@@ -1,3 +1,4 @@
+node_modules/
 # Swap
 [._]*.s[a-v][a-z]
 [._]*.sw[a-p]
