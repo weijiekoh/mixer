@@ -18,6 +18,10 @@ A technical specification can be found
 
 **TODO**
 
+### Frontend
+
+See the frontend documentation [here](./frontend).
+
 ## Contributing pull requests
 
 Please make pull requests against the `develop` branch.
