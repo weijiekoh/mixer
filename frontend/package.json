@@ -5,7 +5,9 @@
     "main": "index.js",
     "scripts": {
         "watch": "parcel index.html",
-        "build": "parcel build index.html",
+        "build": "parcel build index.html --no-source-maps",
+        "lint": "tslint --project . 'js/**/*.ts[x]'",
+        "lint-fix": "tslint --project . 'js/**/*.ts[x]' --fix",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
@@ -13,10 +15,14 @@
     "license": "ISC",
     "dependencies": {
         "react": "^16.8.6",
-        "react-dom": "^16.8.6"
+        "react-dom": "^16.8.6",
+        "react-router-dom": "^5.0.1"
     },
     "devDependencies": {
+        "less": "^3.9.0",
         "parcel-bundler": "^1.12.3",
+        "tslint": "^5.17.0",
+        "tslint-microsoft-contrib": "^6.2.0",
         "typescript": "^3.5.2"
     }
 }
