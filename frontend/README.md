@@ -1,9 +1,7 @@
 # Mixer Frontend
 
 The frontend is a React 16 app written in TypeScript. It uses Parcel to handle
-JS bundling.
-
-Stylesheets are written in ...
+source bundling.
 
 ## Development
 
@@ -31,7 +29,7 @@ All stylesheets are written in LESS and stored in `less/`.
 `index.html` imports `index.less`. In turn, `index.less` imports all other
 stylesheets named `index.less` in various subfolders.
 
-We aim to achieve separation of concerns via convention. 
+We use convention to separate of style concerns.
 
 - `constants.less`: defines colour values, lengths, font sizes, and any
   absolute values used by the other stylesheets.

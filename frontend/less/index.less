@@ -1,3 +1,26 @@
 /*
  * Stylesheets for the mixer UI
  */
+@import (less) '../node_modules/bulma/css/bulma.css';
+
+@media screen and (max-width: 1023px) {
+    .navbar {
+        #wallet-widget {
+            text-align: center;
+        }
+
+        #options-link {
+            display:none;
+        }
+
+        .navbar-dropdown {
+            font-size: 1rem;
+            padding-top: 0;
+
+            .navbar-item {
+                padding-left: 0.75em;
+
+            }
+        }
+    }
+}
