@@ -52,6 +52,7 @@
     "prefer-template": false,
     "prefer-type-cast": false,
     "promise-function-async": false,
+    "react-this-binding-issue": false,
     "semicolon": [true, "never"],
     "trailing-comma": [ // https://palantir.github.io/tslint/rules/trailing-comma/
       true,
