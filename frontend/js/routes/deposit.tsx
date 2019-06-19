@@ -19,7 +19,7 @@ const DepositRoute = () => {
                             The operator's fee is 1%.
                         </p>
                         <p>
-                            You'll get back 0.099 ETH at midnight, UTC.
+                            You can get back 0.099 ETH at midnight, UTC.
                         </p>
                     </div>
 
