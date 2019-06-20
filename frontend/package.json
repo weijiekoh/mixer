@@ -15,9 +15,11 @@
     "license": "ISC",
     "dependencies": {
         "bulma": "^0.7.5",
+        "ethers": "^4.0.30",
         "react": "^16.8.6",
         "react-dom": "^16.8.6",
-        "react-router-dom": "^5.0.1"
+        "react-router-dom": "^5.0.1",
+        "web3-react": "^5.0.4"
     },
     "devDependencies": {
         "less": "^3.9.0",

@@ -2,8 +2,10 @@
  * Stylesheets for the mixer UI
  */
 @import (less) '../node_modules/bulma/css/bulma.css';
+@import (less) './constants.less';
+@import (less) './components/index.less';
 
-@media screen and (max-width: 1023px) {
+@media screen and (max-width: @bulma-mobile) {
     .navbar {
         #wallet-widget {
             text-align: center;

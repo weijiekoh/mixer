@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import WalletWidget from './components/walletWidget'
+
 const Nav = () => {
     const [menuToggle, setMenuToggle] = useState(false)
 
@@ -27,7 +29,7 @@ const Nav = () => {
             <div className={ navbarMenuClassName }>
                 <div className='navbar-end'>
                     <div className='navbar-item' id='wallet-widget'>
-                        Wallet widget
+                        <WalletWidget />
                     </div>
 
                     <a className='navbar-item' href='/about'>
