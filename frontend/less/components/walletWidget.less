@@ -1,14 +1,20 @@
+/*@import (less) '../constants.less';*/
+
 #wallet-widget {
     .circle-icon {
         width: 10px;
         margin-right: 8px;
 
         &.ok {
-            fill: #20bc56;
+            fill: @bulma-success;
         }
 
-        &.ok {
-            fill: #20bc56;
+        &.fail {
+            fill: @bulma-failure;
+        }
+
+        &.warn {
+            fill: @bulma-warn;
         }
     }
 
