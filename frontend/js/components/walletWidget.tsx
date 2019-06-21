@@ -1,3 +1,5 @@
+import { ethers } from 'ethers'
+
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { useWeb3Context, Connectors } from 'web3-react'
@@ -53,36 +55,114 @@ const renderWidget = (web3Status: any, context, onConnectBtnClick) => {
     }
 }
 
+// 0. no web3
+// 1. logged out
+// 2. wrong network
+// 3. ok
+// 4. different account
+/*
+
+0 is alone
+1, 2, 3 in a ring
+
+*/
+
 const WalletWidget = () => {
     const context = useWeb3Context()
-    const [web3Status, setWeb3Status] = useState('')
-
-    const setConnector = (context) => {
-        return context.setConnector('MetaMask', { suppressAndThrowErrors: true })
+    const [web3Status, setWeb3Status] = useState('none')
+    let library
+    if (window.hasOwnProperty('ethereum')) {
+        // @ts-ignore
+        library = new ethers.providers.Web3Provider(window.ethereum)
+    } else {
+        setWeb3Status('no web3')
     }
 
-    useEffect(() => {
-        if (context.active) {
-            setConnector(context).then(() => {})
-            .catch((error: any) => {
-                if (error.code === 'UNSUPPORTED_NETWORK') {
-                    setWeb3Status(error.code)
+    const checkIfConnected = () => {
+        if (library) {
+            library.listAccounts().then((accounts: any[]) => {
+                if (accounts.length > 0 && 
+                    web3Status !== 'ok' &&
+                    web3Status !== 'unsupported network') {
+                    setConnector()
                 }
             })
-        } else {
-            setWeb3Status('LOGGED_OUT')
         }
-    })
-
-    const onConnectBtnClick = () => {
-        // TODO: figure out the ideal state machine behind web3 / metamask
     }
 
+    checkIfConnected()
+
+    useEffect(() => {
+        //checkIfConnected()
+    })
+
+    if (context.active && web3Status !== 'ok') {
+        setWeb3Status('ok')
+    } else if (!context.active && web3Status !== 'logged out' && web3Status !== 'unsupported network') {
+        setWeb3Status('logged out')
+    }
+
+    const onConnectBtnClick = () => {
+        if (!context.active) {
+            setConnector()
+        }
+    }
+
+    const setConnector = () => {
+        context.setConnector('MetaMask', { suppressAndThrowErrors: true }).then(() => {
+            setWeb3Status('ok')
+        }).catch((error: any) => {
+            console.log(error.code === 'UNSUPPORTED_NETWORK', context)
+            if (error.code === 'UNSUPPORTED_NETWORK') {
+                setWeb3Status('unsupported network')
+            }
+        })
+    }
+
+    console.log(context, web3Status)
+
     return (
-        <div id='wallet-widget'>
-            { renderWidget(web3Status, context, onConnectBtnClick) }
+        <div>
+            <p>{web3Status}</p>
+            {
+                !context.active &&
+                web3Status !== 'unsupported network' &&
+                <a className='button is-link is-rounded'
+                    role='button'
+                    onClick={() => {onConnectBtnClick()}} >
+                    Connect wallet
+                </a>
+            }
         </div>
     )
+    //const [web3Status, setWeb3Status] = useState('')
+
+    //const setConnector = (context) => {
+        //return context.setConnector('MetaMask', { suppressAndThrowErrors: true })
+    //}
+
+    //useEffect(() => {
+        //if (context.active) {
+            //setConnector(context).then(() => {})
+            //.catch((error: any) => {
+                //if (error.code === 'UNSUPPORTED_NETWORK') {
+                    //setWeb3Status(error.code)
+                //}
+            //})
+        //} else {
+            //setWeb3Status('LOGGED_OUT')
+        //}
+    //})
+
+    //const onConnectBtnClick = () => {
+        //// TODO: figure out the ideal state machine behind web3 / metamask
+    //}
+
+    //return (
+        //<div id='wallet-widget'>
+            //{ renderWidget(web3Status, context, onConnectBtnClick) }
+        //</div>
+    //)
 }
 
 export default WalletWidget
