@@ -5,6 +5,7 @@ import Web3Provider, { useWeb3Context } from 'web3-react'
 
 import Nav from './nav'
 import DepositRoute from './routes/deposit'
+import CountdownRoute from './routes/countdown'
 import connectors from './web3'
 
 const App = () => {
@@ -19,6 +20,7 @@ const App = () => {
                     <div className='container'>
                         <Router>
                             <Route path='/' exact component={DepositRoute} />
+                            <Route path='/countdown' exact component={CountdownRoute} />
                         </Router>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 
-const DepositRoute = () => {
+export default () => {
     return (
         <div className='section'>
             <div className='columns has-text-centered'>
@@ -24,7 +24,7 @@ const DepositRoute = () => {
                     </div>
 
                     <div className='section'>
-                        <a className="button is-primary is-large">
+                        <a href='/countdown' className='button is-primary is-large'>
                             Deposit 0.1 ETH
                         </a>
                     </div>
@@ -33,5 +33,3 @@ const DepositRoute = () => {
         </div>
     )
 }
-
-export default DepositRoute
