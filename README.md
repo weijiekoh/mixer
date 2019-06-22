@@ -12,11 +12,38 @@ A technical specification can be found
 
 ## Getting started
 
+First, install `npx`.
+
+```bash
+npm install -g npx
+```
+
+Clone this repository and its `semaphore` submodule:
+
+```bash
+git clone git@github.com:weijiekoh/mixer.git && \
+cd mixer && \
+git submodule update --init
+```
+
+Install dependencies and build the source code:
+
+```bash
+npx lerna bootstrap && \
+npx lerna run build
+```
+
 **TODO**
 
 ## Full documentation
 
 **TODO**
+
+### Directory structure
+
+- `frontend/`: source code for the UI
+- `contracts/`: source code for mixer contracts and tests
+- `semaphore/`: a submodule for the [Semaphore code](https://github.com/weijiekoh/semaphore)
 
 ### Frontend
 
