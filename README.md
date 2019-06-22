@@ -12,7 +12,7 @@ A technical specification can be found
 
 ## Getting started
 
-First, install `npx`.
+First, install `npx` if you haven't already:
 
 ```bash
 npm install -g npx
@@ -26,17 +26,31 @@ cd mixer && \
 git submodule update --init
 ```
 
-Download the circuit, keys, and verifier contract:
+Download the circuit, keys, and verifier contract. These are not for production
+use. Doing this instead of generating your own keys will save you about 20
+minutes.
 
 ```bash
 ./scripts/downloadSnarks.sh
 ```
 
+Next, download the `solc` [v0.4.25
+binary](https://github.com/ethereum/solidity/releases/tag/v0.4.25) make it
+executable, and rename it
+
+```bash
+chmod a+x solc-static-linux # whatever its name is
+mv solc-static-linux solc-0.4.25
+```
+
+Take note of the filepath of `solc-0.4.25` as you will need to modify the next
+command to use it.
+
 Install dependencies and build the source code:
 
 ```bash
 npx lerna bootstrap && \
-npx lerna run build
+SOLC=/path/to/solc-0.4.25 npx lerna run build
 ```
 
 **TODO**

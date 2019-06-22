@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo 'Building contracts'
 
@@ -11,8 +12,11 @@ else
     solcBinary="${SOLC}"
 fi
 
+echo Using $solcBinary
+
 cd solidity
 
+mkdir -p ../compiled
 $solcBinary -o ../compiled/ ./Mixer.sol --overwrite --optimize --bin --abi --bin-runtime
 
 if [ $? -eq 1 ]; then
