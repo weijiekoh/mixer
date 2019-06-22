@@ -1,3 +1,5 @@
+contracts/compiled/
+contracts/build/
 frontend/dist/
 frontend/.cache/
 node_modules/
