@@ -26,6 +26,12 @@ cd mixer && \
 git submodule update --init
 ```
 
+Download the circuit, keys, and verifier contract:
+
+```bash
+./scripts/downloadSnarks.sh
+```
+
 Install dependencies and build the source code:
 
 ```bash
