@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo \"Building contracts\" && etherlime compile --workingDirectory=solidity --buildDirectory=compiled --exportAbi"
+    "build": "./scripts/buildSolidity.sh"
   },
   "author": "",
   "license": "ISC",
