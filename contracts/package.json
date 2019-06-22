@@ -1,0 +1,15 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"Building contracts\" && etherlime compile --workingDirectory=solidity --buildDirectory=compiled --exportAbi"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "etherlime": "^2.1.0"
+  }
+}

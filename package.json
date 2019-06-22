@@ -1,0 +1,11 @@
+{
+  "name": "root",
+  "private": true,
+  "scripts": {
+      "fetch-semaphore": "echo 'Fetching Semaphore code' && git submodule update --init semaphore"
+  },
+  "devDependencies": {
+    "etherlime": "^2.1.0",
+    "lerna": "^3.15.0"
+  }
+}
