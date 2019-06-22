@@ -12,6 +12,8 @@ A technical specification can be found
 
 ## Getting started
 
+These instructions have been tested with Ubuntu 18.0.4.
+
 First, install `npx` if you haven't already:
 
 ```bash
@@ -26,9 +28,10 @@ cd mixer && \
 git submodule update --init
 ```
 
-Download the circuit, keys, and verifier contract. These are not for production
-use. Doing this instead of generating your own keys will save you about 20
-minutes.
+Download the circuit, keys, and verifier contract. Doing this instead of
+generating your own keys will save you about 20 minutes. Note that these are
+not for production use as there is no guarantee that the toxic waste was
+discarded.
 
 ```bash
 ./scripts/downloadSnarks.sh
@@ -36,10 +39,10 @@ minutes.
 
 Next, download the `solc` [v0.4.25
 binary](https://github.com/ethereum/solidity/releases/tag/v0.4.25) make it
-executable, and rename it
+executable, and rename it.
 
 ```bash
-chmod a+x solc-static-linux # whatever its name is
+chmod a+x solc-static-linux && # whatever its name is
 mv solc-static-linux solc-0.4.25
 ```
 
@@ -52,8 +55,6 @@ Install dependencies and build the source code:
 npx lerna bootstrap && \
 SOLC=/path/to/solc-0.4.25 npx lerna run build
 ```
-
-**TODO**
 
 ## Full documentation
 
