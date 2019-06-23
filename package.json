@@ -5,6 +5,7 @@
     "build": "lerna run bootstrap && lerna run build"
   },
   "devDependencies": {
-    "lerna": "^3.15.0"
+    "lerna": "^3.15.0",
+    "typescript": "^3.5.2"
   }
 }

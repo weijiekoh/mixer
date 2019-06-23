@@ -4,12 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "./scripts/buildSolidity.sh"
+    "test": "etherlime test --path=build/ --skip-compilation",
+    "build": "./scripts/buildSolidity.sh",
+    "circom": "0.0.27",
+    "circomlib": "git+https://github.com/iden3/circomlib.git#d91afa804ace6481f4468eebc0bf55229771e24c",
+    "ganache": "./scripts/runGanache.sh"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "etherlime": "^2.1.0"
+    "@types/mocha": "^5.2.7",
+    "etherlime": "^2.1.0",
+    "etherlime-lib": "^1.1.0",
+    "ganache-cli": "^6.4.4",
+    "openzeppelin-solidity": "^1.11.0",
+    "truffle-artifactor": "^4.0.10"
+  },
+  "dependencies": {
+    "circomlib": "git+https://github.com/iden3/circomlib.git#d91afa804ace6481f4468eebc0bf55229771e24c"
   }
 }

@@ -18,6 +18,10 @@ contract Mixer {
         uint256 fee;
     }
 
+    constructor (address _semaphore) public {
+        semaphore = Semaphore(_semaphore);
+    }
+
     function deposit(uint256 _identityCommitment) public {
         semaphore.insertIdentity(_identityCommitment);
         identityCommitments.push(_identityCommitment);
