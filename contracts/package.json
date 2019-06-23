@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "etherlime test --path=build/ --skip-compilation",
+    "test": "etherlime test --path=build/ --skip-compilation --timeout 10000",
     "build": "./scripts/buildSolidity.sh",
     "watch": "tsc --watch",
     "ganache": "./scripts/runGanache.sh"
