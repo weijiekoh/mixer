@@ -4,6 +4,7 @@ import "./Semaphore.sol";
 contract Mixer {
     address public operator;
     uint256 public operatorFee;
+    uint256 public amt = 0.1 ether;
     Semaphore public semaphore;
     uint256[] public identityCommitments;
 
@@ -22,7 +23,12 @@ contract Mixer {
         semaphore = Semaphore(_semaphore);
     }
 
-    function deposit(uint256 _identityCommitment) public {
+    function getLeaves() public view returns (uint256[]) {
+        return identityCommitments;
+    }
+
+    function deposit(uint256 _identityCommitment) public payable {
+        require(msg.value == amt);
         semaphore.insertIdentity(_identityCommitment);
         identityCommitments.push(_identityCommitment);
     }

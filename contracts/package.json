@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "etherlime": "^2.1.0",
     "etherlime-lib": "^1.1.0",
