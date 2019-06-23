@@ -3,6 +3,7 @@ set -e
 
 echo 'Building contracts'
 
+rm -rf ../compiled/*
 cp ../semaphore/semaphorejs/contracts/*.sol solidity/
 cp ../semaphore/semaphorejs/build/verifier.sol solidity/
 
