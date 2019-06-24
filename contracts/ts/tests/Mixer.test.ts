@@ -1,3 +1,4 @@
+const crypto = require('crypto')
 const fs = require('fs');
 const path = require('path');
 import * as etherlime from 'etherlime-lib'
@@ -5,11 +6,17 @@ import * as Artifactor from 'truffle-artifactor'
 import * as snarkjs from 'snarkjs'
 import * as circomlib from 'circomlib'
 import * as ethers from 'ethers'
+import * as del from 'del'
+const RocksDb = require('zkp-sbmtjs/src/storage/rocksdb')
+const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
+const Mimc7Hasher = require('zkp-sbmtjs/src/hasher/mimc7')
 
-const Semaphore = require('../compiled/Semaphore.json')
-const Mixer = require('../compiled/Mixer.json')
-const MerkleTree = require('../compiled/MerkleTree.json')
+const Semaphore = require('../../compiled/Semaphore.json')
+const Mixer = require('../../compiled/Mixer.json')
+const MerkleTree = require('../../compiled/MerkleTree.json')
+const MultipleMerkleTree = require('../../compiled/MultipleMerkleTree.json')
 const mimcGenContract = require('circomlib/src/mimc_gencontract.js')
+import MemStorage from '../utils/memStorage'
 
 const bigInt = snarkjs.bigInt;
 const eddsa = circomlib.eddsa;
@@ -18,9 +25,43 @@ const mimc7 = circomlib.mimc7;
 const admin = accounts[0]
 const artifactor = new Artifactor('compiled/')
 
+const depositAmt = ethers.utils.parseEther('0.1')
+
+const users = accounts.slice(1, 6).map((user) => user.signer.address)
+const identities = {}
+
+const TREE_LEVELS = 2
+const DEFAULT_VALUE = 4
+
+const mixerInterface = new ethers.utils.Interface(Mixer.abi)
+
+for (const user of users) {
+    const privKey = crypto.randomBytes(32)
+    const pubKey = eddsa.prv2pub(privKey)
+
+    const identityNullifier = bigInt(snarkjs.bigInt.leBuff2int(crypto.randomBytes(31)))
+    const identityTrapdoor = bigInt(snarkjs.bigInt.leBuff2int(crypto.randomBytes(31)))
+
+    const identityCommitment = mimc7.multiHash(
+        [
+            bigInt(pubKey[0]),
+            bigInt(pubKey[1]),
+            bigInt(identityNullifier),
+            bigInt(identityTrapdoor)
+        ]
+    )
+    identities[user] = {
+        identityCommitment,
+        identityNullifier,
+        identityTrapdoor,
+        privKey,
+        pubKey,
+    }
+}
+
 describe('Mixer', () => {
     let mimcContract
-    let merkleTreeContract
+    let multipleMerkleTreeContract
     let mixerContract
     let semaphoreContract
 
@@ -35,18 +76,16 @@ describe('Mixer', () => {
             unlinked_binary: mimcGenContract.createCode('mimc', 91),
         })
 
-        const MiMC = require('../compiled/MiMC.json')
+        const MiMC = require('../../compiled/MiMC.json')
         mimcContract = await deployer.deploy(MiMC, {})
 
         const libraries = {
             MiMC: mimcContract.contractAddress,
         }
 
-        merkleTreeContract = await deployer.deploy(
-            MerkleTree,
+        multipleMerkleTreeContract = await deployer.deploy(
+            MultipleMerkleTree,
             libraries,
-            2,
-            4,
         )
 
         semaphoreContract = await deployer.deploy(
@@ -71,7 +110,7 @@ describe('Mixer', () => {
             )
 
             assert.isAddress(mimcContract.contractAddress)
-            assert.isAddress(merkleTreeContract.contractAddress)
+            assert.isAddress(multipleMerkleTreeContract.contractAddress)
             assert.isAddress(semaphoreContract.contractAddress)
             assert.isAddress(mixerContract.contractAddress)
         })
@@ -82,39 +121,45 @@ describe('Mixer', () => {
     })
 
     describe('Deposits', () => {
-        const depositAmt = ethers.utils.parseEther('0.1')
+        const storage_path = '/tmp/rocksdb_semaphore_mixer_test'
+        if (fs.existsSync(storage_path)) {
+            del.sync(storage_path, { force: true })
+        }
 
-        let identityCommitments = {}
-        let users = accounts.slice(1, 6)
+        const storage = new RocksDb(storage_path);
+        //const storage = new MemStorage()
 
-        const prvKey = Buffer.from('0001020304050607080900010203040506070809000102030405060708090001', 'hex')
-        const pubKey = eddsa.prv2pub(prvKey)
-        const identityNullifier = bigInt('230')
-        const identityTrapdoor = bigInt('12311')
-
-        const identityCommitment = mimc7.multiHash(
-            [
-                bigInt(pubKey[0]),
-                bigInt(pubKey[1]),
-                bigInt(identityNullifier),
-                bigInt(identityTrapdoor)
-            ]
+        const default_value = '0'
+        const hasher = new Mimc7Hasher()
+        const prefix = 'semaphore'
+        const tree = new MerkleTreeJs(
+            prefix,
+            storage,
+            hasher,
+            20,
+            DEFAULT_VALUE,
         )
 
-        it('should generate an identity commitment', async () => {
-            assert.equal(
-                identityCommitment.toString(10), 
-                '21375762478350580868641914949267138481263092446318042242917459058343516778559',
-            )
+        it('should generate identity commitments', async () => {
+            for (const user of users) {
+                assert.isTrue(identities[user].identityCommitment.toString(10).length > 0)
+            }
         })
 
         it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
+            const identityCommitment = identities[users[0]].identityCommitment
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 1 }))
         })
 
         it('should add the identity commitment to the contract if the amount is correct', async () => {
-            await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+            const identityCommitment = identities[users[0]].identityCommitment
+
+            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+            const receipt = await mixerContract.verboseWaitForTransaction(tx)
+
+            assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
+
             const leaves = (await mixerContract.getLeaves()).map((x) => {
                 return x.toString(10)
             })
