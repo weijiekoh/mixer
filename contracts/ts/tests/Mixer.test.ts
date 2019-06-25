@@ -120,7 +120,7 @@ describe('Mixer', () => {
         })
     })
 
-    describe('Deposits', () => {
+    describe('Deposits and withdrawals', () => {
         const storage_path = '/tmp/rocksdb_semaphore_mixer_test'
         if (fs.existsSync(storage_path)) {
             del.sync(storage_path, { force: true })
@@ -139,6 +139,12 @@ describe('Mixer', () => {
             20,
             DEFAULT_VALUE,
         )
+
+        const circuitPath = '../../semaphore/semaphorejs/build/circuit.json'
+        const cirDef = JSON.parse(
+            fs.readFileSync(path.join(__dirname, circuitPath)).toString()
+        )
+        const circuit = new snarkjs.Circuit(cirDef)
 
         it('should generate identity commitments', async () => {
             for (const user of users) {
@@ -159,19 +165,44 @@ describe('Mixer', () => {
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
+            const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
+
+            const nextIndex = leafAddedEvent.leaf_index
+            assert.equal(nextIndex, 0)
 
             const leaves = (await mixerContract.getLeaves()).map((x) => {
                 return x.toString(10)
             })
             assert.include(leaves, identityCommitment.toString())
+
+            //await tree.update(nextIndex, identityCommitment.toString())
+
+            //const identityPath = await tree.path(nextIndex)
+
+            //const identityPathElements = identityPath.path_elements
+            //const identityPathIndex = identityPath.path_index
+
+            ////console.log(identityPath, identityPathElements, identityPathIndex, identityPath.root)
+            //const w = circuit.calculateWitness({
+                //'identity_pk[0]': identities[users[0].pubKey[0],
+                //'identity_pk[1]': identities[users[0].pubKey[1],
+                //'auth_sig_r[0]': signature.R8[0],
+                //'auth_sig_r[1]': signature.R8[1],
+                //auth_sig_s: signature.S,
+                //signal_hash,
+                //external_nullifier,
+                //identity_nullifier,
+                //identityTrapdoor,
+                //identity_path_elements,
+                //identity_path_index,
+                //broadcaster_address,
+            //})
+        })
+
+        it('should perform a withdrawal', async () => {
         })
     })
 
     describe('Withdrawals', () => {
-        //const circuitPath = '../../semaphore/semaphorejs/build/circuit.json'
-        //const cirDef = JSON.parse(
-            //fs.readFileSync(path.join(__dirname, circuitPath)).toString()
-        //)
-        //const circuit = new snarkjs.Circuit(cirDef)
     })
 })
