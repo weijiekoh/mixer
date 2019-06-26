@@ -1,4 +1,5 @@
 declare var assert: any
+
 const crypto = require('crypto')
 const fs = require('fs');
 const path = require('path');
@@ -237,7 +238,6 @@ describe('Mixer', () => {
             const nullifiersHash = w[circuit.getSignalIdx('main.nullifiers_hash')];
             assert(circuit.checkWitness(w));
             assert.equal(witnessRoot, identityPath.root);
-            debugger
 
             const witnessBin = convertWitness(snarkjs.stringifyBigInts(w));
             const publicSignals = w.slice(1, circuit.nPubInputs + circuit.nOutputs+1);

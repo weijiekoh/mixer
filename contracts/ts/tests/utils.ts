@@ -29,13 +29,8 @@ function writeUint32(h, val) {
 
 function writeBigInt(h, bi) {
     for (let i=0; i<8; i++) {
-        try {
-            const v = bi.shiftRight(i*32).and(0xFFFFFFFF).toJSNumber();
-            writeUint32(h, v);
-        } catch (err) {
-            console.log(bi)
-            throw err
-        }
+        const v = bi.shiftRight(i*32).and(0xFFFFFFFF).toJSNumber();
+        writeUint32(h, v);
     }
 }
 
