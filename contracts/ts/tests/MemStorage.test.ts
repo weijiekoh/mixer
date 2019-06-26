@@ -1,3 +1,4 @@
+declare var assert: any
 import MemStorage from '../utils/memStorage'
 
 describe('MemStorage', async () => {

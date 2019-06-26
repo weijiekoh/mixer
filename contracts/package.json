@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "./scripts/buildSolidity.sh && tsc",
-    "test": "etherlime test --path=build/test/Mixer.test.js --skip-compilation --timeout 10000",
+    "test": "etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
+    "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
     "watch": "tsc --watch",
     "ganache": "./scripts/runGanache.sh"
   },
@@ -25,6 +26,8 @@
     "circom": "0.0.27",
     "circomlib": "git+https://github.com/iden3/circomlib.git#d91afa804ace6481f4468eebc0bf55229771e24c",
     "del": "^4.1.1",
-    "snarkjs": "^0.1.13"
+    "snarkjs": "^0.1.13",
+    "wasmbuilder": "0.0.3",
+    "websnark": "0.0.4"
   }
 }

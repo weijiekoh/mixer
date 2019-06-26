@@ -1,3 +1,4 @@
+declare var assert: any
 const crypto = require('crypto')
 const fs = require('fs');
 const path = require('path');
@@ -26,6 +27,7 @@ const admin = accounts[0]
 const artifactor = new Artifactor('compiled/')
 
 const depositAmt = ethers.utils.parseEther('0.1')
+const feeAmt = ethers.utils.parseEther('0.001')
 
 const users = accounts.slice(1, 6).map((user) => user.signer.address)
 const identities = {}
@@ -34,6 +36,8 @@ const TREE_LEVELS = 2
 const DEFAULT_VALUE = 4
 
 const mixerInterface = new ethers.utils.Interface(Mixer.abi)
+
+import { convertWitness, prove } from './utils'
 
 for (const user of users) {
     const privKey = crypto.randomBytes(32)
@@ -140,6 +144,8 @@ describe('Mixer', () => {
             DEFAULT_VALUE,
         )
 
+        const verifyingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/verification_key.json'))
+        const provingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.json'))
         const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
         const cirDef = JSON.parse(
             fs.readFileSync(path.join(__dirname, circuitPath)).toString()
@@ -159,44 +165,86 @@ describe('Mixer', () => {
         })
 
         it('should add the identity commitment to the contract if the amount is correct', async () => {
-            const identityCommitment = identities[users[0]].identityCommitment
+            const identity = identities[users[0]]
+            const recipientAddress = accounts[1].signer.address
+            const identityCommitment = identity.identityCommitment
+            const broadcasterAddress = mixerContract.contractAddress
 
+            // make a deposit (by the first user)
             const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
+            // check that the leaf was added using the receipt
             assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
             const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
 
             const nextIndex = leafAddedEvent.leaf_index
             assert.equal(nextIndex, 0)
 
+            // check that the leaf was added to the leaf history array in the contract
             const leaves = (await mixerContract.getLeaves()).map((x) => {
                 return x.toString(10)
             })
             assert.include(leaves, identityCommitment.toString())
 
-            //await tree.update(nextIndex, identityCommitment.toString())
+            await tree.update(nextIndex, identityCommitment.toString())
 
-            //const identityPath = await tree.path(nextIndex)
+            const identityPath = await tree.path(nextIndex)
 
-            //const identityPathElements = identityPath.path_elements
-            //const identityPathIndex = identityPath.path_index
+            const identityPathElements = identityPath.path_elements
+            const identityPathIndex = identityPath.path_index
 
+            // calculate the signalHash which is the hash of recipientAddress,
+            // broadcasterAddress, and fee
+            // Matches the following Solidity code:
+            //
+            // keccak256(abi.encodePacked(recipientAddress, mixerAddress, feeAmt));
+
+            const signalHash = ethers.utils.solidityKeccak256(
+                ['address', 'address', 'uint256'],
+                [recipientAddress, broadcasterAddress, feeAmt],
+            )
+
+            // the external nullifier is the hash of the contract's address
+            const externalNullifier = mixerContract.contractAddress
+
+            const msg = mimc7.multiHash(
+                [
+                    bigInt(externalNullifier),
+                    bigInt(signalHash), 
+                    bigInt(mixerContract.contractAddress),
+                ]
+            )
+
+            const signature = eddsa.signMiMC(identity.privKey, msg);
             ////console.log(identityPath, identityPathElements, identityPathIndex, identityPath.root)
-            //const w = circuit.calculateWitness({
-                //'identity_pk[0]': identities[users[0].pubKey[0],
-                //'identity_pk[1]': identities[users[0].pubKey[1],
-                //'auth_sig_r[0]': signature.R8[0],
-                //'auth_sig_r[1]': signature.R8[1],
-                //auth_sig_s: signature.S,
-                //signal_hash,
-                //external_nullifier,
-                //identity_nullifier,
-                //identityTrapdoor,
-                //identity_path_elements,
-                //identity_path_index,
-                //broadcaster_address,
-            //})
+            const w = circuit.calculateWitness({
+                'identity_pk[0]': identity.pubKey[0],
+                'identity_pk[1]': identity.pubKey[1],
+                'auth_sig_r[0]': signature.R8[0],
+                'auth_sig_r[1]': signature.R8[1],
+                auth_sig_s: signature.S,
+                signal_hash: signalHash,
+                external_nullifier: externalNullifier,
+                identity_nullifier: identity.identityNullifier,
+                identity_r: identity.identityTrapdoor,
+                identity_path_elements: identityPathElements,
+                identity_path_index: identityPathIndex,
+                broadcaster_address: broadcasterAddress,
+            })
+
+            const witnessRoot = w[circuit.getSignalIdx('main.root')];
+            const nullifiersHash = w[circuit.getSignalIdx('main.nullifiers_hash')];
+            assert(circuit.checkWitness(w));
+            assert.equal(witnessRoot, identityPath.root);
+            debugger
+
+            const witnessBin = convertWitness(snarkjs.stringifyBigInts(w));
+            const publicSignals = w.slice(1, circuit.nPubInputs + circuit.nOutputs+1);
+            const proof = await prove(witnessBin.buffer, provingKey.buffer);
+
+            const isVerified = snarkjs.isValid(verifyingKey, proof, verifyingKey)
+            assert.isTrue(isVerified)
         })
 
         it('should perform a withdrawal', async () => {

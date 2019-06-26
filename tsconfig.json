@@ -8,6 +8,7 @@
         "noUnusedParameters": false,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
+        "sourceMap": true,
         "strict": true
     }
 }

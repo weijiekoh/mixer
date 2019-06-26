@@ -1,3 +1,4 @@
+pragma experimental ABIEncoderV2;
 pragma solidity >=0.4.21;
 import "./Semaphore.sol";
 
