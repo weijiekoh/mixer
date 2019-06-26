@@ -140,7 +140,7 @@ describe('Mixer', () => {
             DEFAULT_VALUE,
         )
 
-        const circuitPath = '../../semaphore/semaphorejs/build/circuit.json'
+        const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
         const cirDef = JSON.parse(
             fs.readFileSync(path.join(__dirname, circuitPath)).toString()
         )

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "./scripts/buildSolidity.sh && tsc",
-    "test": "etherlime test --path=build/ --skip-compilation --timeout 10000",
+    "test": "etherlime test --path=build/test/Mixer.test.js --skip-compilation --timeout 10000",
     "watch": "tsc --watch",
     "ganache": "./scripts/runGanache.sh"
   },
