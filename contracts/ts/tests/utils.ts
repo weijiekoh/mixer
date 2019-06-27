@@ -47,38 +47,55 @@ function calculateBuffLen(witness) {
 
 
 function convertWitness(witnessJson) {
-  const witness = unstringifyBigInts(witnessJson);
-  const buffLen = calculateBuffLen(witness);
+    const witness = unstringifyBigInts(witnessJson);
+    const buffLen = calculateBuffLen(witness);
 
-  const buff = new ArrayBuffer(buffLen);
+    const buff = new ArrayBuffer(buffLen);
 
-  const h = {
-      dataView: new DataView(buff),
-      offset: 0
-  };
+    const h = {
+        dataView: new DataView(buff),
+        offset: 0
+    };
 
 
-  // writeUint32(h, witness.length);
+    // writeUint32(h, witness.length);
 
-  for (let i=0; i<witness.length; i++) {
-      writeBigInt(h, witness[i]);
-  }
+    for (let i=0; i<witness.length; i++) {
+        writeBigInt(h, witness[i]);
+    }
 
-  assert.equal(h.offset, buffLen);
+    assert.equal(h.offset, buffLen);
 
-  return Buffer.from(buff);
+    return Buffer.from(buff);
 }
 
 const buildGroth16 = require('websnark/src/groth16.js');
 
 async function prove(witness, provingKey) {
-  const groth16 = await buildGroth16();
-  const p = await groth16.proof(witness, provingKey);
-  //groth16.terminate();
-  return snarkjs.unstringifyBigInts(p);
+    const groth16 = await buildGroth16();
+    const p = await groth16.proof(witness, provingKey);
+    //groth16.terminate();
+    return snarkjs.unstringifyBigInts(p);
+}
+
+const cutDownBits = (b: snarkjs.bigInt, bits: number) => {
+    let mask = snarkjs.bigInt(1)
+    mask = mask.shl(bits).sub(snarkjs.bigInt(1))
+    return b.and(mask)
+}
+
+const beBuff2int = (buff: snarkjs.bigInt) => {
+    let res = snarkjs.bigInt.zero;
+    for (let i=0; i<buff.length; i++) {
+        const n = snarkjs.bigInt(buff[buff.length - i - 1])
+        res = res.add(n.shl(i*8))
+    }
+    return res;
 }
 
 export {
-  convertWitness,
-  prove,
+    convertWitness,
+    prove,
+    cutDownBits,
+    beBuff2int,
 }

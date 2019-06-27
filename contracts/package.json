@@ -19,12 +19,13 @@
     "etherlime-lib": "^1.1.0",
     "ganache-cli": "^6.4.4",
     "openzeppelin-solidity": "^1.11.0",
-    "zkp-sbmtjs": "^0.2.1",
+    "zkp-sbmtjs": "^0.3.0",
     "truffle-artifactor": "^4.0.10"
   },
   "dependencies": {
+    "blakejs": "^1.1.0",
     "circom": "0.0.27",
-    "circomlib": "git+https://github.com/iden3/circomlib.git#d91afa804ace6481f4468eebc0bf55229771e24c",
+    "circomlib": "git+https://github.com/kobigurk/circomlib.git#f4a7f30faa9867be77522aea42332585338c235d",
     "del": "^4.1.1",
     "snarkjs": "^0.1.13",
     "websnark": "git+https://github.com/iden3/websnark.git"

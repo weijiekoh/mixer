@@ -11,18 +11,19 @@ import * as ethers from 'ethers'
 import * as del from 'del'
 const RocksDb = require('zkp-sbmtjs/src/storage/rocksdb')
 const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
-const Mimc7Hasher = require('zkp-sbmtjs/src/hasher/mimc7')
+const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
+const blake2 = require('blakejs')
 
 const Semaphore = require('../../compiled/Semaphore.json')
 const Mixer = require('../../compiled/Mixer.json')
 const MerkleTree = require('../../compiled/MerkleTree.json')
 const MultipleMerkleTree = require('../../compiled/MultipleMerkleTree.json')
-const mimcGenContract = require('circomlib/src/mimc_gencontract.js')
+const mimcGenContract = require('circomlib/src/mimcsponge_gencontract.js');
 import MemStorage from '../utils/memStorage'
 
 const bigInt = snarkjs.bigInt;
 const eddsa = circomlib.eddsa;
-const mimc7 = circomlib.mimc7;
+const mimcsponge = circomlib.mimcsponge;
 
 const admin = accounts[0]
 const artifactor = new Artifactor('compiled/')
@@ -33,32 +34,32 @@ const feeAmt = ethers.utils.parseEther('0.001')
 const users = accounts.slice(1, 6).map((user) => user.signer.address)
 const identities = {}
 
-const TREE_LEVELS = 2
-const DEFAULT_VALUE = 4
+const DEFAULT_VALUE = 0
 
 const mixerInterface = new ethers.utils.Interface(Mixer.abi)
 
-import { convertWitness, prove } from './utils'
+import { convertWitness, prove, cutDownBits, beBuff2int} from './utils'
 
 for (const user of users) {
     const privKey = crypto.randomBytes(32)
     const pubKey = eddsa.prv2pub(privKey)
 
     const identityNullifier = bigInt(snarkjs.bigInt.leBuff2int(crypto.randomBytes(31)))
-    const identityTrapdoor = bigInt(snarkjs.bigInt.leBuff2int(crypto.randomBytes(31)))
 
-    const identityCommitment = mimc7.multiHash(
-        [
-            bigInt(pubKey[0]),
-            bigInt(pubKey[1]),
-            bigInt(identityNullifier),
-            bigInt(identityTrapdoor)
-        ]
+    const identityCommitmentInts = [
+        bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
+        bigInt(identityNullifier),
+    ]
+
+    const identityCommitmentBuffer = Buffer.concat(
+       identityCommitmentInts.map(x => x.leInt2Buff(32))
     )
+
+    const identityCommitment = cutDownBits(beBuff2int(Buffer.from(blake2.blake2sHex(identityCommitmentBuffer), 'hex')), 253)
+
     identities[user] = {
         identityCommitment,
         identityNullifier,
-        identityTrapdoor,
         privKey,
         pubKey,
     }
@@ -69,30 +70,35 @@ describe('Mixer', () => {
     let multipleMerkleTreeContract
     let mixerContract
     let semaphoreContract
+    const SEED = 'mimcsponge';
 
     const deployer = new etherlime.EtherlimeGanacheDeployer(admin.secretKey)
-    deployer.defaultOverrides = { gasLimit: 8000000 }
+    deployer.defaultOverrides = { gasLimit: 8800000 }
     deployer.setSigner(accounts[0].signer)
 
     before(async () => {
         await artifactor.save({
             contractName: 'MiMC',
             abi: mimcGenContract.abi,
-            unlinked_binary: mimcGenContract.createCode('mimc', 91),
+            unlinked_binary: mimcGenContract.createCode(SEED, 220),
         })
 
         const MiMC = require('../../compiled/MiMC.json')
+
+        console.log('Deploying MiMC')
         mimcContract = await deployer.deploy(MiMC, {})
 
         const libraries = {
             MiMC: mimcContract.contractAddress,
         }
 
+        console.log('Deploying MultipleMerkleTree')
         multipleMerkleTreeContract = await deployer.deploy(
             MultipleMerkleTree,
             libraries,
         )
 
+        console.log('Deploying Semaphore')
         semaphoreContract = await deployer.deploy(
             Semaphore,
             libraries,
@@ -102,7 +108,10 @@ describe('Mixer', () => {
             1000,
         )
 
+        console.log('Deploying Mixer')
         mixerContract = await deployer.deploy(Mixer, {}, semaphoreContract.contractAddress)
+
+        console.log('Transferring ownership of Semaphore to Mixer')
         await semaphoreContract.transferOwnership(mixerContract.contractAddress)
     })
 
@@ -135,7 +144,7 @@ describe('Mixer', () => {
         //const storage = new MemStorage()
 
         const default_value = '0'
-        const hasher = new Mimc7Hasher()
+        const hasher = new MimcSpongeHasher()
         const prefix = 'semaphore'
         const tree = new MerkleTreeJs(
             prefix,
@@ -145,7 +154,15 @@ describe('Mixer', () => {
             DEFAULT_VALUE,
         )
 
-        const verifyingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/verification_key.json'))
+        const verifyingKey = snarkjs.unstringifyBigInts(
+            JSON.parse(fs.readFileSync(
+                path.join(
+                    __dirname,
+                    '../../../semaphore/semaphorejs/build/verification_key.json',
+                )
+            ))
+        )
+
         const provingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'))
         const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
         const cirDef = JSON.parse(
@@ -159,11 +176,11 @@ describe('Mixer', () => {
             }
         })
 
-        it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
-            const identityCommitment = identities[users[0]].identityCommitment
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 1 }))
-        })
+        //it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
+            //const identityCommitment = identities[users[0]].identityCommitment
+            //await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
+            //await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 1 }))
+        //})
 
         it('should add the identity commitment to the contract if the amount is correct', async () => {
             const identity = identities[users[0]]
@@ -209,7 +226,7 @@ describe('Mixer', () => {
             // the external nullifier is the hash of the contract's address
             const externalNullifier = mixerContract.contractAddress
 
-            const msg = mimc7.multiHash(
+            const msg = mimcsponge.multiHash(
                 [
                     bigInt(externalNullifier),
                     bigInt(signalHash), 
@@ -217,8 +234,10 @@ describe('Mixer', () => {
                 ]
             )
 
-            const signature = eddsa.signMiMC(identity.privKey, msg);
-            ////console.log(identityPath, identityPathElements, identityPathIndex, identityPath.root)
+            const signature = eddsa.signMiMCSponge(identity.privKey, msg)
+
+            assert.isTrue(eddsa.verifyMiMCSponge(msg, signature, identity.pubKey));
+
             const w = circuit.calculateWitness({
                 'identity_pk[0]': identity.pubKey[0],
                 'identity_pk[1]': identity.pubKey[1],
@@ -228,22 +247,21 @@ describe('Mixer', () => {
                 signal_hash: signalHash,
                 external_nullifier: externalNullifier,
                 identity_nullifier: identity.identityNullifier,
-                identity_r: identity.identityTrapdoor,
                 identity_path_elements: identityPathElements,
                 identity_path_index: identityPathIndex,
                 broadcaster_address: broadcasterAddress,
             })
 
-            const witnessRoot = w[circuit.getSignalIdx('main.root')];
-            const nullifiersHash = w[circuit.getSignalIdx('main.nullifiers_hash')];
-            assert(circuit.checkWitness(w));
-            assert.equal(witnessRoot, identityPath.root);
+            const witnessRoot = w[circuit.getSignalIdx('main.root')]
+            const nullifiersHash = w[circuit.getSignalIdx('main.nullifiers_hash')]
+            assert.isTrue(circuit.checkWitness(w))
+            assert.equal(witnessRoot, identityPath.root)
 
-            const witnessBin = convertWitness(snarkjs.stringifyBigInts(w));
-            const publicSignals = w.slice(1, circuit.nPubInputs + circuit.nOutputs+1);
-            const proof = await prove(witnessBin.buffer, provingKey.buffer);
+            const witnessBin = convertWitness(snarkjs.stringifyBigInts(w))
+            const publicSignals = w.slice(1, circuit.nPubInputs + circuit.nOutputs+1)
+            const proof = await prove(witnessBin.buffer, provingKey.buffer)
 
-            const isVerified = snarkjs.isValid(verifyingKey, proof, verifyingKey)
+            const isVerified = snarkjs.groth.isValid(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
         })
 
