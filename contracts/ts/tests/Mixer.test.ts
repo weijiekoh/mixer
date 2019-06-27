@@ -146,7 +146,7 @@ describe('Mixer', () => {
         )
 
         const verifyingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/verification_key.json'))
-        const provingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.json'))
+        const provingKey = fs.readFileSync(path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'))
         const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
         const cirDef = JSON.parse(
             fs.readFileSync(path.join(__dirname, circuitPath)).toString()
