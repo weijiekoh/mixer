@@ -12,7 +12,10 @@ A technical specification can be found
 
 ## Getting started
 
-These instructions have been tested with Ubuntu 18.0.4.
+These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
+
+We recommend [`nvm`](https://github.com/nvm-sh/nvm) to manage your Node
+installation.
 
 First, install `npx` if you haven't already:
 
