@@ -56,6 +56,7 @@ Install dependencies and build the source code:
 <!--SOLC=/path/to/solc-0.4.25 npx lerna run build-->
 <!--```-->
 ```bash
+npm i && \
 npx lerna bootstrap && \
 npx lerna run build
 ```
