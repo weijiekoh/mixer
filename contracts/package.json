@@ -25,7 +25,7 @@
   "dependencies": {
     "blakejs": "^1.1.0",
     "circom": "0.0.27",
-    "circomlib": "git+https://github.com/kobigurk/circomlib.git#f4a7f30faa9867be77522aea42332585338c235d",
+    "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "del": "^4.1.1",
     "snarkjs": "^0.1.13",
     "websnark": "git+https://github.com/iden3/websnark.git"
