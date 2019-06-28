@@ -205,14 +205,16 @@ describe('Mixer', () => {
         it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
             const identityCommitment = identities[users[0]].identityCommitment
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 1 }))
+            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: depositAmt.add(1) }))
         })
 
-
-        it('should successfully make a deposit', async () => {
+        it('should perform a deposit', async () => {
             // make a deposit (by the first user)
             const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
+
+            const gasUsed = receipt.gasUsed.toString()
+            console.log('Gas used for this deposit:', gasUsed)
 
             // check that the leaf was added using the receipt
             assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
@@ -228,7 +230,7 @@ describe('Mixer', () => {
             assert.include(leaves, identityCommitment.toString())
         })
 
-        it('should successfully make a withdrawal', async () => {
+        it('should make a withdrawal', async () => {
             const broadcasterAddress = mixerContract.contractAddress
             await tree.update(nextIndex, identityCommitment.toString())
 
@@ -320,6 +322,9 @@ describe('Mixer', () => {
 
             // Wait till the transaction is mined
             const receipt = await mixerContract.verboseWaitForTransaction(mixTx)
+
+            const gasUsed = receipt.gasUsed.toString()
+            console.log('Gas used for this withdrawal:', gasUsed)
 
             recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
             owedFeesAfter = await mixerContract.getFeesOwedToOperator()
