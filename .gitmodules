@@ -1,3 +1,4 @@
 [submodule "semaphore"]
 	path = semaphore
-	url = git@github.com:weijiekoh/semaphore.git#feat/no-gas-refunds
+	url = git@github.com:weijiekoh/semaphore.git
+    branch= feat/no-gas-refunds
