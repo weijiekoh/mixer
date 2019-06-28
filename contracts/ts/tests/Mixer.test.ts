@@ -70,6 +70,7 @@ for (const user of users) {
 }
 
 const identity = identities[users[0]]
+const operatorAddress = accounts[0].signer.address
 const recipientAddress = accounts[1].signer.address
 const identityCommitment = identity.identityCommitment
 let nextIndex
@@ -188,6 +189,13 @@ describe('Mixer', () => {
         )
         const circuit = new snarkjs.Circuit(cirDef)
 
+        let recipientBalanceBefore
+        let recipientBalanceAfter
+        let owedFeesDiff
+        let owedFeesBefore
+        let owedFeesAfter
+        let recipientBalanceDiff
+
         it('should generate identity commitments', async () => {
             for (const user of users) {
                 assert.isTrue(identities[user].identityCommitment.toString(10).length > 0)
@@ -286,7 +294,8 @@ describe('Mixer', () => {
             const isVerified = snarkjs.groth.isValid(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
 
-            const recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
+            recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
+            owedFeesBefore = await mixerContract.getFeesOwedToOperator()
 
             const mixTx = await mixerContract.mix(
                 {
@@ -309,14 +318,36 @@ describe('Mixer', () => {
                 }
             )
 
+            // Wait till the transaction is mined
             const receipt = await mixerContract.verboseWaitForTransaction(mixTx)
-            const recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
 
-            //console.log(await mixerContract.getFeesOwedToOperator())
-            console.log(recipientAddress)
-            console.log(recipientBalanceAfter)
-            //console.log(recipientBalanceBefore)
-            debugger
+            recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
+            owedFeesAfter = await mixerContract.getFeesOwedToOperator()
+        })
+
+        it('should increase the recipient\'s balance', () => {
+            recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
+            assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
+        })
+
+        it('should increase the operator\'s claimable fee balance', () => {
+            owedFeesDiff = owedFeesAfter.sub(owedFeesBefore).toString()
+            assert.equal(ethers.utils.formatEther(owedFeesDiff), '0.0005')
+        })
+
+        it('should allow the operator to withdraw all owed fees', async () => {
+            const operatorBalanceBefore = await deployer.provider.getBalance(operatorAddress)
+
+            const tx = await mixerContract.withdrawFees()
+            const receipt = await mixerContract.verboseWaitForTransaction(tx)
+
+            const operatorBalanceAfter = await deployer.provider.getBalance(operatorAddress)
+
+            const operatorBalanceDiff = operatorBalanceAfter.sub(operatorBalanceBefore).toString()
+            const balancePlusGas = tx.gasPrice.mul(receipt.gasUsed).add(operatorBalanceDiff).toString()
+
+            assert.equal(balancePlusGas, owedFeesDiff)
+            assert.equal(await mixerContract.getFeesOwedToOperator(), 0)
         })
     })
 })

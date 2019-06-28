@@ -74,7 +74,7 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         uint[2] c,
         uint[5] input // (root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address)
     ) public {
-        uint256 start_gas = gasleft();
+        //uint256 start_gas = gasleft();
 
         uint256 signal_hash = uint256(sha256(signal)) >> 8;
         require(signal_hash == input[2]);
@@ -97,17 +97,15 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         nullifiers_set[input[1]] = true;
         emit SignalBroadcast(signal, input[1], external_nullifier);
 
-        uint256 gas_price = gas_price_max;
-        if (tx.gasprice < gas_price) {
-          gas_price = tx.gasprice;
-        }
-        uint256 gas_used = start_gas - gasleft();
+        //uint256 gas_price = gas_price_max;
+        //if (tx.gasprice < gas_price) {
+          //gas_price = tx.gasprice;
+        //}
+        //uint256 gas_used = start_gas - gasleft();
 
         // pay back gas: 21000 constant cost + gas used + reward
         //require((msg.sender).send((21000 + gas_used)*tx.gasprice + reward));
         //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
-        //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
-        msg.sender.transfer((21000 + gas_used + reward)*gas_price);
         //require(msg.sender.send(1 wei));
     }
 

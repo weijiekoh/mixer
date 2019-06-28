@@ -30,6 +30,9 @@ contract Mixer {
      * Constructor
      */
     constructor (address _semaphore) public {
+        // Set the operator as the contract deployer
+        operator = msg.sender;
+
         // Set the Semaphore contract
         semaphore = Semaphore(_semaphore);
     }
@@ -84,9 +87,6 @@ contract Mixer {
         feesOwedToOperator = 0;
     }
 
-    // Fallback function for Semaphore to refund gas
-    function () public payable {}
-
     /*
      * Deposits `mixAmt` wei into the contract and register the user's identity
      * commitment into Semaphore.
@@ -101,8 +101,8 @@ contract Mixer {
 
     /*
      * Withdraw funds to a specified recipient using a zk-SNARK deposit proof
-     * @param _proof A deposit proof. This function will send `mixAmt` to the
-     *               recipient if the proof is valid.
+     * @param _proof A deposit proof. This function will send `mixAmt`, minus
+     *               fees, to the recipient if the proof is valid.
      */
     function mix(DepositProof _proof) public {
         // Check whether the fee matches the one quoted by this contract
