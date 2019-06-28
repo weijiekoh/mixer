@@ -105,7 +105,9 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
 
         // pay back gas: 21000 constant cost + gas used + reward
         //require((msg.sender).send((21000 + gas_used)*tx.gasprice + reward));
-        require((msg.sender).send((21000 + gas_used + reward)*gas_price));
+        //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
+        //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
+        msg.sender.transfer((21000 + gas_used + reward)*gas_price);
         //require(msg.sender.send(1 wei));
     }
 

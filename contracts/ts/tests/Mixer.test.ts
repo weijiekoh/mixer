@@ -8,6 +8,7 @@ import * as Artifactor from 'truffle-artifactor'
 import * as snarkjs from 'snarkjs'
 import * as circomlib from 'circomlib'
 import * as ethers from 'ethers'
+import * as web3Utils from 'web3-utils'
 import * as del from 'del'
 const RocksDb = require('zkp-sbmtjs/src/storage/rocksdb')
 const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
@@ -52,10 +53,13 @@ for (const user of users) {
     ]
 
     const identityCommitmentBuffer = Buffer.concat(
-       identityCommitmentInts.map(x => x.leInt2Buff(32))
+        identityCommitmentInts.map(x => x.leInt2Buff(32))
     )
 
-    const identityCommitment = cutDownBits(beBuff2int(Buffer.from(blake2.blake2sHex(identityCommitmentBuffer), 'hex')), 253)
+    const identityCommitment = cutDownBits(
+        beBuff2int(Buffer.from(blake2.blake2sHex(identityCommitmentBuffer), 'hex')),
+        253,
+    )
 
     identities[user] = {
         identityCommitment,
@@ -65,11 +69,17 @@ for (const user of users) {
     }
 }
 
+const identity = identities[users[0]]
+const recipientAddress = accounts[1].signer.address
+const identityCommitment = identity.identityCommitment
+let nextIndex
+
+let mimcContract
+let multipleMerkleTreeContract
+let mixerContract
+let semaphoreContract
+
 describe('Mixer', () => {
-    let mimcContract
-    let multipleMerkleTreeContract
-    let mixerContract
-    let semaphoreContract
     const SEED = 'mimcsponge';
 
     const deployer = new etherlime.EtherlimeGanacheDeployer(admin.secretKey)
@@ -113,9 +123,12 @@ describe('Mixer', () => {
 
         console.log('Transferring ownership of Semaphore to Mixer')
         await semaphoreContract.transferOwnership(mixerContract.contractAddress)
+
+        console.log('Setting the external nullifier of the Semaphore contract')
+        await mixerContract.setSemaphoreExternalNulllifier()
     })
 
-    describe('Deployments', () => {
+    describe('Contract deployments', () => {
         it('should deploy contracts', () => {
             assert.notEqual(
                 mimcContract._contract.bytecode,
@@ -132,6 +145,12 @@ describe('Mixer', () => {
         it('the Mixer contract should be the owner of the Semaphore contract', async () => {
             assert.equal((await semaphoreContract.owner()), mixerContract.contractAddress)
         })
+
+        it('the Semaphore contract\'s external nullifier should be the mixer contract address', async () => {
+            const semaphoreExtNullifier = await semaphoreContract.external_nullifier()
+            const mixerAddress = mixerContract.contractAddress
+            assert.equal(mixerAddress.toLowerCase(), semaphoreExtNullifier.toHexString().toLowerCase())
+        })
     })
 
     describe('Deposits and withdrawals', () => {
@@ -141,7 +160,6 @@ describe('Mixer', () => {
         }
 
         const storage = new RocksDb(storage_path);
-        //const storage = new MemStorage()
 
         const default_value = '0'
         const hasher = new MimcSpongeHasher()
@@ -176,18 +194,14 @@ describe('Mixer', () => {
             }
         })
 
-        //it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
-            //const identityCommitment = identities[users[0]].identityCommitment
-            //await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            //await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 1 }))
-        //})
+        it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
+            const identityCommitment = identities[users[0]].identityCommitment
+            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
+            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 1 }))
+        })
 
-        it('should add the identity commitment to the contract if the amount is correct', async () => {
-            const identity = identities[users[0]]
-            const recipientAddress = accounts[1].signer.address
-            const identityCommitment = identity.identityCommitment
-            const broadcasterAddress = mixerContract.contractAddress
 
+        it('should successfully make a deposit', async () => {
             // make a deposit (by the first user)
             const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
@@ -196,7 +210,7 @@ describe('Mixer', () => {
             assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
             const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
 
-            const nextIndex = leafAddedEvent.leaf_index
+            nextIndex = leafAddedEvent.leaf_index
             assert.equal(nextIndex, 0)
 
             // check that the leaf was added to the leaf history array in the contract
@@ -204,7 +218,10 @@ describe('Mixer', () => {
                 return x.toString(10)
             })
             assert.include(leaves, identityCommitment.toString())
+        })
 
+        it('should successfully make a withdrawal', async () => {
+            const broadcasterAddress = mixerContract.contractAddress
             await tree.update(nextIndex, identityCommitment.toString())
 
             const identityPath = await tree.path(nextIndex)
@@ -212,16 +229,20 @@ describe('Mixer', () => {
             const identityPathElements = identityPath.path_elements
             const identityPathIndex = identityPath.path_index
 
-            // calculate the signalHash which is the hash of recipientAddress,
-            // broadcasterAddress, and fee
-            // Matches the following Solidity code:
-            //
-            // keccak256(abi.encodePacked(recipientAddress, mixerAddress, feeAmt));
+            // calculate the signal, which is the keccak256 hash of
+            // recipientAddress, broadcasterAddress, and fee.
 
-            const signalHash = ethers.utils.solidityKeccak256(
+            const signal = ethers.utils.solidityKeccak256(
                 ['address', 'address', 'uint256'],
                 [recipientAddress, broadcasterAddress, feeAmt],
             )
+
+            const signalToContract = signal
+
+            const signalAsBuffer = Buffer.from(signal.slice(2), 'hex')
+            const signalHashRaw = crypto.createHash('sha256').update(signalAsBuffer).digest()
+            const signalHash = beBuff2int(signalHashRaw.slice(0, 31))
+
 
             // the external nullifier is the hash of the contract's address
             const externalNullifier = mixerContract.contractAddress
@@ -261,14 +282,41 @@ describe('Mixer', () => {
             const publicSignals = w.slice(1, circuit.nPubInputs + circuit.nOutputs+1)
             const proof = await prove(witnessBin.buffer, provingKey.buffer)
 
+            // verify the proof off-chain
             const isVerified = snarkjs.groth.isValid(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
-        })
 
-        it('should perform a withdrawal', async () => {
-        })
-    })
+            const recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
 
-    describe('Withdrawals', () => {
+            const mixTx = await mixerContract.mix(
+                {
+                    signal: signalToContract,
+                    a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
+                    b: [ 
+                        [ proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString() ],
+                        [ proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString() ] 
+                    ],
+                    c: [ proof.pi_c[0].toString(), proof.pi_c[1].toString() ],
+                    input: [
+                        publicSignals[0].toString(),
+                        publicSignals[1].toString(),
+                        publicSignals[2].toString(),
+                        publicSignals[3].toString(),
+                        publicSignals[4].toString()
+                    ],
+                    recipientAddress,
+                    fee: feeAmt,
+                }
+            )
+
+            const receipt = await mixerContract.verboseWaitForTransaction(mixTx)
+            const recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
+
+            //console.log(await mixerContract.getFeesOwedToOperator())
+            console.log(recipientAddress)
+            console.log(recipientBalanceAfter)
+            //console.log(recipientBalanceBefore)
+            debugger
+        })
     })
 })

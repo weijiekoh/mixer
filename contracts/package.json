@@ -19,8 +19,9 @@
     "etherlime-lib": "^1.1.0",
     "ganache-cli": "^6.4.4",
     "openzeppelin-solidity": "^1.11.0",
-    "zkp-sbmtjs": "^0.3.0",
-    "truffle-artifactor": "^4.0.10"
+    "solc": "^0.4.25",
+    "truffle-artifactor": "^4.0.10",
+    "zkp-sbmtjs": "^0.3.0"
   },
   "dependencies": {
     "blakejs": "^1.1.0",
@@ -28,6 +29,7 @@
     "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "del": "^4.1.1",
     "snarkjs": "^0.1.13",
+    "web3-utils": "^1.0.0-beta.55",
     "websnark": "git+https://github.com/iden3/websnark.git"
   }
 }

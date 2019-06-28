@@ -13,14 +13,16 @@ contract Mixer {
     Semaphore public semaphore;
     uint256[] public identityCommitments;
 
+    event Deposited(address indexed depositor, uint256 indexed mixAmt, uint256 identityCommitment);
+    event Mixed(address indexed recipient, uint256 indexed mixAmt, uint256 indexed operatorFee);
+
     struct DepositProof {
-        bytes signal;
+        bytes32 signal;
         uint[2] a;
         uint[2][2] b;
         uint[2] c;
-        uint[3] input;
+        uint[5] input; // (root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address)
         address recipientAddress;
-        address broadcasterAddress;
         uint256 fee;
     }
 
@@ -33,10 +35,35 @@ contract Mixer {
     }
 
     /*
+     * Sets Semaphore's external nullifier to the mixer's address
+     */
+    function setSemaphoreExternalNulllifier () public {
+        semaphore.setExternalNullifier(uint256(address(this)));
+    }
+
+    /*
+     * Returns the amount of fees owed to the operator in wei
+     */
+    function getFeesOwedToOperator() public view returns (uint256) {
+        return feesOwedToOperator;
+    }
+
+    /*
      * Returns the fee which each user has to pay to mix their funds.
      */
     function getTotalFee() public view returns (uint256) {
         return operatorFee * 2;
+    }
+
+    /*
+     * Returns the total amount of fees burnt. This is equivalent to
+     * `operatorFee` multipled by the number of deposits. To save gas, we do
+     * not send the burnt fees to a burn address. As this contract provides no
+     * way for anyone - not even the operator - to withdraw this amount of ETH,
+     * we consider it burnt.
+     */
+    function calcBurntFees() public view returns (uint256) {
+        return address(this).balance.sub(feesOwedToOperator);
     }
 
     /*
@@ -57,6 +84,9 @@ contract Mixer {
         feesOwedToOperator = 0;
     }
 
+    // Fallback function for Semaphore to refund gas
+    function () public payable {}
+
     /*
      * Deposits `mixAmt` wei into the contract and register the user's identity
      * commitment into Semaphore.
@@ -66,6 +96,7 @@ contract Mixer {
         require(_identityCommitment != 0);
         semaphore.insertIdentity(_identityCommitment);
         identityCommitments.push(_identityCommitment);
+        emit Deposited(msg.sender, msg.value, _identityCommitment);
     }
 
     /*
@@ -77,9 +108,8 @@ contract Mixer {
         // Check whether the fee matches the one quoted by this contract
         require(_proof.fee == getTotalFee());
 
-        // Hash the recipient's address, mixer contract address, and fee to get
-        // the signal hash
-        bytes32 computedSignalHash = keccak256(
+        // Hash the recipient's address, mixer contract address, and fee
+        bytes32 computedSignal = keccak256(
             abi.encodePacked(
                 _proof.recipientAddress,
                 address(this),
@@ -88,10 +118,11 @@ contract Mixer {
         );
 
         // Check whether the signal hash provided matches the one computed above
-        require(computedSignalHash == _proof.input[2]);
+        require(computedSignal == _proof.signal);
 
         // Broadcast the signal
         semaphore.broadcastSignal(
+            abi.encode(_proof.signal),
             _proof.a,
             _proof.b,
             _proof.c,
@@ -106,5 +137,7 @@ contract Mixer {
         // Note that totalFee = operatorFee * 2.
         uint256 recipientMixAmt = mixAmt.sub(operatorFee.mul(2));
         _proof.recipientAddress.transfer(recipientMixAmt);
+
+        emit Mixed(_proof.recipientAddress, recipientMixAmt, operatorFee);
     }
 }
