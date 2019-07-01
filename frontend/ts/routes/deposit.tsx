@@ -1,7 +1,12 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
+import { useWeb3Context } from 'web3-react'
+import { deposit } from '../web3/deposit'
 
 export default () => {
+    const context = useWeb3Context()
+    deposit(context)
+
     return (
         <div className='section'>
             <div className='columns has-text-centered'>
@@ -24,9 +29,12 @@ export default () => {
                     </div>
 
                     <div className='section'>
-                        <a href='/countdown' className='button is-primary is-large'>
+                        <span
+                            onClick={() => {deposit(context)}}
+                            href='/countdown'
+                            className='button is-primary is-large'>
                             Deposit 0.1 ETH
-                        </a>
+                        </span>
                     </div>
                 </div>
             </div>

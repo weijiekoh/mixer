@@ -1,6 +1,7 @@
 contracts/.etherlime-store/
 contracts/compiled/
 contracts/build/
+utils/build/
 frontend/dist/
 frontend/.cache/
 node_modules/

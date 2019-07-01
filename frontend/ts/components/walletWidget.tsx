@@ -46,7 +46,7 @@ const WalletWidget = () => {
             return (
                 <p>
                     { circleIcon('warn') }
-                    Please connect to the Kovan testnet.
+                    Please connect to your local Ganache testnet.
                 </p>
             )
         } else {

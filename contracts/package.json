@@ -1,8 +1,8 @@
 {
-  "name": "contracts",
+  "name": "mixer-contracts",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "build": "./scripts/buildSolidity.sh && tsc",
     "test": "etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
@@ -15,18 +15,21 @@
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
-    "etherlime": "^2.1.0",
+    "argparse": "^1.0.10",
+    "etherlime": "^2.1.1",
     "etherlime-lib": "^1.1.0",
     "ganache-cli": "^6.4.4",
     "openzeppelin-solidity": "^1.11.0",
     "solc": "^0.4.25",
     "truffle-artifactor": "^4.0.10",
-    "zkp-sbmtjs": "^0.3.0"
+    "zkp-sbmtjs": "^0.3.0",
+    "mixer-utils": "1.0.0"
   },
   "dependencies": {
     "blakejs": "^1.1.0",
     "circom": "0.0.27",
     "circomlib": "git+https://github.com/kobigurk/circomlib.git",
+    "config": "^3.1.0",
     "del": "^4.1.1",
     "snarkjs": "^0.1.13",
     "web3-utils": "^1.0.0-beta.55",

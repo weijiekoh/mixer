@@ -4,35 +4,36 @@ const crypto = require('crypto')
 const fs = require('fs');
 const path = require('path');
 import * as etherlime from 'etherlime-lib'
-import * as Artifactor from 'truffle-artifactor'
 import * as snarkjs from 'snarkjs'
 import * as circomlib from 'circomlib'
 import * as ethers from 'ethers'
 import * as web3Utils from 'web3-utils'
 import * as del from 'del'
+import { config } from 'mixer-utils'
 const RocksDb = require('zkp-sbmtjs/src/storage/rocksdb')
 const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
 const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
 const blake2 = require('blakejs')
 
+import { generateAccounts } from '../accounts'
+import buildMiMC from '../buildMiMC'
 const Semaphore = require('../../compiled/Semaphore.json')
 const Mixer = require('../../compiled/Mixer.json')
 const MerkleTree = require('../../compiled/MerkleTree.json')
 const MultipleMerkleTree = require('../../compiled/MultipleMerkleTree.json')
 const mimcGenContract = require('circomlib/src/mimcsponge_gencontract.js');
-import MemStorage from '../utils/memStorage'
 
 const bigInt = snarkjs.bigInt;
 const eddsa = circomlib.eddsa;
 const mimcsponge = circomlib.mimcsponge;
 
+const accounts = generateAccounts()
 const admin = accounts[0]
-const artifactor = new Artifactor('compiled/')
 
 const depositAmt = ethers.utils.parseEther('0.1')
 const feeAmt = ethers.utils.parseEther('0.001')
 
-const users = accounts.slice(1, 6).map((user) => user.signer.address)
+const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
 
 const DEFAULT_VALUE = 0
@@ -70,8 +71,8 @@ for (const user of users) {
 }
 
 const identity = identities[users[0]]
-const operatorAddress = accounts[0].signer.address
-const recipientAddress = accounts[1].signer.address
+const operatorAddress = accounts[0].address
+const recipientAddress = accounts[1].address
 const identityCommitment = identity.identityCommitment
 let nextIndex
 
@@ -81,18 +82,19 @@ let mixerContract
 let semaphoreContract
 
 describe('Mixer', () => {
-    const SEED = 'mimcsponge';
 
-    const deployer = new etherlime.EtherlimeGanacheDeployer(admin.secretKey)
+    const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
+        admin.privateKey,
+        config.get('chain.url'),
+        {
+            chainId: config.get('chain.chainId'),
+        },
+    )
     deployer.defaultOverrides = { gasLimit: 8800000 }
-    deployer.setSigner(accounts[0].signer)
+    deployer.setSigner(accounts[0])
 
     before(async () => {
-        await artifactor.save({
-            contractName: 'MiMC',
-            abi: mimcGenContract.abi,
-            unlinked_binary: mimcGenContract.createCode(SEED, 220),
-        })
+        await buildMiMC()
 
         const MiMC = require('../../compiled/MiMC.json')
 
