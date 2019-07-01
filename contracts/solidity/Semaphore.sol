@@ -22,7 +22,7 @@ pragma solidity >=0.4.21;
 
 import "./verifier.sol";
 import "./MerkleTreeLib.sol";
-import "node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./Ownable.sol";
 
 contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
     uint256 public external_nullifier;
@@ -103,10 +103,10 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         //}
         //uint256 gas_used = start_gas - gasleft();
 
-        // pay back gas: 21000 constant cost + gas used + reward
-        //require((msg.sender).send((21000 + gas_used)*tx.gasprice + reward));
+        //// pay back gas: 21000 constant cost + gas used + reward
+        ////require((msg.sender).send((21000 + gas_used)*tx.gasprice + reward));
         //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
-        //require(msg.sender.send(1 wei));
+        ////require(msg.sender.send(1 wei));
     }
 
     function roots(uint8 tree_index) public view returns (uint256 root) {
