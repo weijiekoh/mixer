@@ -7,8 +7,8 @@ contract Mixer {
     using SafeMath for uint256;
 
     address public operator;
-    uint256 public operatorFee = 0.0005 ether;
-    uint256 public mixAmt = 0.1 ether;
+    uint256 public operatorFee;
+    uint256 public mixAmt;
     uint256 public feesOwedToOperator;
     Semaphore public semaphore;
     uint256[] public identityCommitments;
@@ -29,9 +29,15 @@ contract Mixer {
     /*
      * Constructor
      */
-    constructor (address _semaphore) public {
+    constructor (address _semaphore, uint256 _mixAmt, uint256 _operatorFee) public {
         // Set the operator as the contract deployer
         operator = msg.sender;
+
+        // Set the fixed mixing amount
+        mixAmt = _mixAmt;
+
+        // Set the fixed operator's fee
+        operatorFee = _operatorFee;
 
         // Set the Semaphore contract
         semaphore = Semaphore(_semaphore);
