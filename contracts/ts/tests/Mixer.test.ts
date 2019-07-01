@@ -23,6 +23,8 @@ const MerkleTree = require('../../compiled/MerkleTree.json')
 const MultipleMerkleTree = require('../../compiled/MultipleMerkleTree.json')
 const mimcGenContract = require('circomlib/src/mimcsponge_gencontract.js');
 
+import { deploy } from '../deploy/deploy'
+
 const bigInt = snarkjs.bigInt;
 const eddsa = circomlib.eddsa;
 const mimcsponge = circomlib.mimcsponge;
@@ -96,43 +98,21 @@ describe('Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        const MiMC = require('../../compiled/MiMC.json')
-
-        console.log('Deploying MiMC')
-        mimcContract = await deployer.deploy(MiMC, {})
-
-        const libraries = {
-            MiMC: mimcContract.contractAddress,
-        }
-
-        console.log('Deploying MultipleMerkleTree')
-        multipleMerkleTreeContract = await deployer.deploy(
-            MultipleMerkleTree,
-            libraries,
+        const contractsPath = path.join(
+            __dirname,
+            '../..',
+            'compiled',
         )
-
-        console.log('Deploying Semaphore')
-        semaphoreContract = await deployer.deploy(
-            Semaphore,
-            libraries,
-            20,
-            0,
-            12312,
-            1000,
-        )
-
-        console.log('Deploying Mixer')
-        mixerContract = await deployer.deploy(Mixer, {}, semaphoreContract.contractAddress)
-
-        console.log('Transferring ownership of Semaphore to Mixer')
-        await semaphoreContract.transferOwnership(mixerContract.contractAddress)
-
-        console.log('Setting the external nullifier of the Semaphore contract')
-        await mixerContract.setSemaphoreExternalNulllifier()
+        const contracts = await deploy(deployer, contractsPath)
+        mimcContract = contracts.mimcContract
+        multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
+        semaphoreContract = contracts.semaphoreContract
+        mixerContract = contracts.mixerContract
     })
 
     describe('Contract deployments', () => {
         it('should deploy contracts', () => {
+            debugger
             assert.notEqual(
                 mimcContract._contract.bytecode,
                 '0x',

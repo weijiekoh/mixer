@@ -1,8 +1,63 @@
+import * as ethers from 'ethers'
 import * as argparse from 'argparse' 
+import * as fs from 'fs' 
 import * as path from 'path'
 import * as etherlime from 'etherlime-lib'
 import { config } from 'mixer-utils'
 import { generateAccounts } from '../accounts'
+
+const deploy = async (deployer: any, compiledContracts: string) => {
+    const MiMC = require(path.join(compiledContracts, 'MiMC.json'))
+    const MultipleMerkleTree = require(path.join(compiledContracts, 'MultipleMerkleTree.json'))
+    const Semaphore = require(path.join(compiledContracts, 'Semaphore.json'))
+    const Mixer = require(path.join(compiledContracts, 'Mixer.json'))
+
+    console.log('Deploying MiMC')
+    const mimcContract = await deployer.deploy(MiMC, {})
+
+    const libraries = {
+        MiMC: mimcContract.contractAddress,
+    }
+
+    console.log('Deploying MultipleMerkleTree')
+    const multipleMerkleTreeContract = await deployer.deploy(
+        MultipleMerkleTree,
+        libraries,
+    )
+
+    console.log('Deploying Semaphore')
+    const semaphoreContract = await deployer.deploy(
+        Semaphore,
+        libraries,
+        20,
+        0,
+        12312,
+        1000,
+    )
+
+    console.log('Deploying Mixer')
+    const mixerContract = await deployer.deploy(Mixer,
+        {},
+        semaphoreContract.contractAddress,
+        ethers.utils.parseEther(config.mixAmtEth),
+        ethers.utils.parseEther(config.operatorFeeEth),
+    )
+
+    console.log('Transferring ownership of Semaphore to Mixer')
+    // @ts-ignore
+    await semaphoreContract.transferOwnership(mixerContract.contractAddress)
+
+    console.log('Setting the external nullifier of the Semaphore contract')
+    // @ts-ignore
+    await mixerContract.setSemaphoreExternalNulllifier()
+
+    return {
+        mimcContract,
+        multipleMerkleTreeContract,
+        semaphoreContract,
+        mixerContract,
+    }
+}
 
 const main = async () => {
     const accounts = generateAccounts()
@@ -39,11 +94,40 @@ const main = async () => {
             chainId: config.get('chain.chainId'),
         },
     )
-    const MiMC = require(path.join(__dirname, '../../',  compiledContracts, 'MiMC.json'))
-    console.log('Deploying MiMC')
-    const mimcContract = await deployer.deploy(MiMC, {})
+
+    const contractsPath = path.join(
+        __dirname,
+        '../..',
+        compiledContracts,
+    )
+    console.log(contractsPath)
+
+    const {
+        mimcContract,
+        multipleMerkleTreeContract,
+        semaphoreContract,
+        mixerContract, } 
+    = await deploy(deployer, contractsPath)
+
+    const addresses = {
+        MiMC: mimcContract.contractAddress,
+        MultipleMerkleTree: multipleMerkleTreeContract.contractAddress,
+        Semaphore: semaphoreContract.contractAddress,
+        Mixer: mixerContract.contractAddress,
+    }
+
+    const addressJsonPath = path.join(__dirname, '../..', outputAddressFile)
+    fs.writeFileSync(
+        addressJsonPath,
+        JSON.stringify(addresses),
+    )
+
+    console.log(addresses)
+    console.log('Wrote addresses to', addressJsonPath)
 }
 
 if (require.main === module) {
     main()
 }
+
+export { deploy }
