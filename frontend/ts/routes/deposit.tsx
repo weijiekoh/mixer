@@ -3,9 +3,15 @@ import ReactDOM from 'react-dom'
 import { useWeb3Context } from 'web3-react'
 import { deposit } from '../web3/deposit'
 
+const handleDepositBtnClick = (context: any) => {
+    const identityCommitment = '0x1'
+
+    // Perform the deposit tx
+    deposit(context, identityCommitment)
+}
+
 export default () => {
     const context = useWeb3Context()
-    deposit(context)
 
     return (
         <div className='section'>
@@ -30,7 +36,7 @@ export default () => {
 
                     <div className='section'>
                         <span
-                            onClick={() => {deposit(context)}}
+                            onClick={() => {handleDepositBtnClick(context)}}
                             href='/countdown'
                             className='button is-primary is-large'>
                             Deposit 0.1 ETH

@@ -16,6 +16,7 @@
     "dependencies": {
         "bulma": "^0.7.5",
         "ethers": "^4.0.30",
+        "mixer-contracts": "1.0.0",
         "react": "^16.8.6",
         "react-dom": "^16.8.6",
         "react-router-dom": "^5.0.1",
