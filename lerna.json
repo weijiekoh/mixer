@@ -2,6 +2,7 @@
   "packages": [
     "frontend",
     "contracts",
+    "crypto",
     "utils"
   ],
   "version": "0.0.1",

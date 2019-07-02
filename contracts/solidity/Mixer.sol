@@ -147,8 +147,11 @@ contract Mixer {
         feesOwedToOperator = feesOwedToOperator.add(operatorFee);
 
         // Transfer the ETH owed to the recipient, minus the totalFee (to
-        // prevent griefing)
+        // prevent griefing).
         // Note that totalFee = operatorFee * 2.
+        // Since the remainder is stuck in this contract, it's as good as
+        // burned. As such, we don't need to transfer the ETH to 0x0000..., and
+        // we can save gas too.
         uint256 recipientMixAmt = mixAmt.sub(operatorFee.mul(2));
         _proof.recipientAddress.transfer(recipientMixAmt);
 

@@ -1,4 +1,8 @@
-*/build/
+**/build
+utils/build
+contracts/build
+frontend/build
+crypto/build
 contracts/.etherlime-store/
 contracts/compiled/
 contracts/.outputParameter

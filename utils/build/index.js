@@ -2,4 +2,8 @@
 exports.__esModule = true;
 var config_1 = require("./config");
 exports.config = config_1.config;
+var sleep = function (ms) {
+    return new Promise(function (resolve) { return setTimeout(resolve, ms); });
+};
+exports.sleep = sleep;
 //# sourceMappingURL=index.js.map
