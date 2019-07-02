@@ -6,10 +6,12 @@ const deployedAddresses = require('../deployedAddresses.json')
  * Perform the 
  * @param context The web3-react context
  * @param identityCommitment A hex string of the user's identity commitment
+ * @param mixAmt The amount to mix
  */
 const deposit = async (
     context: any,
     identityCommitment: string,
+    mixAmt: ethers.utils.BigNumber,
 ) => {
 
     const library = context.library
@@ -24,8 +26,8 @@ const deposit = async (
             signer,
         )
 
-        const tx = await mixerContract.deposit(identityCommitment, { value: '0x16345785d8a0000' })
-        console.log(tx)
+        const tx = await mixerContract.deposit(identityCommitment, { value: mixAmt })
+        return tx
     }
 }
 

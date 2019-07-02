@@ -16,7 +16,9 @@ const WalletWidget = () => {
     const context = useWeb3Context()
 
     const setConnector = () => {
-        context.setConnector('MetaMask')
+        if (!context.connector) {
+            context.setConnector('MetaMask')
+        }
     }
 
     setConnector()
