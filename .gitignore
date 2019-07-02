@@ -1,13 +1,13 @@
+*/build/
 contracts/.etherlime-store/
 contracts/compiled/
-contracts/build/
 contracts/.outputParameter
-utils/build/
 frontend/dist/
 frontend/.cache/
 frontend/ts/abis
 frontend/ts/deployedAddresses.json
 node_modules/
+lerna-debug.log
 # Swap
 [._]*.s[a-v][a-z]
 [._]*.sw[a-p]
