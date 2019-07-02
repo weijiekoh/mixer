@@ -11,8 +11,8 @@
     "deploy": "NODE_ENV=local-dev node ./build/deploy/deploy.js -c compiled -o ../frontend/ts/deployedAddresses.json",
     "ganache": "./scripts/runGanache.sh"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Koh Wei Jie",
+  "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
@@ -32,8 +32,8 @@
     "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "config": "^3.1.0",
     "del": "^4.1.1",
+    "mixer-crypto": "1.0.0",
     "snarkjs": "^0.1.13",
-    "web3-utils": "^1.0.0-beta.55",
     "websnark": "git+https://github.com/iden3/websnark.git"
   }
 }
