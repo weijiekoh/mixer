@@ -1,0 +1,78 @@
+{
+  "rulesDirectory": ["node_modules/tslint-microsoft-contrib"],
+  "files": "./js/",
+  "extends": [
+    "tslint-microsoft-contrib"
+  ],
+  "rules": {
+    "align": false,
+    "export-name": false,
+    "forin": false,
+    "function-name": false,
+    "import-name": false,
+    "indent": [true, "spaces", 4],
+    "interface-name": false,
+    "insecure-random": false,
+    "max-func-body-length": false,
+    "max-line-length": false,
+    "member-ordering": false,
+    "missing-jsdoc": false,
+    "mocha-no-side-effect-code": false,
+    "mocha-unneeded-done": false,
+    "newline-per-chained-call": false,
+    "no-any": false,
+    "no-console": false,
+    "no-default-export": false,
+    "no-empty": false,
+    "no-for-in": false,
+    "no-function-constructor-with-string-args": false,
+    "no-increment-decrement": false,
+    "no-invalid-template-strings": false,
+    "no-parameter-properties": false,
+    "no-parameter-reassignment": false,
+    "no-non-null-assertion": false,
+    "no-null-keyword": false,
+    "no-redundant-jsdoc": false,
+    "no-relative-imports": false,
+    "no-require-imports": false,
+    "no-string-literal": false,
+    "no-unused-locals": false,
+    "no-unused-parameters": false,
+    "no-unsafe-any": false,
+    "no-submodule-imports": false,
+    "no-suspicious-comment": false,
+    "no-trailing-whitespace": [true, "ignore-blank-lines"],
+    "no-unnecessary-class": false,
+    "no-unnecessary-override": false,
+    "no-var-requires": false,
+    "no-void-expression": false,
+    "non-literal-require": false,
+    "one-line": false,
+    "ordered-imports": false,
+    "prefer-template": false,
+    "prefer-type-cast": false,
+    "promise-function-async": false,
+    "react-this-binding-issue": false,
+    "semicolon": [true, "never"],
+    "trailing-comma": [ // https://palantir.github.io/tslint/rules/trailing-comma/
+      true,
+      {
+        "multiline": "always",
+        "singleline": "never"
+      }
+    ],
+    "typedef": [
+      true,
+      "parameter",
+      "arrow-parameter",
+      "property-declaration",
+      "member-variable-declaration"
+    ],
+    "variable-name": false
+  },
+  "linterOptions": {
+    "exclude": [
+        "node_modules/**"
+    ]
+  }
+}
