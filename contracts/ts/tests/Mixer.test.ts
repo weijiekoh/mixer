@@ -42,14 +42,22 @@ const DEFAULT_VALUE = 0
 
 const mixerInterface = new ethers.utils.Interface(Mixer.abi)
 
+const contractsPath = path.join(
+    __dirname,
+    '../..',
+    'compiled',
+)
+
 import { convertWitness, prove, cutDownBits, beBuff2int} from './utils'
 
 for (const user of users) {
     const privKey = crypto.randomBytes(32)
     const pubKey = eddsa.prv2pub(privKey)
 
+    // The identity nullifier is a random 31-byte value
     const identityNullifier = bigInt(snarkjs.bigInt.leBuff2int(crypto.randomBytes(31)))
 
+    // The identity commitment is the hash of the public key and the identity nullifier
     const identityCommitmentInts = [
         bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
         bigInt(identityNullifier),
@@ -98,11 +106,6 @@ describe('Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        const contractsPath = path.join(
-            __dirname,
-            '../..',
-            'compiled',
-        )
         const contracts = await deploy(deployer, contractsPath)
         mimcContract = contracts.mimcContract
         multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
@@ -111,8 +114,33 @@ describe('Mixer', () => {
     })
 
     describe('Contract deployments', () => {
+        const MixerInvalid = require(path.join(contractsPath, 'Mixer.json'))
+
+        it('should not deploy Mixer if the operatorFee is invalid', async () => {
+            assert.revert(
+                deployer.deploy(
+                    Mixer,
+                    {},
+                    semaphoreContract.contractAddress,
+                    ethers.utils.parseEther(config.mixAmtEth),
+                    ethers.utils.parseEther('0'),
+                )
+            )
+        })
+
+        it('should not deploy Mixer if the mixAmt is invalid', async () => {
+            assert.revert(
+                deployer.deploy(
+                    Mixer,
+                    {},
+                    semaphoreContract.contractAddress,
+                    ethers.utils.parseEther('0'),
+                    ethers.utils.parseEther(config.operatorFeeEth),
+                )
+            )
+        })
+
         it('should deploy contracts', () => {
-            debugger
             assert.notEqual(
                 mimcContract._contract.bytecode,
                 '0x',

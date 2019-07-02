@@ -17,7 +17,7 @@
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "argparse": "^1.0.10",
-    "etherlime": "^2.1.1",
+    "etherlime": "^2.1.2",
     "etherlime-lib": "^1.1.0",
     "ganache-cli": "^6.4.4",
     "openzeppelin-solidity": "^1.11.0",

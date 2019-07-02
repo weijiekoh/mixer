@@ -30,6 +30,10 @@ contract Mixer {
      * Constructor
      */
     constructor (address _semaphore, uint256 _mixAmt, uint256 _operatorFee) public {
+        require(_semaphore != address(0));
+        require(_operatorFee != 0);
+        require(_mixAmt > _operatorFee);
+
         // Set the operator as the contract deployer
         operator = msg.sender;
 
@@ -44,28 +48,30 @@ contract Mixer {
     }
 
     /*
-     * Sets Semaphore's external nullifier to the mixer's address
+     * Sets Semaphore's external nullifier to the mixer's address. Call this
+     * function after transferring Semaphore's ownership to this contract's
+    *  address.
      */
     function setSemaphoreExternalNulllifier () public {
         semaphore.setExternalNullifier(uint256(address(this)));
     }
 
     /*
-     * Returns the amount of fees owed to the operator in wei
+     * @return The amount of fees owed to the operator in wei
      */
     function getFeesOwedToOperator() public view returns (uint256) {
         return feesOwedToOperator;
     }
 
     /*
-     * Returns the fee which each user has to pay to mix their funds.
+     * @return The fee in wei which each user has to pay to mix their funds.
      */
     function getTotalFee() public view returns (uint256) {
         return operatorFee * 2;
     }
 
     /*
-     * Returns the total amount of fees burnt. This is equivalent to
+     * @return The total amount of fees burnt. This is equivalent to
      * `operatorFee` multipled by the number of deposits. To save gas, we do
      * not send the burnt fees to a burn address. As this contract provides no
      * way for anyone - not even the operator - to withdraw this amount of ETH,
@@ -96,6 +102,8 @@ contract Mixer {
     /*
      * Deposits `mixAmt` wei into the contract and register the user's identity
      * commitment into Semaphore.
+     * @param The identity commitment (the hash of the public key and the
+     *        identity nullifier)
      */
     function deposit(uint256 _identityCommitment) public payable {
         require(msg.value == mixAmt);
