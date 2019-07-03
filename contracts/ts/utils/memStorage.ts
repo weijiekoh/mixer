@@ -25,7 +25,6 @@ class MemStorage {
     }
 
     async put_batch(key_values) {
-        let ops = [];
         for (var i = 0; i < key_values.length; i++) {
             await this.put(key_values[i].key, key_values[i].value)
         }

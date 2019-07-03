@@ -98,7 +98,6 @@ describe('Mixer', () => {
     })
 
     describe('Contract deployments', () => {
-        const MixerInvalid = require(path.join(contractsPath, 'Mixer.json'))
 
         it('should not deploy Mixer if the Semaphore contract address is invalid', async () => {
             assert.revert(
