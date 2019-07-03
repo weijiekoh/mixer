@@ -33,11 +33,19 @@ const hexifyItem = (item: IdentityStored) => {
     )
 }
 
+const deHexifyItem = (hexified: any): IdentityStored => {
+    return {
+        ...hexified,
+        identityNullifier: BigInt('0x' + hexified.identityNullifier),
+        privKey: Buffer.from(hexified.privKey),
+    }
+}
+
 const updateDepositTxStatus = (
     identity: Identity,
     txHash: string,
 ) => {
-    let items = getItems()
+    let items = getRawItems()
     for (let i=0; i < items.length; i++) {
         if (items[i].identityNullifier === identity.identityNullifier.toString(16)) {
             items[i].txHash = txHash
@@ -47,12 +55,20 @@ const updateDepositTxStatus = (
     saveItems(items)
 }
 
-const getItems = () => {
+const getRawItems = () => {
     const stored = localStorage.getItem(key)
     if (!stored) {
         throw 'Storage not initialised'
     }
     return JSON.parse(stored)
+}
+
+const getItems = () => {
+    return getRawItems().map(deHexifyItem)
+}
+
+const getNumItems = (): number => {
+    return getRawItems().length
 }
 
 const saveItems = (items: any[]) => {
@@ -61,7 +77,7 @@ const saveItems = (items: any[]) => {
 }
 
 const storeDeposit = (identity: Identity, recipientAddress: string, txHash=null) =>  {
-    const items = getItems()
+    const items = getRawItems()
     items.push({
         privKey: identity.keypair.privKey,
         identityNullifier: identity.identityNullifier,
@@ -76,4 +92,7 @@ export {
     initStorage,
     storeDeposit,
     updateDepositTxStatus,
+    deHexifyItem,
+    getItems,
+    getNumItems,
 }

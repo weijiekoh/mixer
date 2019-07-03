@@ -10,6 +10,7 @@ import {
     initStorage,
     storeDeposit,
     updateDepositTxStatus,
+    getNumItems,
 } from '../storage'
 
 import { deposit } from '../web3/deposit'
@@ -33,9 +34,13 @@ export default () => {
 
     initStorage()
 
-    // TODO: check whether there already is a deposit and disallow the user
+    // Check whether there already is a deposit and disallow the user
     // from making another one
     // Redirect the user to the withdraw page if so
+
+    if (getNumItems() > 0) {
+          return <Redirect to='/countdown' />
+    }
 
     const handleDepositBtnClick = async (context: any) => {
         if (depositBtnDisabled) {
@@ -50,8 +55,6 @@ export default () => {
 
         const identityCommitment = '0x' + genIdentityCommitment(identityNullifier, pubKey).toString(16)
 
-        storeDeposit(identity, recipientAddress)
-
         // Perform the deposit tx
         try {
             setTxStatus(TxStatuses.Pending)
@@ -60,6 +63,7 @@ export default () => {
 
             updateDepositTxStatus(identity, minedTx.hash)
 
+            storeDeposit(identity, recipientAddress)
             setTxStatus(TxStatuses.Mined)
             setErrorMsg('')
 

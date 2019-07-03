@@ -1,6 +1,11 @@
 import React, { Component, useState } from 'react'
 import ReactDOM from 'react-dom'
+import { Redirect } from 'react-router-dom'
 const config = require('../exported_config')
+import {
+    getItems,
+    getNumItems,
+} from '../storage'
 
 const mixAmtEth = config.mixAmtEth
 const operatorFeeEth = config.operatorFeeEth
@@ -10,6 +15,13 @@ const months = [
 ]
 
 export default () => {
+    if (getNumItems() === 0) {
+        return <Redirect to='/' />
+    }
+
+    const identityStored = getItems()[0]
+    const recipientAddress = identityStored.recipientAddress
+    
     const now = new Date()
     const utcMidnight = new Date(Date.UTC(
         now.getFullYear(),
@@ -42,7 +54,11 @@ export default () => {
                 <div className='column is-8 is-offset-2'>
                     <div className='section'>
                         <h2 className='subtitle'>
-                            The recipient you specified will
+                            <pre>
+                                {recipientAddress} 
+                            </pre>
+                            <br />
+                            will
                             receive {mixAmtEth - operatorFeeEth} ETH shortly
                             after { timeStr }.
                         </h2>
