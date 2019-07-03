@@ -59,7 +59,7 @@ export default () => {
                             </pre>
                             <br />
                             will
-                            receive {mixAmtEth - operatorFeeEth} ETH shortly
+                            receive {mixAmtEth - operatorFeeEth * 2} ETH shortly
                             after { timeStr }.
                         </h2>
                     </div>

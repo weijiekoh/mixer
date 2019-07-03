@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
-import Web3Provider, { useWeb3Context } from 'web3-react'
+import Web3Provider from 'web3-react'
 
 import Nav from './nav'
 import DepositRoute from './routes/deposit'
 import CountdownRoute from './routes/countdown'
+import QuickWithdrawRoute from './routes/quick_withdraw'
 import connectors from './web3'
 
 const App = () => {
@@ -21,6 +22,7 @@ const App = () => {
                         <Router>
                             <Route path='/' exact component={DepositRoute} />
                             <Route path='/countdown' exact component={CountdownRoute} />
+                            <Route path='/quick_withdraw' exact component={QuickWithdrawRoute} />
                         </Router>
                     </div>
                 </div>

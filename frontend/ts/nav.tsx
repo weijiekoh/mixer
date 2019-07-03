@@ -42,7 +42,7 @@ const Nav = () => {
                         </a>
 
                         <div className='navbar-dropdown'>
-                            <a className='navbar-item' href='/quick-withdraw'>
+                            <a className='navbar-item' href='/quick_withdraw'>
                                 Quick withdrawal
                             </a>
 
