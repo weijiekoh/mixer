@@ -22,12 +22,9 @@ export default () => {
     const identityStored = getItems()[0]
     const recipientAddress = identityStored.recipientAddress
     
-    const now = new Date()
-    const utcMidnight = new Date(Date.UTC(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1,
-    ))
+    const utcMidnight = new Date()
+    utcMidnight.setUTCHours(0, 0, 0, 0)
+    utcMidnight.setDate(utcMidnight.getDate() + 1)
 
     const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -54,12 +51,14 @@ export default () => {
                 <div className='column is-8 is-offset-2'>
                     <div className='section'>
                         <h2 className='subtitle'>
+                            The address:
+                            <br />
+                            <br />
                             <pre>
                                 {recipientAddress} 
                             </pre>
                             <br />
-                            will
-                            receive {mixAmtEth - operatorFeeEth * 2} ETH shortly
+                            will receive {mixAmtEth - operatorFeeEth * 2} ETH shortly
                             after { timeStr }.
                         </h2>
                     </div>
