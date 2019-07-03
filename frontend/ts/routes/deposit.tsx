@@ -32,8 +32,6 @@ export default () => {
     const mixAmtEth = config.mixAmtEth
     const mixAmt = ethers.utils.parseEther(mixAmtEth)
 
-    initStorage()
-
     // Check whether there already is a deposit and disallow the user
     // from making another one
     // Redirect the user to the withdraw page if so
@@ -111,10 +109,10 @@ export default () => {
                 {`You can mix ${mixAmtEth} ETH at a time.`}
             </p>
         <p>
-            {`The operator's fee is ${operatorFeeEth} ETH.`}
+            {`The fee is ${operatorFeeEth * 2} ETH.`}
         </p>
         <p>
-            {`You can get back ${mixAmtEth - operatorFeeEth} ETH at midnight, UTC.`}
+            {`You can get back ${mixAmtEth - operatorFeeEth * 2} ETH at midnight, UTC.`}
         </p>
         </div>
 
