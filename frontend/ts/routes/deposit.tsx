@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom'
 import { Redirect } from 'react-router-dom'
 import * as ethers from 'ethers'
 import { useWeb3Context } from 'web3-react'
+const deployedAddresses = require('../deployedAddresses.json')
+const config = require('../exported_config')
 
 import {
     initStorage,
@@ -17,13 +19,23 @@ import {
 } from 'mixer-crypto'
 
 enum TxStatuses {
-    None, Pending, Mined,
+    None, Pending, Mined, Err,
 }
 
 export default () => {
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
     const [recipientAddress, setRecipientAddress] = useState('')
+    const [errorMsg, setErrorMsg] = useState('')
+
+    const operatorFeeEth = config.operatorFeeEth
+    const mixAmtEth = config.mixAmtEth
+    const mixAmt = ethers.utils.parseEther(mixAmtEth)
+
     initStorage()
+
+    // TODO: check whether there already is a deposit and disallow the user
+    // from making another one
+    // Redirect the user to the withdraw page if so
 
     const handleDepositBtnClick = async (context: any) => {
         if (depositBtnDisabled) {
@@ -37,7 +49,6 @@ export default () => {
         const identityNullifier = identity.identityNullifier
 
         const identityCommitment = '0x' + genIdentityCommitment(identityNullifier, pubKey).toString(16)
-        const mixAmt = ethers.utils.parseEther('0.1')
 
         storeDeposit(identity, recipientAddress)
 
@@ -50,10 +61,17 @@ export default () => {
             updateDepositTxStatus(identity, minedTx.hash)
 
             setTxStatus(TxStatuses.Mined)
+            setErrorMsg('')
 
         } catch (err) {
-            console.error('Error', err)
-            setTxStatus(TxStatuses.None)
+            setTxStatus(TxStatuses.Err)
+
+            if (
+                err.code === ethers.errors.UNSUPPORTED_OPERATION &&
+                err.reason === 'contract not deployed'
+            ) {
+                setErrorMsg(`The mixer contract was not deployed to the expected address ${deployedAddresses.Mixer}`)
+            }
         }
     }
 
@@ -73,7 +91,7 @@ export default () => {
         depositBtnDisabled = true
     }
 
-    depositBtnDisabled = !recipientAddress.match(/^0x[a-fA-F0-9]{40}$/))
+    depositBtnDisabled = !recipientAddress.match(/^0x[a-fA-F0-9]{40}$/)
 
     return (
         <div className='section'>
@@ -86,13 +104,13 @@ export default () => {
         </div>
         <div className='section'>
             <p>
-                You can mix 0.1 ETH at a time.
+                {`You can mix ${mixAmtEth} ETH at a time.`}
             </p>
         <p>
-            The operator's fee is 1%.
+            {`The operator's fee is ${operatorFeeEth} ETH.`}
         </p>
         <p>
-            You can get back 0.099 ETH at midnight, UTC.
+            {`You can get back ${mixAmtEth - operatorFeeEth} ETH at midnight, UTC.`}
         </p>
         </div>
 
@@ -116,14 +134,27 @@ export default () => {
                 disabled={depositBtnDisabled}
                 href='/countdown'
                 className={depositBtnClass}>
-                Mix 0.1 ETH
+                {`Mix ${mixAmtEth} ETH`}
             </span>
+            
+            <br />
+            <br />
 
             { txStatus === TxStatuses.Mined &&
-                <div>
-                    <p>Transaction mined.</p>
-                    <Redirect to='/countdown' />
-                </div
+                <article className="message is-success">
+                  <div className="message-body">
+                      Transaction mined.
+                  </div>
+                  <Redirect to='/countdown' />
+                </article>
+            }
+
+            { txStatus === TxStatuses.Err &&
+                <article className="message is-danger">
+                  <div className="message-body">
+                    {errorMsg}
+                  </div>
+              </article>
             }
 
         </div>

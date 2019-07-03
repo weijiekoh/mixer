@@ -12,8 +12,4 @@ if (!process.env.hasOwnProperty('NODE_ENV')) {
 
 const config = require('config')
 
-if (config.get('printConfigDetails')) {
-    console.log(`Using config ${process.env.NODE_ENV} at ${process.env.NODE_CONFIG_DIR}`)
-}
-
 export { config }

@@ -10,7 +10,4 @@ if (!process.env.hasOwnProperty('NODE_ENV')) {
 }
 var config = require('config');
 exports.config = config;
-if (config.get('printConfigDetails')) {
-    console.log("Using config " + process.env.NODE_ENV + " at " + process.env.NODE_CONFIG_DIR);
-}
 //# sourceMappingURL=config.js.map

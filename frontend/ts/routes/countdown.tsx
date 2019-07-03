@@ -1,6 +1,13 @@
 import React, { Component, useState } from 'react'
 import ReactDOM from 'react-dom'
+const config = require('../exported_config')
 
+const mixAmtEth = config.mixAmtEth
+const operatorFeeEth = config.operatorFeeEth
+
+const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+]
 
 export default () => {
     const now = new Date()
@@ -12,18 +19,19 @@ export default () => {
 
     const [currentTime, setCurrentTime] = useState(new Date())
 
-    setInterval(() => {
-        setCurrentTime(new Date())
-    }, 1000)
+    // update the clock every `interval` ms
+    const interval = 5000
+    setTimeout(function update(){
+        const time = new Date()
+        setCurrentTime(time)
+        setTimeout(update, interval)
+    }, interval)
 
-    const minsLeft = Math.floor((utcMidnight.getTime() - currentTime.getTime()) / 60 / 1000)
+    const secsLeft = Math.floor((utcMidnight.getTime() - currentTime.getTime()) / 1000)
+    const secsMod = secsLeft % 60
 
-    const hoursLeft = Math.floor(minsLeft / 60)
-    const minsMod = minsLeft - (hoursLeft * 60)
-
-    const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ]
+    const hoursMod = Math.floor(secsLeft / 3600)
+    const minsMod = Math.floor((secsLeft - (hoursMod * 3600))/ 60)
 
     const timeStr = `${utcMidnight.getDate()} ${months[utcMidnight.getMonth()]} ${utcMidnight.getFullYear()}, ${utcMidnight.toLocaleTimeString()}`
 
@@ -31,17 +39,13 @@ export default () => {
         <div className='section'>
 
             <div className='columns has-text-centered'>
-                <div className='column is-12'>
+                <div className='column is-8 is-offset-2'>
                     <div className='section'>
                         <h2 className='subtitle'>
-                            The recipient you specified will receive the ETH
-                            shortly after { timeStr }.
+                            The recipient you specified will
+                            receive {mixAmtEth - operatorFeeEth} ETH shortly
+                            after { timeStr }.
                         </h2>
-
-                        <h2 className='subtitle'>
-                            {hoursLeft} hours and {minsMod} minutes left.
-                        </h2>
-
                     </div>
                 </div>
             </div>
@@ -50,7 +54,7 @@ export default () => {
                 <div className='column is-3 is-offset-3'>
                     <p>
                         To maximise anonymity, we only allow users to
-                        submit withdrawal requests after midnight UTC.
+                        submit mix requests after midnight UTC.
                         For example, if you deposit your funds at 3pm UTC
                         on 1 Jan, this page will wait till midnight 2 Jan
                         UTC to mix the funds.
@@ -59,17 +63,22 @@ export default () => {
 
                 <div className='column is-3 is-offset-1'>
                     <p>
-                        If you close this tab, you can reopen it any time.
-                        You can even open it after midnight UTC. You'll see
-                        a button which you can click to mix the funds.
+                        Please keep this tab open to automatically mix the
+                        funds. If you close this tab, you can reopen it any
+                        time, and withdraw it at a click of a button, even
+                        after midnight UTC.
                     </p>
                 </div>
 
             </div>
 
             <br />
+
             <div className="columns has-text-centered">
                 <div className='column is-12'>
+                        <h2 className='subtitle'>
+                            {hoursMod}h {minsMod}m {secsMod}s left
+                        </h2>
                     <h2 className='subtitle'>
                         Please keep this tab open.
                     </h2>
