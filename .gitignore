@@ -1,5 +1,6 @@
 **/build
 utils/build
+contracts/.privateKeys.json
 contracts/build
 frontend/build
 crypto/build

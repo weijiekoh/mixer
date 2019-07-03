@@ -30,14 +30,14 @@ const RocksDb = require('zkp-sbmtjs/src/storage/rocksdb')
 const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
 const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
 
-import { generateAccounts } from '../accounts'
+import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
 const Mixer = require('../../compiled/Mixer.json')
 
 import { deploy } from '../deploy/deploy'
 
 
-const accounts = generateAccounts()
+const accounts = genAccounts()
 const admin = accounts[0]
 
 const depositAmt = ethers.utils.parseEther('0.1')

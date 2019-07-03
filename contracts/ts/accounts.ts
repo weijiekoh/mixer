@@ -1,12 +1,10 @@
 import * as ethers from 'ethers'
-import { config } from 'mixer-utils'
+const privateKeys = require('../.privateKeys.json')
 
-const generateAccounts = () => {
-    const privateKeys = config.get('chain.privateKeys')
-
+const genAccounts = () => {
     return privateKeys.map((pk: string) => {
         return new ethers.Wallet(pk)
     })
 }
 
-export { generateAccounts }
+export { genAccounts }

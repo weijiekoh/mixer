@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as etherlime from 'etherlime-lib'
 import { config } from 'mixer-utils'
-import { generateAccounts } from '../accounts'
+import { genAccounts } from '../accounts'
 
 const deploy = async (deployer: any, compiledContracts: string) => {
     const MiMC = require(path.join(compiledContracts, 'MiMC.json'))
@@ -60,7 +60,7 @@ const deploy = async (deployer: any, compiledContracts: string) => {
 }
 
 const main = async () => {
-    const accounts = generateAccounts()
+    const accounts = genAccounts()
     const admin = accounts[0]
 
     const parser = new argparse.ArgumentParser({ 
