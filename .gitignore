@@ -3,6 +3,8 @@ utils/build
 contracts/.privateKeys.json
 contracts/build
 frontend/build
+frontend/server.cert
+frontend/server.key
 crypto/build
 contracts/.etherlime-store/
 contracts/compiled/
