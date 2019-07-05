@@ -2,6 +2,7 @@ import * as ethers from 'ethers'
 const mixerAbi = require('../abis/Mixer-abi.json')
 const deployedAddresses = require('../deployedAddresses.json')
 const config = require('../exported_config')
+import { getMixerContract } from './mixer'
 
 /*
  * Perform a web3 transaction to make a deposit
@@ -23,11 +24,7 @@ const deposit = async (
         )
         const signer = provider.getSigner()
 
-        const mixerContract = new ethers.Contract(
-            deployedAddresses.Mixer,
-            mixerAbi,
-            signer,
-        )
+        const mixerContract = await getMixerContract(context)
 
         const tx = await mixerContract.deposit(identityCommitment, { value: mixAmt })
         return tx

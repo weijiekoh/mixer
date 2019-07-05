@@ -4,30 +4,35 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "watch": "parcel index.html",
+        "watch": "node server.js",
         "build": "echo 'Building frontend' && parcel build index.html --no-source-maps",
         "lint": "tslint --project . 'js/**/*.ts[x]'",
         "lint-fix": "tslint --project . 'js/**/*.ts[x]' --fix"
     },
     "keywords": [],
+    "proxy": "http://localhost:8000",
     "author": "Koh Wei Jie",
     "license": "GPL-3.0-or-later",
     "alias": {
-      "worker_threads": "./externals/worker_threads.js"
+        "worker_threads": "./externals/worker_threads.js"
     },
     "dependencies": {
+        "buffer": "^5.2.1",
         "bulma": "^0.7.5",
         "ethers": "^4.0.30",
         "mixer-contracts": "1.0.0",
+        "mixer-crypto": "1.0.0",
         "mixer-utils": "1.0.0",
         "react": "^16.8.6",
         "react-dom": "^16.8.6",
         "react-router-dom": "^5.0.1",
+        "snarkjs": "^0.1.13",
         "web3-react": "^5.0.4"
     },
     "devDependencies": {
         "less": "^3.9.0",
         "parcel-bundler": "^1.12.3",
+        "parcel-proxy-server": "^1.1.0",
         "tslint": "^5.17.0",
         "tslint-microsoft-contrib": "^6.2.0",
         "typescript": "^3.5.2"

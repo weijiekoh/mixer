@@ -2,15 +2,16 @@ import React, { useState, Component } from 'react'
 import ReactDOM from 'react-dom'
 import { Redirect } from 'react-router-dom'
 import * as ethers from 'ethers'
+import { Buffer } from 'buffer'
 import { useWeb3Context } from 'web3-react'
 const deployedAddresses = require('../deployedAddresses.json')
 const config = require('../exported_config')
+import { TxButton, TxStatuses } from '../components/txButton'
 
 import {
-    initStorage,
     storeDeposit,
     updateDepositTxStatus,
-    getNumItems,
+    getNumUnwithdrawn,
 } from '../storage'
 
 import { deposit } from '../web3/deposit'
@@ -18,10 +19,6 @@ import {
     genIdentity,
     genIdentityCommitment,
 } from 'mixer-crypto'
-
-enum TxStatuses {
-    None, Pending, Mined, Err,
-}
 
 export default () => {
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
@@ -32,16 +29,21 @@ export default () => {
     const mixAmtEth = config.mixAmtEth
     const mixAmt = ethers.utils.parseEther(mixAmtEth)
 
+    const validRecipientAddress= !recipientAddress.match(/^0x[a-fA-F0-9]{40}$/)
+    const depositBtnDisabled = validRecipientAddress
+
     // Check whether there already is a deposit and disallow the user
     // from making another one
     // Redirect the user to the withdraw page if so
 
-    if (getNumItems() > 0) {
+    if (getNumUnwithdrawn() > 0) {
           return <Redirect to='/countdown' />
     }
 
-    const handleDepositBtnClick = async (context: any) => {
-        if (depositBtnDisabled) {
+    const context = useWeb3Context()
+
+    const handleDepositBtnClick = async () => {
+        if (validRecipientAddress) {
             return
         }
 
@@ -58,12 +60,12 @@ export default () => {
             setTxStatus(TxStatuses.Pending)
 
             const minedTx = await deposit(context, identityCommitment, mixAmt)
+            const receipt = await minedTx.wait()
 
-            updateDepositTxStatus(identity, minedTx.hash)
 
             storeDeposit(identity, recipientAddress)
+            updateDepositTxStatus(identity, minedTx.hash)
             setTxStatus(TxStatuses.Mined)
-            setErrorMsg('')
 
         } catch (err) {
             setTxStatus(TxStatuses.Err)
@@ -76,24 +78,6 @@ export default () => {
             }
         }
     }
-
-    const context = useWeb3Context()
-    let depositBtnClass = 'button is-large '
-    let depositBtnDisabled = false
-
-    // Change the appearance of the deposit button based on the transaction
-    if (txStatus === TxStatuses.None) {
-        depositBtnClass += 'is-primary'
-
-    } else if (txStatus === TxStatuses.Pending) {
-        depositBtnClass += 'is-loading is-primary'
-        depositBtnDisabled = true
-
-    } else if (txStatus === TxStatuses.Mined) {
-        depositBtnDisabled = true
-    }
-
-    depositBtnDisabled = !recipientAddress.match(/^0x[a-fA-F0-9]{40}$/)
 
     return (
         <div className='section'>
@@ -120,6 +104,7 @@ export default () => {
             <p>Recipient's address:</p>
             <br />
             <input
+                spellCheck={false}
                 className="input eth_address"
                 type="text"
                 placeholder="Recipient's ETH address" 
@@ -131,13 +116,12 @@ export default () => {
         </div>
 
         <div className='section'>
-            <span
-                onClick={() => {handleDepositBtnClick(context)}}
-                disabled={depositBtnDisabled}
-                href='/countdown'
-                className={depositBtnClass}>
-                {`Mix ${mixAmtEth} ETH`}
-            </span>
+            <TxButton
+                onClick={handleDepositBtnClick}
+                txStatus={txStatus}
+                isDisabled={depositBtnDisabled}
+                label={`Mix ${mixAmtEth} ETH`}
+            />
             
             <br />
             <br />

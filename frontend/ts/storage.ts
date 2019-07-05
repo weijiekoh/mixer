@@ -7,11 +7,14 @@ import {
     Identity,
     EddsaPrivateKey,
 } from 'mixer-crypto'
+import { Buffer } from 'buffer'
 
 interface IdentityStored {
     identityNullifier: BigInt,
-    privKey: EddsaPrivateKey
-    txHash: string
+    privKey: EddsaPrivateKey,
+    depositTxHash: string,
+    withdrawTxHash: string,
+    withdrawn: false,
 }
 
 const localStorage = window.localStorage
@@ -37,18 +40,32 @@ const deHexifyItem = (hexified: any): IdentityStored => {
     return {
         ...hexified,
         identityNullifier: BigInt('0x' + hexified.identityNullifier),
-        privKey: Buffer.from(hexified.privKey),
+        privKey: Buffer.from(hexified.privKey, 'hex'),
     }
 }
 
 const updateDepositTxStatus = (
     identity: Identity,
-    txHash: string,
+    depositTxHash: string,
 ) => {
     let items = getRawItems()
     for (let i=0; i < items.length; i++) {
         if (items[i].identityNullifier === identity.identityNullifier.toString(16)) {
-            items[i].txHash = txHash
+            items[i].depositTxHash = depositTxHash
+            break
+        }
+    }
+    saveItems(items)
+}
+
+const updateWithdrawTxStatus = (
+    identity: Identity,
+    withdrawTxHash: string,
+) => {
+    let items = getRawItems()
+    for (let i=0; i < items.length; i++) {
+        if (items[i].identityNullifier === identity.identityNullifier.toString(16)) {
+            items[i].withdrawTxHash = withdrawTxHash
             break
         }
     }
@@ -76,23 +93,59 @@ const saveItems = (items: any[]) => {
     localStorage.setItem(key, data)
 }
 
-const storeDeposit = (identity: Identity, recipientAddress: string, txHash=null) =>  {
+const setItemWithdrawn = (x: IdentityStored) => {
+    const items = getItems()
+
+    for (let i=0; i<items.length; i++){
+        const item = items[i]
+        if (x.identityNullifier === item.identityNullifier){
+            items[i].withdrawn = true
+            break
+        }
+    }
+
+    saveItems(items)
+}
+
+const storeDeposit = (identity: Identity, recipientAddress: string, depositTxHash=null) =>  {
     const items = getRawItems()
     items.push({
         privKey: identity.keypair.privKey,
         identityNullifier: identity.identityNullifier,
-        txHash,
+        depositTxHash,
         recipientAddress,
         timestamp: (new Date()).getTime(),
+        withdrawn: false,
+        withdrawTxHash: null,
     })
     saveItems(items)
+}
+
+const getNumUnwithdrawn = (): number => {
+    return getItems().filter((item) => {
+        return item.withdrawn === false
+    }).length
+}
+
+const getFirstUnwithdrawn= (): IdentityStored => {
+    const items = getItems()
+    for (let item of items) {
+        if (!item.withdrawn) {
+            return item
+        }
+    }
+    throw new Error('All items withdrawn')
 }
 
 export {
     initStorage,
     storeDeposit,
     updateDepositTxStatus,
+    updateWithdrawTxStatus,
     deHexifyItem,
     getItems,
     getNumItems,
+    getNumUnwithdrawn,
+    getFirstUnwithdrawn,
+    setItemWithdrawn
 }

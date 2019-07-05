@@ -6,7 +6,7 @@ import Web3Provider from 'web3-react'
 import Nav from './nav'
 import DepositRoute from './routes/deposit'
 import CountdownRoute from './routes/countdown'
-import QuickWithdrawRoute from './routes/quick_withdraw'
+import QuickWithdrawRoute from './routes/quickWithdraw'
 import connectors from './web3'
 import {
     initStorage,

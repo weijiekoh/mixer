@@ -1,5 +1,5 @@
 declare var assert: any
-import MemStorage from '../utils/memStorage'
+import { MemStorage } from 'mixer-crypto'
 
 describe('MemStorage', async () => {
     const storage = new MemStorage()

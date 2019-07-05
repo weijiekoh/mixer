@@ -6,6 +6,11 @@ const blake2 = require('blakejs')
 const eddsa = circomlib.eddsa
 const bigInt = snarkjs.bigInt
 
+import MemStorage from './memStorage'
+const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
+const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
+
+
 import { convertWitness, prove, cutDownBits, beBuff2int} from './utils'
 
 type EddsaPrivateKey = Buffer
@@ -52,19 +57,28 @@ const genIdentityCommitment = (
     )
 }
 
+const genPubKey = (privKey: EddsaPrivateKey) => {
+    const pubKey = eddsa.prv2pub(privKey)
+
+    return pubKey
+}
+
 const genEddsaKeyPair = (
     privKey: Buffer = genRandomBuffer(),
 ): EddsaKeyPair => {
 
-    const pubKey = eddsa.prv2pub(privKey)
+    const pubKey = genPubKey(privKey)
     return { pubKey, privKey }
 }
 
-const genIdentity = (): Identity => {
+const genIdentity = (
+    privKey: Buffer = genRandomBuffer(32),
+    randomBytes: Buffer = genRandomBuffer(31),
+): Identity => {
 
     return {
-        keypair: genEddsaKeyPair(),
-        identityNullifier: genIdentityNullifier(),
+        keypair: genEddsaKeyPair(privKey),
+        identityNullifier: genIdentityNullifier(randomBytes),
     }
 }
 
@@ -85,6 +99,7 @@ const signMsg = (
     privKey: EddsaPrivateKey,
     msg: BigInt,
 ): BigInt => {
+
     return eddsa.signMiMCSponge(privKey, msg)
 }
 
@@ -93,6 +108,7 @@ const verifySignature = (
     signature: BigInt,
     pubKey: EddsaPublicKey,
 ): boolean => {
+
     return eddsa.verifyMiMCSponge(msg, signature, pubKey)
 }
 
@@ -121,8 +137,8 @@ const genWitness = (
     externalNullifier,
     identityNullifier,
     identityPathElements,
-    identityPathIndex,
-    broadcasterAddress
+    identityPathIndex: number,
+    broadcasterAddress: string,
 ) => {
 
     return circuit.calculateWitness({
@@ -150,12 +166,12 @@ const extractWitnessRoot = (
 
 const genProof = async (
     witness: any,
-    provingKey: Buffer,
+    provingKeyBuffer: Buffer,
 ) => {
 
     const witnessBin = convertWitness(snarkjs.stringifyBigInts(witness))
 
-    return await prove(witnessBin.buffer, provingKey.buffer)
+    return await prove(witnessBin.buffer, provingKeyBuffer)
 }
 
 const genPublicSignals = (
@@ -177,9 +193,24 @@ const verifyProof = (
 
 const unstringifyBigInts = snarkjs.unstringifyBigInts
 
+const setupTree = () => {
+    const storage = new MemStorage()
+    const hasher = new MimcSpongeHasher()
+    const prefix = 'semaphore'
+
+    return new MerkleTreeJs(
+        prefix,
+        storage,
+        hasher,
+        20,
+        0,
+    )
+}
+
 export {
     EddsaKeyPair,
     Identity,
+    genPubKey,
     genIdentity,
     genEddsaKeyPair,
     genRandomBuffer,
@@ -199,4 +230,6 @@ export {
     genPublicSignals,
     verifyProof,
     unstringifyBigInts,
+    setupTree,
+    MemStorage,
 }

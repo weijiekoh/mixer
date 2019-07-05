@@ -1,18 +1,19 @@
-class MemStorage {
-    private db = {}
+export default class MemStorage {
+    db: object
+
+    constructor() {
+        this.db = {}
+    }
+
     async get(key) {
-        return Promise.resolve(this.db[key])
+        return await this.db[key]
     }
 
     async get_or_element(key, element) {
-        try {
-            return Promise.resolve(this.db[key])
-        } catch(err) {
-            if (err.notFound) {
-                return element;
-            }
-
-            throw err
+        if (!this.db.hasOwnProperty(key)) {
+            return element
+        } else {
+            return await this.get(key)
         }
     }
 
@@ -30,5 +31,3 @@ class MemStorage {
         }
     }
 }
-
-export default MemStorage
