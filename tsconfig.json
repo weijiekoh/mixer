@@ -4,7 +4,7 @@
         "alwaysStrict": true,
         "noImplicitAny": false,
         "forceConsistentCasingInFileNames": true,
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "noUnusedParameters": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
