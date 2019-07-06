@@ -6,3 +6,6 @@ operatorFeeEth: "0.0005"
 chain:
   url: "http://localhost:8545"
   chainId: 1234
+
+backend:
+  port: 3000

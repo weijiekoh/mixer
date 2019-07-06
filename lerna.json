@@ -1,6 +1,7 @@
 {
   "packages": [
     "frontend",
+    "backend",
     "contracts",
     "crypto",
     "utils"

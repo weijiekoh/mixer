@@ -1,0 +1,35 @@
+{
+  "name": "mixer-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/index.js",
+  "scripts": {
+    "watch": "tsc --watch",
+    "server": "node build/index.js",
+    "server-debug": "node --inspect-brk build/index.js",
+    "test": "NODE_ENV=local-dev jest",
+    "test-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest",
+    "build": "tsc"
+  },
+  "author": "Koh Wei Jie",
+  "license": "GPL-3.0-or-later",
+  "_moduleAliases": {
+    "@mixer-backend": "."
+  },
+  "dependencies": {
+    "koa": "^2.7.0",
+    "module-alias": "^2.2.0",
+    "ajv": "^6.10.0",
+    "mixer-contracts": "1.0.0",
+    "mixer-crypto": "1.0.0",
+    "mixer-utils": "1.0.0",
+    "verror": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.15",
+    "@types/node": "^12.0.12",
+    "axios": "^0.19.0",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2"
+  }
+}
