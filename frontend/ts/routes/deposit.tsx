@@ -9,6 +9,7 @@ const config = require('../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
 
 import {
+    initStorage,
     storeDeposit,
     updateDepositTxStatus,
     getNumUnwithdrawn,
@@ -21,6 +22,7 @@ import {
 } from 'mixer-crypto'
 
 export default () => {
+    initStorage()
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
     const [recipientAddress, setRecipientAddress] = useState('')
     const [errorMsg, setErrorMsg] = useState('')
@@ -46,6 +48,8 @@ export default () => {
         if (validRecipientAddress) {
             return
         }
+
+        initStorage()
 
         // generate an Identity
         const identity = genIdentity()

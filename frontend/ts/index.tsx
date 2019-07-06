@@ -8,14 +8,13 @@ import DepositRoute from './routes/deposit'
 import CountdownRoute from './routes/countdown'
 import QuickWithdrawRoute from './routes/quickWithdraw'
 import connectors from './web3'
+
 import {
     initStorage,
 } from './storage'
 
 const App = () => {
-
     initStorage()
-
     return (
         <Web3Provider connectors={connectors} libraryName='ethers.js'>
             <div className='section'>

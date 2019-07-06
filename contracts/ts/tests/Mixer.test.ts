@@ -13,6 +13,7 @@ import {
     SnarkProvingKey,
     SnarkVerifyingKey,
     genRandomBuffer,
+    genIdentity,
     genIdentityCommitment,
     genIdentityNullifier,
     genEddsaKeyPair,
@@ -79,11 +80,35 @@ for (let i=0; i < users.length; i++) {
     }
 }
 
+const mix = async (mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt) => {
+    return await mixerContract.mix(
+        {
+            signal,
+            a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
+            b: [ 
+                [ proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString() ],
+                [ proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString() ],
+            ],
+            c: [ proof.pi_c[0].toString(), proof.pi_c[1].toString() ],
+            input: [
+                publicSignals[0].toString(),
+                publicSignals[1].toString(),
+                publicSignals[2].toString(),
+                publicSignals[3].toString(),
+                publicSignals[4].toString()
+            ],
+            recipientAddress,
+            fee: feeAmt,
+        }
+    )
+}
+
 let mimcContract
 let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
-
+let externalNullifier : string
+let broadcasterAddress: string
 describe('Mixer', () => {
 
     const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
@@ -158,6 +183,10 @@ describe('Mixer', () => {
             assert.isAddress(multipleMerkleTreeContract.contractAddress)
             assert.isAddress(semaphoreContract.contractAddress)
             assert.isAddress(mixerContract.contractAddress)
+
+            // the external nullifier is the hash of the contract's address
+            externalNullifier = mixerContract.contractAddress
+            broadcasterAddress = mixerContract.contractAddress
         })
 
         it('the Mixer contract should be the owner of the Semaphore contract', async () => {
@@ -172,8 +201,10 @@ describe('Mixer', () => {
     })
 
     describe('Deposits and withdrawals', () => {
+        // initialise the off-chain merkle tree
         const tree = setupTree()
 
+        // get the circuit, verifying key, and proving key
         const verifyingKey: SnarkVerifyingKey = unstringifyBigInts(
             JSON.parse(fs.readFileSync(
                 path.join(
@@ -190,6 +221,7 @@ describe('Mixer', () => {
         const cirDef = JSON.parse(
             fs.readFileSync(path.join(__dirname, circuitPath)).toString()
         )
+
         const circuit = new snarkjs.Circuit(cirDef)
 
         const identity = identities[users[0]]
@@ -222,8 +254,6 @@ describe('Mixer', () => {
             const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
-            console.log('Root', (await semaphoreContract.getRootHistory(0)).toString(10))
-
             const gasUsed = receipt.gasUsed.toString()
             console.log('Gas used for this deposit:', gasUsed)
 
@@ -238,25 +268,17 @@ describe('Mixer', () => {
             const leaves = (await mixerContract.getLeaves()).map((x) => {
                 return x.toString(10)
             })
-            console.log(leaves)
-            console.log('identityCommitment', identityCommitment.toString(16))
             assert.include(leaves, identityCommitment.toString())
         })
 
         it('should make a withdrawal', async () => {
-            const broadcasterAddress = mixerContract.contractAddress
             await tree.update(nextIndex, identityCommitment.toString())
 
             const identityPath = await tree.path(nextIndex)
-            const identityPathElements = identityPath.path_elements
-            const identityPathIndex = identityPath.path_index
 
             const { signalHash, signal } = genSignalAndSignalHash(
                 recipientAddress, broadcasterAddress, feeAmt,
             )
-
-            // the external nullifier is the hash of the contract's address
-            const externalNullifier = mixerContract.contractAddress
 
             const msg = genMsg(
                 externalNullifier,
@@ -288,20 +310,17 @@ describe('Mixer', () => {
                 signalHash,
                 externalNullifier,
                 identity.identityNullifier,
-                identityPathElements,
-                identityPathIndex,
+                identityPath.path_elements,
+                identityPath.path_index,
                 broadcasterAddress
             )
 
             const witnessRoot = extractWitnessRoot(circuit, w)
             assert.equal(witnessRoot, identityPath.root)
-            console.log('Root / witnessRoot', identityPath.root.toString(16))
-            debugger
 
             assert.isTrue(circuit.checkWitness(w))
 
             const publicSignals = genPublicSignals(w, circuit)
-            console.log('Public signal root', publicSignals[0].toString())
 
             const proof = await genProof(w, provingKey.buffer)
 
@@ -312,26 +331,7 @@ describe('Mixer', () => {
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
             owedFeesBefore = await mixerContract.getFeesOwedToOperator()
 
-            const mixTx = await mixerContract.mix(
-                {
-                    signal,
-                    a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
-                    b: [ 
-                        [ proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString() ],
-                        [ proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString() ],
-                    ],
-                    c: [ proof.pi_c[0].toString(), proof.pi_c[1].toString() ],
-                    input: [
-                        publicSignals[0].toString(),
-                        publicSignals[1].toString(),
-                        publicSignals[2].toString(),
-                        publicSignals[3].toString(),
-                        publicSignals[4].toString()
-                    ],
-                    recipientAddress,
-                    fee: feeAmt,
-                }
-            )
+            const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
 
             // Wait till the transaction is mined
             const receipt = await mixerContract.verboseWaitForTransaction(mixTx)
@@ -366,6 +366,81 @@ describe('Mixer', () => {
 
             assert.equal(balancePlusGas, owedFeesDiff)
             assert.equal(await mixerContract.getFeesOwedToOperator(), 0)
+        })
+
+        it('should make another deposit and withdrawal', async () => {
+            const identity = genIdentity()
+            const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
+
+            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+            const receipt = await mixerContract.verboseWaitForTransaction(tx)
+            const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
+            nextIndex = leafAddedEvent.leaf_index
+            await tree.update(nextIndex, identityCommitment.toString())
+            const leaves = await mixerContract.getLeaves()
+
+            const leafIndex = await tree.element_index(identityCommitment)
+            assert.equal(nextIndex, 1)
+            assert.equal(nextIndex.toString(10), leafIndex)
+
+            await tree.update(nextIndex, identityCommitment.toString())
+
+            const identityPath = await tree.path(nextIndex)
+
+            const { signalHash, signal } = genSignalAndSignalHash(
+                recipientAddress, broadcasterAddress, feeAmt,
+            )
+
+            const msg = genMsg(
+                externalNullifier,
+                signalHash, 
+                mixerContract.contractAddress,
+            )
+
+            const signature = signMsg(identity.keypair.privKey, msg)
+
+            assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
+
+            const w = genWitness(
+                circuit,
+                identity.keypair.pubKey,
+                signature,
+                signalHash,
+                externalNullifier,
+                identity.identityNullifier,
+                identityPath.path_elements,
+                identityPath.path_index,
+                broadcasterAddress
+            )
+
+            const witnessRoot = extractWitnessRoot(circuit, w)
+            assert.equal(witnessRoot, identityPath.root)
+
+            assert.isTrue(circuit.checkWitness(w))
+
+            const publicSignals = genPublicSignals(w, circuit)
+
+            const proof = await genProof(w, provingKey.buffer)
+
+            // verify the proof off-chain
+            const isVerified = verifyProof(verifyingKey, proof, publicSignals)
+            assert.isTrue(isVerified)
+
+            recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
+            owedFeesBefore = await mixerContract.getFeesOwedToOperator()
+
+            const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
+
+            // Wait till the transaction is mined
+            const mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
+
+            const gasUsed = mixReceipt.gasUsed.toString()
+            console.log('Gas used for this withdrawal:', gasUsed)
+
+            recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
+
+            recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
+            assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
         })
     })
 })

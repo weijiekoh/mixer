@@ -1,3 +1,5 @@
+// From https://www.npmjs.com/package/parcel-proxy-server
+
 const ParcelProxyServer = require('parcel-proxy-server');
 
 // configure the proxy server

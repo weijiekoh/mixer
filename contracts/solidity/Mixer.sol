@@ -16,12 +16,13 @@ contract Mixer {
     event Deposited(address indexed depositor, uint256 indexed mixAmt, uint256 identityCommitment);
     event Mixed(address indexed recipient, uint256 indexed mixAmt, uint256 indexed operatorFee);
 
+    // input = [root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address]
     struct DepositProof {
         bytes32 signal;
         uint[2] a;
         uint[2][2] b;
         uint[2] c;
-        uint[5] input; // (root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address)
+        uint[5] input;
         address recipientAddress;
         uint256 fee;
     }

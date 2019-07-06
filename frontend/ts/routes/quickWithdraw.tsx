@@ -15,6 +15,7 @@ import {
     genPubKey,
     setupTree,
     genWitness,
+    genIdentityCommitment,
     genSignalAndSignalHash,
     genPublicSignals,
     verifySignature,
@@ -28,14 +29,12 @@ enum ErrorCodes {
     INVALID_WITNESS,
     INVALID_PROOF,
     INVALID_SIG,
+    TX_FAILED,
 }
 
 import {
     getItems,
-    getNumItems,
-    setItemWithdrawn,
-    getNumUnwithdrawn,
-    updateWithdrawTxStatus,
+    updateWithdrawTxHash,
 } from '../storage'
 
 const mixAmtEth = config.mixAmtEth
@@ -55,18 +54,16 @@ const noItems = (
 )
 
 export default () => {
-    //if (getNumUnwithdrawn() === 0) {
-        //return noItems
-    //}
+    const items = getItems()
+    if (items.length == 0) {
+        return noItems
+    }
 
-    const identityStored = getItems()[0]
-    const recipientAddress = identityStored.recipientAddress
-    const pubKey = genPubKey(identityStored.privKey)
     const [proofGenProgress, setProofGenProgress] = useState('')
+    const [completedWithdraw, setCompletedWithdraw] = useState(false)
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
     const [consentChecked, setConsentChecked] = useState(false)
     const [errorMsg, setErrorMsg] = useState('')
-    const [withdrawTxHash, setWithdrawTxHash] = useState('')
 
     const context = useWeb3Context()
     let withdrawBtnDisabled = !consentChecked
@@ -75,7 +72,14 @@ export default () => {
         setProofGenProgress(line)
     }
 
+    const identityStored = items[items.length - 1]
+
+    let withdrawTxHash = identityStored.withdrawTxHash
+
+    const recipientAddress = identityStored.recipientAddress
+
     const handleWithdrawBtnClick = async () => {
+
         if (!consentChecked) {
             return
         }
@@ -92,8 +96,6 @@ export default () => {
                 (parseFloat(operatorFeeEth) * 2).toString()
             )
             const mixerContract = await getMixerContract(context)
-            //const semaphoreContract = await getSemaphoreContract(context)
-            //console.log('1st root from the contract storage', (await semaphoreContract.getRootHistory(0)).toString(10))
 
             const broadcasterAddress = mixerContract.address
             const externalNullifier = mixerContract.address
@@ -103,15 +105,21 @@ export default () => {
             const tree = setupTree()
 
             for (let i=0; i<leaves.length; i++) {
-                const leaf = leaves[i].toString()
-                console.log('Leaf', leaf)
-                await tree.update(i, leaf)
+                await tree.update(i, leaves[i].toString())
             }
-            const identityPath = await tree.path(0)
+
+            const pubKey = genPubKey(identityStored.privKey)
+
+            const identityCommitment = genIdentityCommitment(
+                identityStored.identityNullifier,
+                pubKey,
+            )
+
+            const leafIndex = await tree.element_index(identityCommitment)
+
+            const identityPath = await tree.path(leafIndex)
             const identityPathElements = identityPath.path_elements
             const identityPathIndex = identityPath.path_index
-
-            console.log('Identity path root from the in-memory tree', identityPath.root.toString(10))
 
             const { signalHash, signal } = genSignalAndSignalHash(
                 recipientAddress, broadcasterAddress, feeAmt,
@@ -125,7 +133,6 @@ export default () => {
 
             const signature = signMsg(identityStored.privKey, msg)
             const validSig = verifySignature(msg, signature, pubKey)
-            console.log('validSig:', validSig)
             if (!validSig) {
                 throw {
                     code: ErrorCodes.INVALID_SIG,
@@ -146,11 +153,10 @@ export default () => {
                 identityStored.identityNullifier,
                 identityPathElements,
                 identityPathIndex,
-                broadcasterAddress
+                broadcasterAddress,
             )
 
             const witnessRoot = extractWitnessRoot(circuit, w)
-            console.log('Witness root', witnessRoot)
 
             if (!circuit.checkWitness(w)) {
                 throw {
@@ -163,9 +169,7 @@ export default () => {
             const provingKey = new Uint8Array(
                 await (await fetch('/build/proving_key.bin')).arrayBuffer()
             )
-
-            progress('Generating proof')
-            const proof = await genProof(w, provingKey.buffer)
+            
 
             progress('Downloading verifying key')
 
@@ -173,17 +177,21 @@ export default () => {
                 await (await fetch('/build/verification_key.json')).json()
             )
 
+            progress('Generating proof')
+            const proof = await genProof(w, provingKey.buffer)
+
             const publicSignals = genPublicSignals(w, circuit)
 
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
-            console.log(isVerified)
 
             if (!isVerified) {
                 throw {
                     code: ErrorCodes.INVALID_PROOF,
                 }
             }
-            console.log('Public signal root', publicSignals[0].toString())
+
+            progress('Executing transaction')
+
             const tx = await quickWithdraw(
                 context,
                 signal,
@@ -195,13 +203,15 @@ export default () => {
 
             const receipt = await tx.wait()
             if (receipt.status === 1) {
-                setItemWithdrawn(identityStored)
+                updateWithdrawTxHash(identityStored, tx.hash)
+                setCompletedWithdraw(true)
+            } else {
+                throw {
+                    code: ErrorCodes.TX_FAILED,
+                }
             }
-            setItemWithdrawn(identityStored)
-            updateWithdrawTxStatus(identityStored, tx.hash)
-            setWithdrawTxHash(tx.hash)
-
             setProofGenProgress('')
+
 
         } catch (err) {
             console.error(err)
@@ -218,72 +228,78 @@ export default () => {
                 setErrorMsg('Invalid proof.')
             } else if (err.code === ErrorCodes.INVALID_SIG) {
                 setErrorMsg('Invalid signature.')
-            } else {
+            } else if (err.code === ErrorCodes.TX_FAILED) {
                 setErrorMsg('The transaction failed.')
             }
 
         }
     }
 
+    //const handle = () => {
+        //updateWithdrawTxHash(identityStored, '0xabc')
+        //setCompletedWithdraw(true)
+    //}
+
     return (
         <div className='section'>
             <div className='columns has-text-centered'>
-                <div className='column is-8 is-offset-2'>
+              { (!withdrawTxHash && !completedWithdraw) &&
+                  <div className='column is-8 is-offset-2'>
+                      <div className='section'>
+                          <h2 className='subtitle'>
+                              You can immediately withdraw { mixAmtEth - operatorFeeEth * 2 } ETH to
+                              <pre>
+                                  {recipientAddress} 
+                              </pre>
+                          </h2>
+                      </div>
+
                     <div className='section'>
-                        <h2 className='subtitle'>
-                            You can make a transaction to
-                            immediately withdraw { mixAmtEth - operatorFeeEth * 2 } ETH to
-                            <pre>
-                                {recipientAddress} 
-                            </pre>
-                        </h2>
-                    </div>
+                          <label className="checkbox">
+                              <input 
+                                  onChange={() => {
+                                      setConsentChecked(!consentChecked)
+                                  }}
+                                  type="checkbox" className="consent_checkbox" />
+                              I understand that this transaction won't be private
+                              as it will link your deposit address to the
+                              receiver's address.
+                         </label>
 
-                    {withdrawTxHash.length === 0 &&
-                        <div className='section'>
-                            <label className="checkbox">
-                                <input 
-                                    onChange={() => {
-                                        setConsentChecked(!consentChecked)
-                                    }}
-                                    type="checkbox" className="consent_checkbox" />
-                                I understand that this transaction won't be private
-                                as it will link your deposit address to the
-                                receiver's address.
-                           </label>
+                          <br />
+                          <br />
 
-                            <br />
-                            <br />
+                          <TxButton
+                              onClick={handleWithdrawBtnClick}
+                              txStatus={txStatus}
+                              isDisabled={withdrawBtnDisabled}
+                              label={`Withdraw ${mixAmtEth - operatorFeeEth * 2} ETH`}
+                          />
+                          <br />
+                          <br />
 
-                            <TxButton
-                                onClick={handleWithdrawBtnClick}
-                                txStatus={txStatus}
-                                isDisabled={withdrawBtnDisabled}
-                                label={`Withdraw ${mixAmtEth - operatorFeeEth * 2} ETH`}
-                            />
-                            <br />
-                            <br />
-
-                            { txStatus === TxStatuses.Err &&
-                                <article className="message is-danger">
-                                  <div className="message-body">
-                                    {errorMsg}
-                                  </div>
-                              </article>
-                            }
-
-                            { proofGenProgress.length > 0 && 
-                                <div className="has-text-left">
-                                    <br />
-                                    <pre>
-                                        {proofGenProgress}
-                                    </pre>
+                          { txStatus === TxStatuses.Err &&
+                              <article className="message is-danger">
+                                <div className="message-body">
+                                  {errorMsg}
                                 </div>
-                            }
-                       </div>
-                    }
+                            </article>
+                          }
 
-                    {withdrawTxHash.length > 0 &&
+                          { proofGenProgress.length > 0 && 
+                              <div className="has-text-left">
+                                  <br />
+                                  <pre>
+                                      {proofGenProgress}
+                                  </pre>
+                              </div>
+                          }
+                       </div>
+                   </div>
+               }
+
+               { withdrawTxHash &&
+                    <div className='column is-8 is-offset-2'>
                         <article className="message is-success">
                             <div className="message-body">
                                 Withdrawal successful. <a
@@ -292,8 +308,9 @@ export default () => {
                                 </a>
                             </div>
                         </article>
-                    }
-                </div>
+                        <a href='/'>Make another deposit</a>.
+                   </div>
+               }
             </div>
         </div>
     )

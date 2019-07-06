@@ -12,9 +12,9 @@ import { Buffer } from 'buffer'
 interface IdentityStored {
     identityNullifier: BigInt,
     privKey: EddsaPrivateKey,
+    recipientAddress: string,
     depositTxHash: string,
     withdrawTxHash: string,
-    withdrawn: false,
 }
 
 const localStorage = window.localStorage
@@ -58,7 +58,7 @@ const updateDepositTxStatus = (
     saveItems(items)
 }
 
-const updateWithdrawTxStatus = (
+const updateWithdrawTxHash = (
     identity: Identity,
     withdrawTxHash: string,
 ) => {
@@ -93,20 +93,6 @@ const saveItems = (items: any[]) => {
     localStorage.setItem(key, data)
 }
 
-const setItemWithdrawn = (x: IdentityStored) => {
-    const items = getItems()
-
-    for (let i=0; i<items.length; i++){
-        const item = items[i]
-        if (x.identityNullifier === item.identityNullifier){
-            items[i].withdrawn = true
-            break
-        }
-    }
-
-    saveItems(items)
-}
-
 const storeDeposit = (identity: Identity, recipientAddress: string, depositTxHash=null) =>  {
     const items = getRawItems()
     items.push({
@@ -115,22 +101,21 @@ const storeDeposit = (identity: Identity, recipientAddress: string, depositTxHas
         depositTxHash,
         recipientAddress,
         timestamp: (new Date()).getTime(),
-        withdrawn: false,
-        withdrawTxHash: null,
+        withdrawTxHash: '',
     })
     saveItems(items)
 }
 
 const getNumUnwithdrawn = (): number => {
     return getItems().filter((item) => {
-        return item.withdrawn === false
+        return item.withdrawTxHash.length === 0
     }).length
 }
 
-const getFirstUnwithdrawn= (): IdentityStored => {
+const getFirstUnwithdrawn = (): IdentityStored => {
     const items = getItems()
     for (let item of items) {
-        if (!item.withdrawn) {
+        if (item.withdrawTxHash.length === 0) {
             return item
         }
     }
@@ -141,11 +126,11 @@ export {
     initStorage,
     storeDeposit,
     updateDepositTxStatus,
-    updateWithdrawTxStatus,
+    updateWithdrawTxHash,
     deHexifyItem,
     getItems,
     getNumItems,
     getNumUnwithdrawn,
     getFirstUnwithdrawn,
-    setItemWithdrawn
+    IdentityStored,
 }
