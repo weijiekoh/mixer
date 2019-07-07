@@ -1,11 +1,18 @@
 import * as Koa from 'koa';
 import * as JsonRpc from '../jsonRpc'
 import echo from './echo'
+import { config } from 'mixer-utils'
 
+// Define routes here
 const routes = {
-    mixer_echo: echo,
 }
 
+// Dev-only routes for testing
+if (config.get('env') !== 'production') {
+    routes['mixer_echo'] = echo
+}
+
+// Invoke the route
 const handle = (reqData: JsonRpc.Request) => {
     const result = routes[reqData.method](reqData.params)
 

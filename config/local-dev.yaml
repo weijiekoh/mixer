@@ -1,5 +1,5 @@
 ---
-
+env: 'local-dev'
 mixAmtEth: "0.1"
 operatorFeeEth: "0.0005"
 

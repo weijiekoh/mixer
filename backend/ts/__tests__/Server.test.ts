@@ -6,6 +6,12 @@ import * as JsonRpc from '../jsonRpc'
 const PORT = 1111
 const HOST = 'http://localhost:' + PORT.toString()
 
+const OPTS = {
+    headers: {
+        'Content-Type': 'application/json',
+    }
+}
+
 const post = (id: JsonRpc.Id, method: string, params: any) => {
     return axios.post(
         HOST,
@@ -15,11 +21,7 @@ const post = (id: JsonRpc.Id, method: string, params: any) => {
             method,
             params,
         },
-        {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        },
+        OPTS,
     )
 }
 
@@ -79,11 +81,7 @@ describe('Backend API', () => {
         const resp = await axios.post(
             HOST,
             { hello: 'world' },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            },
+            OPTS,
         )
 
         expect(resp.status).toEqual(200)
@@ -97,6 +95,39 @@ describe('Backend API', () => {
 
         expect(resp.status).toEqual(200)
         expect(resp.data.result.message).toEqual(message)
+    })
+
+    test('handles the echo method in batch', async () => {
+        let data: JsonRpc.Request[] = []
+        for (let i=0; i<5; i++) {
+            data.push({
+                id: i,
+                jsonrpc: '2.0',
+                method: 'mixer_echo',
+                params: {
+                    message: i,
+                }
+            })
+        }
+
+        const resp = await axios.post(
+            HOST,
+            data,
+            OPTS,
+        )
+
+        expect(resp.status).toEqual(200)
+        expect(resp.data.length).toEqual(data.length)
+        const expected = JSON.stringify(
+            [ 
+                { jsonrpc: '2.0', id: 0, result: { message: 0 } },
+                { jsonrpc: '2.0', id: 1, result: { message: 1 } },
+                { jsonrpc: '2.0', id: 2, result: { message: 2 } },
+                { jsonrpc: '2.0', id: 3, result: { message: 3 } },
+                { jsonrpc: '2.0', id: 4, result: { message: 4 } },
+            ]
+        )
+        expect(JSON.stringify(resp.data)).toEqual(expected)
     })
 
     afterAll(async () => {
