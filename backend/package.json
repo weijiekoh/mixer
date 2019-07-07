@@ -17,12 +17,14 @@
     "@mixer-backend": "."
   },
   "dependencies": {
-    "koa": "^2.7.0",
-    "module-alias": "^2.2.0",
     "ajv": "^6.10.0",
+    "koa": "^2.7.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-helmet": "^4.2.0",
     "mixer-contracts": "1.0.0",
     "mixer-crypto": "1.0.0",
     "mixer-utils": "1.0.0",
+    "module-alias": "^2.2.0",
     "verror": "^1.10.0"
   },
   "devDependencies": {

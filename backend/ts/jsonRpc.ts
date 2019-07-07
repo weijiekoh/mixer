@@ -65,6 +65,7 @@ const genError = (id: Id, error: JsonRpcError, errorData?: any): ResponseError =
 }
 
 export {
+    Id,
     Request,
     Response,
     ResponseSuccess,
