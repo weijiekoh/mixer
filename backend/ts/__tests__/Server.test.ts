@@ -2,6 +2,7 @@ import { createApp } from '../index'
 const Koa = require('koa')
 import axios from 'axios'
 import * as JsonRpc from '../jsonRpc'
+import errorCodes from '../routes/errorCodes'
 
 const PORT = 1111
 const HOST = 'http://localhost:' + PORT.toString()
@@ -128,6 +129,13 @@ describe('Backend API', () => {
             ]
         )
         expect(JSON.stringify(resp.data)).toEqual(expected)
+    })
+
+    test('correct error handling by the echo method', async () => {
+        const resp = await post(1, 'mixer_echo', { message: '' })
+
+        expect(resp.status).toEqual(200)
+        expect(resp.data.error.code).toEqual(errorCodes.echoMsgBlank)
     })
 
     afterAll(async () => {

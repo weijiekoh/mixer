@@ -14,9 +14,13 @@ if (config.get('env') !== 'production') {
 
 // Invoke the route
 const handle = (reqData: JsonRpc.Request) => {
-    const result = routes[reqData.method](reqData.params)
+    try {
+        const result = routes[reqData.method](reqData.params)
+        return JsonRpc.genSuccessResponse(reqData.id, result)
 
-    return JsonRpc.genResponse(reqData.id, result)
+    } catch (err) {
+        return JsonRpc.genErrorResponse(reqData.id, err)
+    }
 }
 
 const router = async (

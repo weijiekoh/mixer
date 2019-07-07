@@ -43,6 +43,7 @@ const validateJsonParse = async (
         JSON.parse(ctx.request.rawBody)
         await next()
     } catch (err) {
+        debugger
         ctx.type = 'application/json-rpc'
         ctx.body = JsonRpc.genError(null, JsonRpc.Errors.parseError)
     }

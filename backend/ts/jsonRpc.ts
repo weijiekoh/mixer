@@ -45,11 +45,19 @@ const Errors = {
 
 type Response = (ResponseSuccess | ResponseError)
 
-const genResponse = (id: Id, result: any): ResponseSuccess => {
+const genSuccessResponse = (id: Id, result: any): ResponseSuccess => {
     return {
         jsonrpc: '2.0',
         id,
-        result
+        result,
+    }
+}
+
+const genErrorResponse = (id: Id, error: any): ResponseError => {
+    return {
+        jsonrpc: '2.0',
+        id,
+        error,
     }
 }
 
@@ -72,6 +80,7 @@ export {
     ResponseError,
     JsonRpcError,
     Errors,
-    genResponse,
+    genSuccessResponse,
+    genErrorResponse,
     genError,
 }
