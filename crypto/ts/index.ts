@@ -10,7 +10,6 @@ import MemStorage from './memStorage'
 const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
 const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
 
-
 import { convertWitness, prove, cutDownBits, beBuff2int} from './utils'
 
 type EddsaPrivateKey = Buffer
@@ -232,4 +231,5 @@ export {
     unstringifyBigInts,
     setupTree,
     MemStorage,
+    bigInt,
 }

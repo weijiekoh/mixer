@@ -28,7 +28,11 @@ const validateJsonRpcSchema = async (
         await next()
     } else {
         ctx.type = 'application/json-rpc'
-        ctx.body = JsonRpc.genError(null, JsonRpc.Errors.invalidRequest)
+        ctx.body = JsonRpc.genErrorResponse(
+            null,
+            JsonRpc.Errors.invalidRequest.code,
+            JsonRpc.Errors.invalidRequest.message,
+        )
     }
 }
 
@@ -43,9 +47,12 @@ const validateJsonParse = async (
         JSON.parse(ctx.request.rawBody)
         await next()
     } catch (err) {
-        debugger
         ctx.type = 'application/json-rpc'
-        ctx.body = JsonRpc.genError(null, JsonRpc.Errors.parseError)
+        ctx.body = JsonRpc.genErrorResponse(
+            null,
+            JsonRpc.Errors.parseError.code,
+            JsonRpc.Errors.parseError.message,
+        )
     }
 }
 

@@ -8,7 +8,7 @@
     "test": "etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
     "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
     "watch": "tsc --watch",
-    "deploy": "NODE_ENV=local-dev node ./build/deploy/deploy.js -c compiled -o ../frontend/ts/deployedAddresses.json",
+    "deploy": "NODE_ENV=local-dev ./scripts/deploy.sh",
     "ganache": "./scripts/runGanache.sh"
   },
   "author": "Koh Wei Jie",

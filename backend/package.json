@@ -7,9 +7,11 @@
     "watch": "tsc --watch",
     "server": "node build/index.js",
     "server-debug": "node --inspect-brk build/index.js",
-    "test": "NODE_ENV=local-dev jest",
-    "test-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest",
-    "build": "tsc"
+    "test": "NODE_ENV=local-dev jest --testPathPattern=__tests__/Server.test.ts",
+    "test-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest --testPathPattern=__tests__/Server.test.ts",
+    "test-mix": "NODE_ENV=local-dev jest --testPathPattern=__tests__/Mix.test.ts",
+    "test-mix-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest --testPathPattern=__tests__/Mix.test.ts",
+    "build": "./scripts/copyVerifyingKey.sh && tsc"
   },
   "author": "Koh Wei Jie",
   "license": "GPL-3.0-or-later",
@@ -18,6 +20,7 @@
   },
   "dependencies": {
     "ajv": "^6.10.0",
+    "ethers": "^4.0.30",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
     "koa-helmet": "^4.2.0",
@@ -25,6 +28,7 @@
     "mixer-crypto": "1.0.0",
     "mixer-utils": "1.0.0",
     "module-alias": "^2.2.0",
+    "node-etcd-lock": "^0.3.3",
     "verror": "^1.10.0"
   },
   "devDependencies": {

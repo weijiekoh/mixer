@@ -81,6 +81,7 @@ for (let i=0; i < users.length; i++) {
 }
 
 const mix = async (mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt) => {
+
     return await mixerContract.mix(
         {
             signal,

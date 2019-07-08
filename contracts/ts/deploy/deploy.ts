@@ -123,7 +123,6 @@ const main = async () => {
     )
 
     console.log(addresses)
-    console.log('Wrote addresses to', addressJsonPath)
 }
 
 if (require.main === module) {

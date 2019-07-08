@@ -1,25 +1,52 @@
 import * as Koa from 'koa';
 import * as JsonRpc from '../jsonRpc'
-import echo from './echo'
+import * as Ajv from 'ajv'
+import echoRoute from './echo'
+import mixRoute from './mix'
+import backendStatusRoute from './status'
 import { config } from 'mixer-utils'
+
+interface Route {
+    reqValidator: Ajv.ValidateFunction
+    route(bodyData: JsonRpc.Request): Promise<JsonRpc.Response> 
+}
 
 // Define routes here
 const routes = {
+    mixer_mix: mixRoute,
+    mixer_status: backendStatusRoute,
 }
 
 // Dev-only routes for testing
 if (config.get('env') !== 'production') {
-    routes['mixer_echo'] = echo
+    routes['mixer_echo'] = echoRoute
 }
 
 // Invoke the route
-const handle = (reqData: JsonRpc.Request) => {
+const handle = async (reqData: JsonRpc.Request) => {
     try {
-        const result = routes[reqData.method](reqData.params)
-        return JsonRpc.genSuccessResponse(reqData.id, result)
+        const route = routes[reqData.method]
 
+        if (route.reqValidator(reqData.params)) {
+            const result = await route.route(reqData.params)
+
+            return JsonRpc.genSuccessResponse(reqData.id, result)
+        } else {
+
+            return JsonRpc.genErrorResponse(
+                reqData.id, 
+                JsonRpc.Errors.invalidParams.code,
+                JsonRpc.Errors.invalidParams.message,
+            )
+        }
     } catch (err) {
-        return JsonRpc.genErrorResponse(reqData.id, err)
+
+        return JsonRpc.genErrorResponse(
+            reqData.id,
+            err.code,
+            err.message,
+            err.data,
+        )
     }
 }
 
@@ -41,7 +68,7 @@ const router = async (
             })
         )
     } else {
-        resData = handle(reqData)
+        resData = await handle(reqData)
     }
 
     ctx.type = 'application/json-rpc'

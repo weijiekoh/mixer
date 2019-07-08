@@ -2,10 +2,11 @@ import { createApp } from '../index'
 const Koa = require('koa')
 import axios from 'axios'
 import * as JsonRpc from '../jsonRpc'
-import errorCodes from '../routes/errorCodes'
+import { config, errors } from 'mixer-utils'
+import { post } from './utils'
 
-const PORT = 1111
-const HOST = 'http://localhost:' + PORT.toString()
+const PORT = config.get('backend.port')
+const HOST = config.get('backend.host') + ':' + PORT.toString()
 
 const OPTS = {
     headers: {
@@ -13,18 +14,6 @@ const OPTS = {
     }
 }
 
-const post = (id: JsonRpc.Id, method: string, params: any) => {
-    return axios.post(
-        HOST,
-        {
-            jsonrpc: '2.0',
-            id,
-            method,
-            params,
-        },
-        OPTS,
-    )
-}
 
 let server
 
@@ -135,7 +124,8 @@ describe('Backend API', () => {
         const resp = await post(1, 'mixer_echo', { message: '' })
 
         expect(resp.status).toEqual(200)
-        expect(resp.data.error.code).toEqual(errorCodes.echoMsgBlank)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.ECHO_MSG_BLANK)
+        expect(resp.data.error.data.name).toEqual('BACKEND_ECHO_MSG_BLANK')
     })
 
     afterAll(async () => {

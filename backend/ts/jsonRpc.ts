@@ -53,22 +53,20 @@ const genSuccessResponse = (id: Id, result: any): ResponseSuccess => {
     }
 }
 
-const genErrorResponse = (id: Id, error: any): ResponseError => {
-    return {
-        jsonrpc: '2.0',
-        id,
-        error,
-    }
-}
-
-const genError = (id: Id, error: JsonRpcError, errorData?: any): ResponseError => {
+const genErrorResponse = (
+    id: Id,
+    code: number,
+    message: string,
+    data?: any,
+): ResponseError => {
     return {
         jsonrpc: '2.0',
         id,
         error: {
-            ...error,
-            ...errorData
-        }
+            code,
+            message,
+            data,
+        },
     }
 }
 
@@ -82,5 +80,4 @@ export {
     Errors,
     genSuccessResponse,
     genErrorResponse,
-    genError,
 }

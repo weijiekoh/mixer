@@ -1,21 +1,25 @@
 import { errors } from 'mixer-utils'
-import errorCodes from './errorCodes'
+import { genValidator } from './utils'
 
-const echo = (params: any) => {
-    if (params.message !== '') {
-        return {
-            message: params.message
-        }
+const echo = async ({ message }) => {
+    if (message !== '') {
+        return { message }
     } else {
         const errorMsg = 'the message param cannot be blank'
         throw {
-            code: errorCodes.echoMsgBlank,
+            code: errors.errorCodes.ECHO_MSG_BLANK,
             message: errorMsg,
             data: errors.genError(
-                errors.MixerErrorNames.BACKEND_ECHO_EMPTY_MSG,
+                errors.MixerErrorNames.BACKEND_ECHO_MSG_BLANK,
                 errorMsg,
             )
         }
     }
 }
-export default echo
+
+const echoRoute = {
+    route: echo,
+    reqValidator: genValidator('echo'),
+}
+
+export default echoRoute
