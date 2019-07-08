@@ -1,0 +1,67 @@
+{
+    "title": "mix",
+    "decription": "Parameters for a request to the test mixer_mix JSON-RPC method",
+    "required": [
+        "signal",
+        "a",
+        "b",
+        "c",
+        "input",
+        "recipientAddress",
+        "fee"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "signal": {
+            "$ref": "#/definitions/bytes32"
+        },
+        "a": {
+            "$ref": "#/definitions/twoHexStrs"
+        },
+        "b": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/twoHexStrs" },
+            "minItems": 2,
+            "maxItems": 2
+        },
+        "c": {
+            "$ref": "#/definitions/twoHexStrs"
+        },
+        "input": {
+            "$ref": "#/definitions/fiveHexStrs"
+        },
+        "recipientAddress": {
+            "$ref": "#/definitions/address"
+        },
+        "fee": {
+            "$ref": "#/definitions/hex"
+        }
+    },
+    "definitions": {
+        "bytes32": {
+            "type": "string",
+            "pattern": "^0x([A-Fa-f0-9]{64})$"
+        },
+        "address": {
+            "type": "string",
+            "pattern": "^0x([A-Fa-f0-9]{40})$"
+        },
+        "hex": {
+            "type": "string",
+            "pattern": "^0x([A-Fa-f0-9]+)$"
+        },
+        "twoHexStrs": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/hex" },
+            "minItems": 2,
+            "maxItems": 2
+        },
+        "fiveHexStrs": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/hex" },
+            "minItems": 5,
+            "maxItems": 5
+        }
+    }
+}
+

@@ -1,0 +1,12 @@
+{
+    "title": "An echo request for testing",
+    "decription": "Parameters for a request to the test mixer_echo JSON-RPC method",
+    "required": ["message"],
+    "additionalProperties": false,
+    "properties": {
+        "message": {
+            "type": ["string", "number"]
+        }
+    }
+}
+
