@@ -43,7 +43,6 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     const publicInputs = depositProof.input.map(bigInt)
-    debugger
 
     // verify the external nullifier
     if (deployedAddresses.Mixer !== depositProof.input[3]) {
@@ -160,27 +159,51 @@ const mix = async (depositProof: DepositProof) => {
         deployedAddresses,
     )
 
-    // TODO: check the nullifiers_set and tree roots
-    // Need to modify Semaphore to let this happen
-    //const nullifiersSet = await semaphoreContract.nullifiers_set
-    //debugger
-
-    const iface = new ethers.utils.Interface(mixerContract.interface.abi)
-    const funcInterface = iface.functions.mix
-    const callData = funcInterface.encode([depositProof])
-
     const etcdAddress = config.get('backend.etcd.host') + ':' +
         config.get('backend.etcd.port')
 
+    // TODO: handle error where etcd isn't running
     const locker = new Locker({
         address: etcdAddress,
     })
 
     // Acquire a lock on the hot wallet address
-    const lock = await locker.lock(signer.address)
+    const lock = await locker.lock(
+        signer.address,
+        config.get('backend.etcd.lockTime'),
+    )
+
+    // Use the preBroadcastVerify view function to verify the inputs
+    const preBroadcastValid = await semaphoreContract.preBroadcastVerify(
+        depositProof.a,
+        depositProof.b,
+        depositProof.c,
+        depositProof.input,
+        '0x' + signalHash.toString(16),
+    )
+
+    if (!preBroadcastValid) {
+
+        // Release the lock
+        await lock.unlock()
+
+        const errorMsg = 'the proof is invalid according to preBroadcastVerify()'
+        throw {
+            code: errors.errorCodes.BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID,
+            message: errorMsg,
+            data: errors.genError(
+                errors.MixerErrorNames.BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID,
+                errorMsg,
+            )
+        }
+    }
 
     // Get the latest nonce
     const nonce = await provider.getTransactionCount(signer.address)
+
+    const iface = new ethers.utils.Interface(mixerContract.interface.abi)
+    const funcInterface = iface.functions.mix
+    const callData = funcInterface.encode([depositProof])
 
     const unsignedTx = {
         to: mixerContract.address,

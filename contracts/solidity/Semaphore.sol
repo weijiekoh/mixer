@@ -81,7 +81,7 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         return false;
     }
 
-    function preBroadcastVerification (
+    function preBroadcastVerify (
         uint[2] a,
         uint[2][2] b,
         uint[2] c,
@@ -117,7 +117,7 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         uint256 signal_hash = uint256(sha256(signal)) >> 8;
 
         // Check and verify the proof and inputs
-        require(preBroadcastVerification(a, b, c, input, signal_hash));
+        require(preBroadcastVerify(a, b, c, input, signal_hash));
 
         insert(signal_tree_index, signal_hash);
         nullifiers_set[input[1]] = true;

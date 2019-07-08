@@ -2,7 +2,6 @@ import * as crypto from 'crypto'
 import * as circomlib from 'circomlib'
 import * as snarkjs from 'snarkjs'
 import * as ethers from 'ethers'
-const blake2 = require('blakejs')
 const eddsa = circomlib.eddsa
 const bigInt = snarkjs.bigInt
 
@@ -10,7 +9,7 @@ import MemStorage from './memStorage'
 const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
 const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
 
-import { convertWitness, prove, cutDownBits, beBuff2int} from './utils'
+import { convertWitness, prove, beBuff2int } from './utils'
 
 type EddsaPrivateKey = Buffer
 type EddsaPublicKey = BigInt[]
@@ -61,17 +60,6 @@ const genIdentityCommitment = (
         bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
         bigInt(identityNullifier)
     ])
-    //const ints = [
-        //bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
-        //bigInt(identityNullifier),
-    //]
-
-    //const buf = Buffer.concat(ints.map(x => x.leInt2Buff(32)))
-
-    //return cutDownBits(
-        //beBuff2int(Buffer.from(blake2.blake2sHex(buf), 'hex')),
-        //253,
-    //)
 }
 
 const genPubKey = (privKey: EddsaPrivateKey) => {

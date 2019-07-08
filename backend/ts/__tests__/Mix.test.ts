@@ -19,26 +19,27 @@ const OPTS = {
 const validProof = {
     signal: '0xe706109ba6c5dedbbdde0e5ee5672dac00865ad1b0dd0e96e19bd51f67989a8d',
     a: [
-        '0x16a016665c6c9e1c9f7c31e8d15da7a13422cfe9d34033385029ec1f63d64ee',
-        "0x2c8901269cf94c9750bf6a483d435cdb8208fb2e6c33c95a2075898f87680ca1",
+        '0x579ce307effc91b23ecabe0a55f825cf4a1ab96df8441481ef25a7efc0fae30',
+        '0x22070bc0aaa193c3138218d617df009ceeccae9c3cb3ec73317ede47b4c07b17',
+
     ],
     b: [
         [
-            "0x2595acb7d68899af526d68aa5b683ac962eb1d0c8a7d5580f8a18ce52eb3a0d6",
-            "0x518f333664a3ea1abe4d23515df938e355b3d27fa6b990e93a8f79e1add08f8"
+            '0x1c93418aa3337eeec9ba6f6c4e56cecb488e7e9bc3ccb74743c6dc247be4115',
+            '0x244d23c0d0ccac80d5cc74bdb58667dbf022ca50112b24d9c040e1889cc35edd'
         ],
         [
-            "0xbe59983d803d70060d5da420d85ec1a2acc8e3cb2e47841389da642ceb3633d",
-            "0x29bb878c7daf8f253b05a34dc93ad8a758cec8a6b629bbaaa9962a6cb20df8c3",
+            '0x649ada79066e1a5822cad3686b30469c62c67675338c65960524f5baea9cfea',
+            '0xbf663bb918e1091e160275138a534ceeb42618ab3657b6ba35a46f3a0c947c'
         ],
     ],
     c: [
-        "0x20a91d3bd0ff84d1da10136ac8aabd432efa6413feb9b290168e9faeb6f2560b",
-        "0x1cc765e992f5a708bd07e7da5232ba6322ff4b7b705f8798ae132806a84d299a",
+        '0x24c964db0fe35a8ff60ae870fe61a56e68ca0c25b60c807dac7b2c4ba76c5f66',
+        '0xa1e3a1f968730240f5775fef0bd2e54948dd3ef107a8d2b346906b3347d69ab',
     ],
     input: [
-        '0x16f1c8223e3533940ab092e11a8bda201868fce34405a09215f49828967b9ef3',
-        '0xf13fadb946e1c807b2a98d48aa8f234ba95bb42a04413cfb80bd61911d0c959',
+        '0x2955829eb3a89f06e17df3a5e8730ff8530ebbbcde2b9decc9938a470cc6ca44',
+        '0xb9bac86a108a68a587b36863c9e33021576318428d1b6d2d3e8eff45389a5ce',
         '0xc0573451aef54b8e518c1a22734a2d90a0659ffcfb2bcf5bc1d228d024544f',
         deployedAddresses.Mixer,
         deployedAddresses.Mixer,
@@ -96,9 +97,6 @@ describe('Relayer', () => {
         server = app.listen(PORT)
     })
 
-    // TODO: test for BACKEND_MIX_NULLIFIER_ALREADY_SET
-    // TODO: test for BACKEND_MIX_ROOT_NOT_FOUND
-
     test('rejects a proof where the schema is invalid', async () => {
         const resp = await post(1, 'mixer_mix', schemaInvalidProof)
 
@@ -136,6 +134,8 @@ describe('Relayer', () => {
     })
 
     test('accepts a valid proof', async () => {
+        // TODO: make a deposit here to test mix()
+        // first, make a deposit
         const resp = await post(1, 'mixer_mix', validProof)
 
         expect(resp.data.result.txHash).toMatch(/^0x[a-fA-F0-9]{40}/)

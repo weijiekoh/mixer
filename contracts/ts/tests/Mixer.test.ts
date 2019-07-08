@@ -334,6 +334,13 @@ describe('Mixer', () => {
 
             const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
 
+            //console.log(signal)
+            //console.log(proof.pi_a.map((x) => '0x' + x.toString(16)))
+            //console.log(proof.pi_b.map((b) => b.map((x) => '0x' + x.toString(16))))
+            //console.log(proof.pi_c.map((x) => '0x' + x.toString(16)))
+            //console.log(publicSignals.map((x) => '0x' + x.toString(16)))
+            //console.log(feeAmt.toHexString())
+
             // Wait till the transaction is mined
             const receipt = await mixerContract.verboseWaitForTransaction(mixTx)
 

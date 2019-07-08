@@ -16,3 +16,4 @@ backend:
   etcd:
     host: "localhost"
     port: 2379
+    lockTime: 7000
