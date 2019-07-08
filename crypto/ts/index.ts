@@ -37,7 +37,6 @@ const genIdentityNullifier = (
     return bigInt(snarkjs.bigInt.leBuff2int(randomBytes))
 }
 
-
 const pedersenHash = (ints: snarkjs.bigInt[]) => {
     const p = circomlib.babyJub.unpackPoint(
         circomlib.pedersenHash.hash(
