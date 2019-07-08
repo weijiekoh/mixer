@@ -38,22 +38,40 @@ const genIdentityNullifier = (
     return bigInt(snarkjs.bigInt.leBuff2int(randomBytes))
 }
 
+
+const pedersenHash = (ints: snarkjs.bigInt[]) => {
+    const p = circomlib.babyJub.unpackPoint(
+        circomlib.pedersenHash.hash(
+            Buffer.concat(
+             ints.map(x => x.leInt2Buff(32))
+            )
+        )
+    )
+
+    return bigInt(p[0])
+}
+
+// The identity commitment is the hash of the public key and the identity nullifier
 const genIdentityCommitment = (
     identityNullifier: BigInt,
     pubKey: EddsaPublicKey,
 ) => {
-    // The identity commitment is the hash of the public key and the identity nullifier
-    const ints = [
+
+    return pedersenHash([
         bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
-        bigInt(identityNullifier),
-    ]
+        bigInt(identityNullifier)
+    ])
+    //const ints = [
+        //bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
+        //bigInt(identityNullifier),
+    //]
 
-    const buf = Buffer.concat(ints.map(x => x.leInt2Buff(32)))
+    //const buf = Buffer.concat(ints.map(x => x.leInt2Buff(32)))
 
-    return cutDownBits(
-        beBuff2int(Buffer.from(blake2.blake2sHex(buf), 'hex')),
-        253,
-    )
+    //return cutDownBits(
+        //beBuff2int(Buffer.from(blake2.blake2sHex(buf), 'hex')),
+        //253,
+    //)
 }
 
 const genPubKey = (privKey: EddsaPrivateKey) => {

@@ -7,7 +7,7 @@ const echo = async ({ message }) => {
     } else {
         const errorMsg = 'the message param cannot be blank'
         throw {
-            code: errors.errorCodes.ECHO_MSG_BLANK,
+            code: errors.errorCodes.BACKEND_ECHO_MSG_BLANK,
             message: errorMsg,
             data: errors.genError(
                 errors.MixerErrorNames.BACKEND_ECHO_MSG_BLANK,

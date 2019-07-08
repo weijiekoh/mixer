@@ -16,7 +16,7 @@
     "ethers": "^4.0.32",
     "snarkjs": "^0.1.13",
     "websnark": "git+https://github.com/iden3/websnark.git",
-    "zkp-sbmtjs": "^0.3.0"
+    "zkp-sbmtjs": "^0.3.1"
   },
   "devDependencies": {}
 }

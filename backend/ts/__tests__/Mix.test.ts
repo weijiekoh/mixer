@@ -56,9 +56,18 @@ signalInvalidProof.signal = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 const signalHashInvalidProof = JSON.parse(JSON.stringify(validProof))
 signalHashInvalidProof.input[2] = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
 
+// deep copy and make both the signal and the signal hash invalid
 const signalAndSignalHashInvalidProof = JSON.parse(JSON.stringify(validProof))
 signalAndSignalHashInvalidProof.signal = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 signalAndSignalHashInvalidProof.input[2] = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+
+// deep copy and make the broadcaster's address invalid
+const broadcasterAddressInvalidProof = JSON.parse(JSON.stringify(validProof))
+broadcasterAddressInvalidProof.input[4] = '0x0000000000000000000000000000000000000000'
+
+// deep copy and make the external nullifier invalid
+const externalNullifierInvalidProof = JSON.parse(JSON.stringify(validProof))
+externalNullifierInvalidProof.input[3] = '0x0000000000000000000000000000000000000000'
 
 const schemaInvalidProof = {
     signal: 'INVALID<<<<<<<<<<<<<<<<<<<<<<<<<<<<<',
@@ -87,6 +96,9 @@ describe('Relayer', () => {
         server = app.listen(PORT)
     })
 
+    // TODO: test for BACKEND_MIX_NULLIFIER_ALREADY_SET
+    // TODO: test for BACKEND_MIX_ROOT_NOT_FOUND
+
     test('rejects a proof where the schema is invalid', async () => {
         const resp = await post(1, 'mixer_mix', schemaInvalidProof)
 
@@ -96,23 +108,34 @@ describe('Relayer', () => {
     test('rejects a proof where the signal is invalid', async () => {
         const resp = await post(1, 'mixer_mix', signalInvalidProof)
 
-        expect(resp.data.error.code).toEqual(errors.errorCodes.MIX_SIGNAL_INVALID)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_SIGNAL_INVALID)
     })
 
     test('rejects a proof where the signal hash is invalid', async () => {
         const resp = await post(1, 'mixer_mix', signalHashInvalidProof)
 
-        expect(resp.data.error.code).toEqual(errors.errorCodes.MIX_SIGNAL_HASH_INVALID)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_SIGNAL_HASH_INVALID)
     })
 
     test('rejects a proof where both the signal and the signal hash are invalid', async () => {
         const resp = await post(1, 'mixer_mix', signalAndSignalHashInvalidProof)
 
-        expect(resp.data.error.code).toEqual(errors.errorCodes.MIX_SIGNAL_AND_SIGNAL_HASH_INVALID)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_SIGNAL_AND_SIGNAL_HASH_INVALID)
+    })
+
+    test('rejects a proof where the external nullifier is invalid', async () => {
+        const resp = await post(1, 'mixer_mix', externalNullifierInvalidProof)
+
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID)
+    })
+
+    test('rejects a proof where the broadcaster\'s address is invalid', async () => {
+        const resp = await post(1, 'mixer_mix', broadcasterAddressInvalidProof)
+
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID)
     })
 
     test('accepts a valid proof', async () => {
-
         const resp = await post(1, 'mixer_mix', validProof)
 
         expect(resp.data.result.txHash).toMatch(/^0x[a-fA-F0-9]{40}/)

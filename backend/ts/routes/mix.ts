@@ -10,6 +10,7 @@ import {
 } from 'mixer-crypto'
 import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
+const deployedAddresses = require('../deployedAddresses.json')
 
 const verificationKey = require('@mixer-backend/verification_key.json')
 
@@ -22,8 +23,6 @@ const verificationKey = require('@mixer-backend/verification_key.json')
     //address recipientAddress;
     //uint256 fee;
 //}
-
-const deployedAddresses = require('../deployedAddresses.json')
 
 interface DepositProof {
     signal: string
@@ -44,6 +43,33 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     const publicInputs = depositProof.input.map(bigInt)
+    debugger
+
+    // verify the external nullifier
+    if (deployedAddresses.Mixer !== depositProof.input[3]) {
+        const errorMsg = 'the external nullifier in the input is invalid'
+        throw {
+            code: errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID,
+            message: errorMsg,
+            data: errors.genError(
+                errors.MixerErrorNames.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID,
+                errorMsg,
+            )
+        }
+    }
+
+    // verify the broadcaster's address
+    if (deployedAddresses.Mixer !== depositProof.input[4]) {
+        const errorMsg = 'the broadcaster\'s address in the input is invalid'
+        throw {
+            code: errors.errorCodes.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
+            message: errorMsg,
+            data: errors.genError(
+                errors.MixerErrorNames.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
+                errorMsg,
+            )
+        }
+    }
 
     // verify the signal off-chain
     const { signalHash, signal } = genSignalAndSignalHash(
@@ -58,7 +84,7 @@ const mix = async (depositProof: DepositProof) => {
     if (signalHashInvalid && !signalInvalid) {
         const errorMsg = 'the signal hash in the input is invalid'
         throw {
-            code: errors.errorCodes.MIX_SIGNAL_HASH_INVALID,
+            code: errors.errorCodes.BACKEND_MIX_SIGNAL_HASH_INVALID,
             message: errorMsg,
             data: errors.genError(
                 errors.MixerErrorNames.BACKEND_MIX_SIGNAL_HASH_INVALID,
@@ -70,7 +96,7 @@ const mix = async (depositProof: DepositProof) => {
     if (!signalHashInvalid && signalInvalid) {
         const errorMsg = 'the signal param is invalid'
         throw {
-            code: errors.errorCodes.MIX_SIGNAL_INVALID,
+            code: errors.errorCodes.BACKEND_MIX_SIGNAL_INVALID,
             message: errorMsg,
             data: errors.genError(
                 errors.MixerErrorNames.BACKEND_MIX_SIGNAL_INVALID,
@@ -82,7 +108,7 @@ const mix = async (depositProof: DepositProof) => {
     if (signalHashInvalid && signalInvalid) {
         const errorMsg = 'both the signal param and signal hash are invalid'
         throw {
-            code: errors.errorCodes.MIX_SIGNAL_AND_SIGNAL_HASH_INVALID,
+            code: errors.errorCodes.BACKEND_MIX_SIGNAL_AND_SIGNAL_HASH_INVALID,
             message: errorMsg,
             data: errors.genError(
                 errors.MixerErrorNames.BACKEND_MIX_SIGNAL_AND_SIGNAL_HASH_INVALID,
@@ -101,7 +127,7 @@ const mix = async (depositProof: DepositProof) => {
     if (!isValid) {
         const errorMsg = 'the snark proof is invalid'
         throw {
-            code: errors.errorCodes.mixProofInvalid,
+            code: errors.errorCodes.BACKEND_MIX_PROOF_INVALID,
             message: errorMsg,
             data: errors.genError(
                 errors.MixerErrorNames.BACKEND_MIX_PROOF_INVALID,
@@ -110,7 +136,8 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
-    // Check whether the contract has been deployed
+    // TODO: check whether the contract has been deployed
+    
     const provider = new ethers.providers.JsonRpcProvider(
         config.get('chain.url'),
         config.get('chain.chainId'),
@@ -126,6 +153,17 @@ const mix = async (depositProof: DepositProof) => {
         signer,
         deployedAddresses,
     )
+
+    const semaphoreContract = getContract(
+        'Semaphore',
+        signer,
+        deployedAddresses,
+    )
+
+    // TODO: check the nullifiers_set and tree roots
+    // Need to modify Semaphore to let this happen
+    //const nullifiersSet = await semaphoreContract.nullifiers_set
+    //debugger
 
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const funcInterface = iface.functions.mix
