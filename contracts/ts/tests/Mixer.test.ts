@@ -1,3 +1,4 @@
+// Make Typescript happy
 declare var assert: any
 
 const fs = require('fs');
@@ -46,8 +47,6 @@ const feeAmt = ethers.utils.parseEther(
 
 const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
-
-
 
 const contractsPath = path.join(
     __dirname,
@@ -110,6 +109,7 @@ let mixerContract
 let semaphoreContract
 let externalNullifier : string
 let broadcasterAddress: string
+
 describe('Mixer', () => {
 
     const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
