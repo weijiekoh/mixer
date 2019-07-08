@@ -67,6 +67,45 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         root_history[current_root_index++ % root_history_size] = tree_roots[id_tree_index];
     }
 
+    function hasNullifier(uint n) public view returns (bool) {
+        return nullifiers_set[n];
+    }
+
+    function isInRootHistory(uint n) public view returns (bool) {
+        for (uint8 i = 0; i < root_history_size; i++) {
+            if (root_history[i] == n) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function preBroadcastVerification (
+        uint[2] a,
+        uint[2][2] b,
+        uint[2] c,
+        uint[5] input,
+        uint256 signal_hash
+    ) public view returns (bool) {
+
+        bool correctInputs = 
+            hasNullifier(input[1]) == false &&
+            signal_hash == input[2] &&
+            external_nullifier == input[3] &&
+            address(input[4]) == msg.sender &&
+            verifyProof(a, b, c, input);
+
+        if (!correctInputs) {
+            return false;
+        } else {
+            return isInRootHistory(input[0]);
+        }
+
+        // not sure if the above is more efficient than the following:
+        //return correctInputs && isInRootHistory(input[0]);
+    }
+
     function broadcastSignal(
         bytes memory signal,
         uint[2] a,
@@ -74,27 +113,26 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         uint[2] c,
         uint[5] input // (root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address)
     ) public {
-
+        //uint256 start_gas = gasleft();
         uint256 signal_hash = uint256(sha256(signal)) >> 8;
-        require(signal_hash == input[2]);
-        require(external_nullifier == input[3]);
-        require(verifyProof(a, b, c, input));
-        require(nullifiers_set[input[1]] == false);
-        address broadcaster = address(input[4]);
-        require(broadcaster == msg.sender);
 
-        bool found_root = false;
-        for (uint8 i = 0; i < root_history_size; i++) {
-            if (root_history[i] == input[0]) {
-                found_root = true;
-                break;
-            }
-        }
-        require(found_root);
+        // Check and verify the proof and inputs
+        require(preBroadcastVerification(a, b, c, input, signal_hash));
 
         insert(signal_tree_index, signal_hash);
         nullifiers_set[input[1]] = true;
         emit SignalBroadcast(signal, input[1], external_nullifier);
+
+        //uint256 gas_price = gas_price_max;
+        //if (tx.gasprice < gas_price) {
+          //gas_price = tx.gasprice;
+        //}
+        //uint256 gas_used = start_gas - gasleft();
+
+        //// pay back gas: 21000 constant cost + gas used + reward
+        ////require((msg.sender).send((21000 + gas_used)*tx.gasprice + reward));
+        //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
+        ////require(msg.sender.send(1 wei));
     }
 
     function roots(uint8 tree_index) public view returns (uint256 root) {
