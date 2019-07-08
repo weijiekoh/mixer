@@ -2,6 +2,7 @@
 config/*-prod.yaml
 config/*-prod.yml
 
+verification_key.json
 **/build
 utils/build
 contracts/.privateKeys.json
