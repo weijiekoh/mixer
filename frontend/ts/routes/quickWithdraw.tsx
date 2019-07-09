@@ -169,7 +169,6 @@ export default () => {
             const provingKey = new Uint8Array(
                 await (await fetch('/build/proving_key.bin')).arrayBuffer()
             )
-            
 
             progress('Downloading verifying key')
 
