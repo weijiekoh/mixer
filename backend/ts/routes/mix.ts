@@ -34,18 +34,15 @@ interface DepositProof {
     fee: string
 }
 
-const mix = async (depositProof: DepositProof) => {
-    // convert proof and public inputs to bigInts
-    const proof = {
-        pi_a: [...depositProof.a.map(bigInt), bigInt(1)],
-        pi_b: [...depositProof.b.map((b) => b.map(bigInt)), [bigInt(1), bigInt(0)]],
-        pi_c: [...depositProof.c.map(bigInt), bigInt(1)],
-    }
+const areEqualAddresses = (a: string, b: string) => {
+    return a.toLowerCase() === b.toLowerCase()
+}
 
+const mix = async (depositProof: DepositProof) => {
     const publicInputs = depositProof.input.map(bigInt)
 
     // verify the external nullifier
-    if (deployedAddresses.Mixer !== depositProof.input[3]) {
+    if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[3])) {
         const errorMsg = 'the external nullifier in the input is invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID,
@@ -58,7 +55,7 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     // verify the broadcaster's address
-    if (deployedAddresses.Mixer !== depositProof.input[4]) {
+    if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[4])) {
         const errorMsg = 'the broadcaster\'s address in the input is invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
@@ -114,6 +111,25 @@ const mix = async (depositProof: DepositProof) => {
                 errorMsg,
             )
         }
+    }
+
+    // convert proof and public inputs to bigInts
+    // this is only for the off-chain verification
+    // be careful with the ordering of depositProof.b
+    const proof = {
+        pi_a: [...depositProof.a.map(bigInt), bigInt(1)],
+        pi_b: [
+            [
+                bigInt(depositProof.b[0][1]),
+                bigInt(depositProof.b[0][0]),
+            ],
+            [
+                bigInt(depositProof.b[1][1]),
+                bigInt(depositProof.b[1][0]),
+            ],
+            [1, 0].map(bigInt),
+        ],
+        pi_c: [...depositProof.c.map(bigInt), bigInt(1)],
     }
 
     // verify the snark off-chain
@@ -173,21 +189,18 @@ const mix = async (depositProof: DepositProof) => {
         config.get('backend.etcd.lockTime'),
     )
 
-    // Use the preBroadcastVerify view function to verify the inputs
-    const preBroadcastValid = await semaphoreContract.preBroadcastVerify(
-        depositProof.a,
-        depositProof.b,
-        depositProof.c,
+    // Use the preBroadcastCheck view function to checks some inputs
+    const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
         depositProof.input,
         '0x' + signalHash.toString(16),
     )
 
-    if (!preBroadcastValid) {
+    if (!preBroadcastChecked) {
 
         // Release the lock
         await lock.unlock()
 
-        const errorMsg = 'the proof is invalid according to preBroadcastVerify()'
+        const errorMsg = 'the proof is invalid according to pre-broadcast checks'
         throw {
             code: errors.errorCodes.BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID,
             message: errorMsg,
@@ -220,7 +233,7 @@ const mix = async (depositProof: DepositProof) => {
     const tx = provider.sendTransaction(signedData)
 
     // Release the lock so other running instances of this function can
-    // get the nonce and send a tx
+    // get the nonce and send their own tx
     await lock.unlock()
 
     tx.then((_) => {

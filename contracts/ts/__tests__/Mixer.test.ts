@@ -1,13 +1,11 @@
 // Make Typescript happy
 declare var assert: any
+require('events').EventEmitter.defaultMaxListeners = 0
 
 const fs = require('fs');
 const path = require('path');
 import * as etherlime from 'etherlime-lib'
-import * as snarkjs from 'snarkjs'
 import * as ethers from 'ethers'
-
-import * as del from 'del'
 
 import { config, sleep } from 'mixer-utils'
 import {
@@ -19,6 +17,7 @@ import {
     genIdentityNullifier,
     genEddsaKeyPair,
     genMsg,
+    genCircuit,
     signMsg,
     verifySignature,
     genSignalAndSignalHash,
@@ -223,7 +222,7 @@ describe('Mixer', () => {
             fs.readFileSync(path.join(__dirname, circuitPath)).toString()
         )
 
-        const circuit = new snarkjs.Circuit(cirDef)
+        const circuit = genCircuit(cirDef)
 
         const identity = identities[users[0]]
         const operatorAddress = accounts[0].address
@@ -331,6 +330,16 @@ describe('Mixer', () => {
 
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
             owedFeesBefore = await mixerContract.getFeesOwedToOperator()
+
+            // check some inputs using preBroadcastCheck()
+            const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
+                //proof.pi_a.slice(0, 2).map((x) => x.toString()),
+                //proof.pi_b.slice(0, 2).map((x) => x.map((y) => y.toString())),
+                //proof.pi_c.slice(0, 2).map((x) => x.toString()),
+                publicSignals.map((x) => x.toString()),
+                signalHash.toString(),
+            )
+            assert.isTrue(preBroadcastChecked)
 
             const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
 

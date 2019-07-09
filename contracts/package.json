@@ -5,8 +5,8 @@
   "main": "build/index.js",
   "scripts": {
     "build": "./scripts/buildSolidity.sh && tsc",
-    "test": "etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
-    "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 60000",
+    "test": "etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 90000",
+    "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/tests/Mixer.test.js --skip-compilation --timeout 90000",
     "watch": "tsc --watch",
     "deploy": "NODE_ENV=local-dev ./scripts/deploy.sh",
     "ganache": "./scripts/runGanache.sh"
@@ -17,23 +17,20 @@
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "argparse": "^1.0.10",
+    "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "etherlime": "^2.1.2",
     "etherlime-lib": "^1.1.0",
     "ganache-cli": "^6.4.4",
-    "openzeppelin-solidity": "^1.11.0",
+    "ethers": "^4.0.32",
     "solc": "^0.4.25",
     "truffle-artifactor": "^4.0.10",
     "zkp-sbmtjs": "^0.3.0",
     "mixer-utils": "1.0.0"
   },
   "dependencies": {
-    "blakejs": "^1.1.0",
-    "circom": "0.0.27",
-    "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "config": "^3.1.0",
-    "del": "^4.1.1",
+    "openzeppelin-solidity": "^1.11.0",
     "mixer-crypto": "1.0.0",
-    "snarkjs": "^0.1.13",
-    "websnark": "git+https://github.com/iden3/websnark.git"
+    "mixer-utils": "1.0.0"
   }
 }

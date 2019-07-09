@@ -72,38 +72,28 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
     }
 
     function isInRootHistory(uint n) public view returns (bool) {
-        for (uint8 i = 0; i < root_history_size; i++) {
+        bool found = false;
+        for (uint8 i = 0; i < root_history.length; i++) {
             if (root_history[i] == n) {
-                return true;
+                found = true;
+                break;
             }
         }
 
-        return false;
+        return found;
     }
 
-    function preBroadcastVerify (
-        uint[2] a,
-        uint[2][2] b,
-        uint[2] c,
+    function preBroadcastCheck (
         uint[5] input,
         uint256 signal_hash
     ) public view returns (bool) {
+        // TODO: figure out why verifyProof() causes an invalid opcode error if
+        // called outside of mix()
 
-        bool correctInputs = 
-            hasNullifier(input[1]) == false &&
+        return hasNullifier(input[1]) == false &&
             signal_hash == input[2] &&
             external_nullifier == input[3] &&
-            address(input[4]) == msg.sender &&
-            verifyProof(a, b, c, input);
-
-        if (!correctInputs) {
-            return false;
-        } else {
-            return isInRootHistory(input[0]);
-        }
-
-        // not sure if the above is more efficient than the following:
-        //return correctInputs && isInRootHistory(input[0]);
+            isInRootHistory(input[0]);
     }
 
     function broadcastSignal(
@@ -116,8 +106,14 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
         //uint256 start_gas = gasleft();
         uint256 signal_hash = uint256(sha256(signal)) >> 8;
 
-        // Check and verify the proof and inputs
-        require(preBroadcastVerify(a, b, c, input, signal_hash));
+        // Verify the broadcaster address
+        require(address(input[4]) == msg.sender);
+
+        // Check the inputs
+        require(preBroadcastCheck(input, signal_hash) == true);
+
+        // Verify the proof
+        require(verifyProof(a, b, c, input));
 
         insert(signal_tree_index, signal_hash);
         nullifiers_set[input[1]] = true;

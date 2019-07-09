@@ -37,6 +37,20 @@ const genIdentityNullifier = (
     return bigInt(snarkjs.bigInt.leBuff2int(randomBytes))
 }
 
+const genCircuit = (cirDef: any) => {
+    return new snarkjs.Circuit(cirDef)
+}
+
+const genTree = async (leaves: snarkjs.bigInt[]) => {
+    const tree = setupTree()
+
+    for (let i=0; i<leaves.length; i++) {
+        await tree.update(i, leaves[i])
+    }
+
+    return tree
+}
+
 const pedersenHash = (ints: snarkjs.bigInt[]) => {
     const p = circomlib.babyJub.unpackPoint(
         circomlib.pedersenHash.hash(
@@ -220,6 +234,8 @@ export {
     genRandomBuffer,
     genIdentityCommitment,
     genIdentityNullifier,
+    genCircuit,
+    genTree,
     EddsaPrivateKey,
     EddsaPublicKey,
     SnarkProvingKey,
