@@ -124,7 +124,7 @@ describe('Backend API', () => {
         const resp = await post(1, 'mixer_echo', { message: '' })
 
         expect(resp.status).toEqual(200)
-        expect(resp.data.error.code).toEqual(errors.errorCodes.ECHO_MSG_BLANK)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_ECHO_MSG_BLANK)
         expect(resp.data.error.data.name).toEqual('BACKEND_ECHO_MSG_BLANK')
     })
 
