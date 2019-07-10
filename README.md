@@ -1,23 +1,39 @@
 # Minimal Ethereum Mixer
 
-This is the monorepo for all code and documentation for a minimal Ethereum
-mixer. It allows you to cryptographically break the link between a source and
-destination address for ETH transfers. It does this via zero-knowledge proofs
-which let withdrawals occur securely without revealing the original address
-which made a deposit. It relies on a centralised broadcaster server, but the
-system is non-custodial and trustless.
+This is the monorepo for all code and documentation for a noncustodial Ethereum
+mixer. A mixer moves Ether from one address to another in a way that nobody,
+except the sender, knows with full certainty the destination address. This
+mixer lets senders deposit fixed amounts of Ether into a contract, and when the
+anonymity set is large enough, anonymously submit zero-knowledge proofs which
+show that the submitter had previously made a deposit, thus authorising the
+contract to release funds to the recipient. As a transaction relayer pays the
+gas of this transaction, there is no certain on-chain connection between the
+sender and recipient. Although this relayer is centralised, the mixer is
+noncustodial and no third party can exit with users' funds.
 
-A technical specification can be found
+A technical specification of the mixer can be found
 [here](https://hackmd.io/qlKORn5MSOes1WtsEznu_g).
 
-## Getting started
+## Getting started for local development and testing
 
 These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
 
-We recommend [`nvm`](https://github.com/nvm-sh/nvm) to manage your Node
+### Requirements
+
+- Node v11.14.0.
+      - We recommend [`nvm`](https://github.com/nvm-sh/nvm) to manage your Node
 installation.
 
-First, install `npx` if you haven't already:
+- [`etcd`](https://github.com/etcd-io/etcd).
+    - We assume that the `etcd` binary is in your `$PATH`.
+
+- Python 3
+    - This is to run a simple HTTP server to serve static zk-SNARK circuit and
+      key files to the frontend.
+
+### Setting up
+
+Install `npx` if you haven't already:
 
 ```bash
 npm install -g npx
@@ -58,11 +74,48 @@ Install dependencies and build the source code:
 <!--npx lerna bootstrap && \-->
 <!--SOLC=/path/to/solc-0.4.25 npx lerna run build-->
 <!--```-->
+
 ```bash
 npm i && \
 npx lerna bootstrap && \
 npx lerna run build
 ```
+
+In a new terminal, run Ganche:
+
+```bash
+cd contracts && \
+./scripts/runGanache.sh
+```
+
+In another terminal, run `etcd`:
+
+```bash
+etcd
+```
+
+In another terminal, run the relayer server:;
+
+```bash
+cd backend && \
+npm run server
+```
+
+In another terminal, launch the frontend:
+
+```bash
+cd frontend && \
+npm run watch
+```
+
+Finally, launch a HTTP server to serve the zk-SNARK content:
+
+```bash
+cd semaphore/semaphorejs/build && \
+python3 -m http.server
+```
+
+You can now run the frontend at http://127.0.0.1:1234.
 
 ## Full documentation
 
