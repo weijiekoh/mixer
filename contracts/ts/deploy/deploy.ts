@@ -3,7 +3,7 @@ import * as argparse from 'argparse'
 import * as fs from 'fs' 
 import * as path from 'path'
 import * as etherlime from 'etherlime-lib'
-import { config } from 'mixer-utils'
+import { config } from 'mixer-config'
 import { genAccounts } from '../accounts'
 
 const deploy = async (deployer: any, compiledContracts: string) => {

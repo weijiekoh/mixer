@@ -2,7 +2,8 @@ import { createApp } from '../index'
 const Koa = require('koa')
 import axios from 'axios'
 import * as JsonRpc from '../jsonRpc'
-import { config, errors } from 'mixer-utils'
+import { config } from 'mixer-config'
+import * as errors from '../errors'
 import { post } from './utils'
 
 const PORT = config.get('backend.port')
@@ -13,7 +14,6 @@ const OPTS = {
         'Content-Type': 'application/json',
     }
 }
-
 
 let server
 

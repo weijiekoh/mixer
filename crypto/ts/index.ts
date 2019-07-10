@@ -121,6 +121,29 @@ const signMsg = (
     return eddsa.signMiMCSponge(privKey, msg)
 }
 
+const genSignedMsg = (
+    privKey: EddsaPrivateKey,
+    externalNullifier: string,
+    signalHash: BigInt,
+    broadcasterAddress: string,
+) => {
+    const msg = genMsg(externalNullifier, signalHash, broadcasterAddress)
+
+    return {
+        msg,
+        signature: signMsg(privKey, msg),
+    }
+}
+
+const genPathElementsAndIndex = async (tree, identityCommitment) => {
+    const leafIndex = await tree.element_index(identityCommitment)
+    const identityPath = await tree.path(leafIndex)
+    const identityPathElements = identityPath.path_elements
+    const identityPathIndex = identityPath.path_index
+    return { identityPathElements, identityPathIndex }
+
+}
+
 const verifySignature = (
     msg: BigInt,
     signature: BigInt,
@@ -242,7 +265,9 @@ export {
     SnarkVerifyingKey,
     genMsg,
     signMsg,
+    genSignedMsg,
     verifySignature,
+    genPathElementsAndIndex,
     genSignalAndSignalHash,
     genWitness,
     extractWitnessRoot,

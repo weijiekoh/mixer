@@ -1,6 +1,7 @@
 require('module-alias/register')
 import * as ethers from 'ethers'
-import { config, errors } from 'mixer-utils'
+import * as errors from '../errors'
+import { config } from 'mixer-config'
 import { getContract } from 'mixer-contracts'
 import {
     verifyProof,
@@ -10,7 +11,7 @@ import {
 } from 'mixer-crypto'
 import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
-const deployedAddresses = require('../deployedAddresses.json')
+const deployedAddresses = require('@mixer-backend/deployedAddresses.json')
 
 const verificationKey = require('@mixer-backend/verification_key.json')
 

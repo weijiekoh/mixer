@@ -4,7 +4,8 @@
     "backend",
     "contracts",
     "crypto",
-    "utils"
+    "utils",
+    "config"
   ],
   "version": "0.0.1",
   "npmClient": "npm"

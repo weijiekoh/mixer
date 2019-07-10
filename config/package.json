@@ -1,17 +1,17 @@
 {
-    "name": "mixer-utils",
+    "name": "mixer-config",
     "version": "1.0.0",
     "description": "",
     "main": "build/index.js",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && node build/export-config.js > ../frontend/ts/exported_config.json",
         "watch": "tsc --watch"
     },
     "author": "Koh Wei Jie",
     "license": "GPL-3.0-or-later",
     "dependencies": {
-        "path": "^0.12.7",
-        "verror": "^1.10.0"
+        "config": "^3.1.0",
+        "path": "^0.12.7"
     },
     "devDependencies": {
         "@types/node": "^12.0.10"

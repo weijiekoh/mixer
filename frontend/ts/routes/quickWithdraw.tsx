@@ -12,10 +12,13 @@ const deployedAddresses = require('../deployedAddresses.json')
 import { 
     genMsg,
     signMsg,
+    genSignedMsg,
     genPubKey,
-    setupTree,
+    genTree,
+    genCircuit,
     genWitness,
     genIdentityCommitment,
+    genPathElementsAndIndex,
     genSignalAndSignalHash,
     genPublicSignals,
     verifySignature,
@@ -25,20 +28,18 @@ import {
     verifyProof,
 } from 'mixer-crypto'
 
-enum ErrorCodes {
-    INVALID_WITNESS,
-    INVALID_PROOF,
-    INVALID_SIG,
-    TX_FAILED,
-}
+import { ErrorCodes } from '../errors'
 
 import {
     getItems,
     updateWithdrawTxHash,
 } from '../storage'
 
-const mixAmtEth = config.mixAmtEth
-const operatorFeeEth = config.operatorFeeEth
+import {
+    mixAmtEth,
+    operatorFeeEth,
+    feeAmtWei,
+} from '../utils/ethAmts'
 
 const noItems = (
     <div className='section'>
@@ -72,10 +73,10 @@ export default () => {
         setProofGenProgress(line)
     }
 
+    // Just use the last stored item
     const identityStored = items[items.length - 1]
 
-    let withdrawTxHash = identityStored.withdrawTxHash
-
+    const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
 
     const handleWithdrawBtnClick = async () => {
@@ -92,9 +93,6 @@ export default () => {
         }
 
         try {
-            const feeAmt = ethers.utils.parseEther(
-                (parseFloat(operatorFeeEth) * 2).toString()
-            )
             const mixerContract = await getMixerContract(context)
 
             const broadcasterAddress = mixerContract.address
@@ -102,11 +100,7 @@ export default () => {
             progress('Downloading leaves...')
             const leaves = await mixerContract.getLeaves()
 
-            const tree = setupTree()
-
-            for (let i=0; i<leaves.length; i++) {
-                await tree.update(i, leaves[i].toString())
-            }
+            const tree = await genTree(leaves)
 
             const pubKey = genPubKey(identityStored.privKey)
 
@@ -115,23 +109,21 @@ export default () => {
                 pubKey,
             )
 
-            const leafIndex = await tree.element_index(identityCommitment)
-
-            const identityPath = await tree.path(leafIndex)
-            const identityPathElements = identityPath.path_elements
-            const identityPathIndex = identityPath.path_index
-
-            const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmt,
+            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
+                tree,
+                identityCommitment,
             )
 
-            const msg = genMsg(
+            const { signalHash, signal } = genSignalAndSignalHash(
+                recipientAddress, broadcasterAddress, feeAmtWei,
+            )
+
+            const { signature, msg } = genSignedMsg(
+                identityStored.privKey,
                 externalNullifier,
                 signalHash, 
                 broadcasterAddress,
             )
-
-            const signature = signMsg(identityStored.privKey, msg)
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
                 throw {
@@ -142,7 +134,7 @@ export default () => {
             progress('Downloading circuit...')
 
             const cirDef = await (await fetch('/build/circuit.json')).json()
-            const circuit = new snarkjs.Circuit(cirDef)
+            const circuit = genCircuit(cirDef)
 
             const w = genWitness(
                 circuit,
@@ -197,7 +189,7 @@ export default () => {
                 proof,
                 publicSignals,
                 recipientAddress,
-                feeAmt
+                feeAmtWei,
             )
 
             const receipt = await tx.wait()

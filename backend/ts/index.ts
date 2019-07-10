@@ -5,7 +5,7 @@ import * as bodyParser from 'koa-bodyparser'
 
 import * as helmet from 'koa-helmet'
 
-import { config } from 'mixer-utils'
+import { config } from 'mixer-config'
 import { router } from './routes'
 import * as JsonRpc from './jsonRpc'
 

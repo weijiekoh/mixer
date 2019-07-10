@@ -7,7 +7,9 @@ const path = require('path');
 import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
-import { config, sleep } from 'mixer-utils'
+import { config } from 'mixer-config'
+
+import { sleep } from 'mixer-utils'
 import {
     SnarkProvingKey,
     SnarkVerifyingKey,

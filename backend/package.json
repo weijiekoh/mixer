@@ -26,7 +26,9 @@
     "koa-helmet": "^4.2.0",
     "mixer-contracts": "1.0.0",
     "mixer-crypto": "1.0.0",
+    "mixer-config": "1.0.0",
     "mixer-utils": "1.0.0",
+    "mixer-config": "1.0.0",
     "module-alias": "^2.2.0",
     "node-etcd-lock": "^0.3.3",
     "verror": "^1.10.0"

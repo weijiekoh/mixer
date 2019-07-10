@@ -5,7 +5,9 @@ import axios from 'axios'
 import * as JsonRpc from '../jsonRpc'
 const fs = require('fs');
 const path = require('path');
-import { config, sleep, errors } from 'mixer-utils'
+import { sleep, genMixParams } from 'mixer-utils'
+import { config } from 'mixer-config'
+import * as errors from '../errors'
 import { getContract } from 'mixer-contracts'
 import {
     bigInt,
@@ -20,7 +22,8 @@ import {
     genIdentityCommitment,
     genSignalAndSignalHash,
 } from 'mixer-crypto'
-import { post, genMixParams } from './utils'
+
+import { post } from './utils'
 
 jest.setTimeout(90000)
 
@@ -28,6 +31,7 @@ const deployedAddresses = require('../deployedAddresses.json')
 
 const PORT = config.get('backend.port')
 const HOST = config.get('backend.host') + ':' + PORT.toString()
+const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 
 const OPTS = {
     headers: {
@@ -184,8 +188,6 @@ describe('the mixer_mix API call', () => {
     })
 
     test('accepts a valid proof and credits the recipient', async () => {
-        const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
-
         // generate an identityCommitment
         const identity = genIdentity()
         const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
@@ -284,7 +286,6 @@ describe('the mixer_mix API call', () => {
     })
 
     afterAll(async () => {
-        await sleep(2000)
         server.close()
     })
 })

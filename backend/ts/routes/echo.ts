@@ -1,4 +1,4 @@
-import { errors } from 'mixer-utils'
+import * as errors from '../errors'
 import { genValidator } from './utils'
 
 const echo = async ({ message }) => {

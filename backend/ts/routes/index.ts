@@ -4,7 +4,7 @@ import * as Ajv from 'ajv'
 import echoRoute from './echo'
 import mixRoute from './mix'
 import backendStatusRoute from './status'
-import { config } from 'mixer-utils'
+import { config } from 'mixer-config'
 
 interface Route {
     reqValidator: Ajv.ValidateFunction
