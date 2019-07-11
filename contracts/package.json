@@ -5,8 +5,10 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc && ./scripts/buildSolidity.sh",
-    "test": "etherlime test --path=build/__tests__/Mixer.test.js --skip-compilation --timeout 90000",
-    "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__/Mixer.test.js --skip-compilation --timeout 90000",
+    "test": "etherlime test --path=build/__tests__ --skip-compilation --timeout 90000",
+    "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__ --skip-compilation --timeout 90000",
+    "test-mix": "etherlime test --path=build/__tests__/Mixer.test.ts --skip-compilation --timeout 90000",
+    "test-mix-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__/Mixer.test.ts --skip-compilation --timeout 90000",
     "watch": "tsc --watch",
     "deploy": "NODE_ENV=local-dev ./scripts/deploy.sh",
     "ganache": "./scripts/runGanache.sh"
