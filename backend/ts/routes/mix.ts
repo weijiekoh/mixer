@@ -213,7 +213,7 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     // Get the latest nonce
-    const nonce = await provider.getTransactionCount(signer.address)
+    const nonce = await provider.getTransactionCount(signer.address, 'pending')
 
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const funcInterface = iface.functions.mix

@@ -1,3 +1,4 @@
+require('module-alias/register')
 import { createApp } from '../index'
 const Koa = require('koa')
 import * as ethers from 'ethers'
@@ -27,7 +28,7 @@ import { post } from './utils'
 
 jest.setTimeout(90000)
 
-const deployedAddresses = require('../deployedAddresses.json')
+const deployedAddresses = require('@mixer-backend/deployedAddresses.json')
 
 const PORT = config.get('backend.port')
 const HOST = config.get('backend.host') + ':' + PORT.toString()

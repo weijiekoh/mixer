@@ -7,8 +7,8 @@
     "watch": "tsc --watch",
     "server": "node build/index.js",
     "server-debug": "node --inspect-brk build/index.js",
-    "test": "NODE_ENV=local-dev jest --testPathPattern=__tests__/Server.test.ts",
-    "test-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest --testPathPattern=__tests__/Server.test.ts",
+    "test": "NODE_ENV=local-dev jest --testPathPattern=__tests__/",
+    "test-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest --testPathPattern=__tests__/",
     "test-mix": "NODE_ENV=local-dev jest --testPathPattern=__tests__/Mix.test.ts",
     "test-mix-debug": "NODE_ENV=local-dev node --inspect-brk ./node_modules/.bin/jest --testPathPattern=__tests__/Mix.test.ts",
     "build": "./scripts/copyVerifyingKey.sh && tsc"
