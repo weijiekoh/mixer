@@ -4,7 +4,7 @@ This is the monorepo for all code and documentation for a noncustodial Ethereum
 mixer. A mixer moves Ether from one address to another in a way that nobody,
 except the sender, knows with full certainty the destination address. This
 mixer lets senders deposit fixed amounts of Ether into a contract, and when the
-anonymity set is large enough, anonymously submit zero-knowledge proofs which
+pool is large enough, anonymously submit zero-knowledge proofs which
 show that the submitter had previously made a deposit, thus authorising the
 contract to release funds to the recipient. As a transaction relayer pays the
 gas of this transaction, there is no certain on-chain connection between the
@@ -22,16 +22,20 @@ These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
 
 - Node v11.14.0.
       - We recommend [`nvm`](https://github.com/nvm-sh/nvm) to manage your Node
-installation.
+        installation.
 
-- [`etcd`](https://github.com/etcd-io/etcd).
-    - We assume that the `etcd` binary is in your `$PATH`.
+- [`etcd`](https://github.com/etcd-io/etcd) v3.3.13
+    - The relayer server requires an `etcd` server to lock the account nonce of
+      its hot wallet.
 
 - Python 3
-    - This is to run a simple HTTP server to serve static zk-SNARK circuit and
-      key files to the frontend.
+    - The built-in
+      [`http.server`](https://docs.python.org/3/library/http.server.html) is
+      helpful during local development to serve static zk-SNARK circuit and key
+      files to the frontend via HTTP. You may choose any other method to do
+      this.
 
-### Setting up
+### Local development
 
 Install `npx` if you haven't already:
 
@@ -77,8 +81,8 @@ Install dependencies and build the source code:
 
 ```bash
 npm i && \
-npx lerna bootstrap && \
-npx lerna run build
+npm run bootstrap && \
+npm run build
 ```
 
 In a new terminal, run Ganche:
@@ -94,7 +98,7 @@ In another terminal, run `etcd`:
 etcd
 ```
 
-In another terminal, run the relayer server:;
+In another terminal, run the relayer server:
 
 ```bash
 cd backend && \
@@ -116,6 +120,44 @@ python3 -m http.server
 ```
 
 You can now run the frontend at http://127.0.0.1:1234.
+
+To automatically compile the TypeScript source code whenever you make a change,
+first make sure that you have `npm run watch` running in a terminal. For
+instance, while you edit `backend/ts/index.ts`, have a terminal open at
+`backend/` and then run `npm run watch`.
+
+## Testing
+
+### Unit tests
+
+#### Contracts
+
+In the `mixer/contracts/` directory:
+
+1. Run `npm run build` if you haven't built the source already
+2. Run `npm run testnet`
+3. In a separate terminal: `npm run test`
+
+#### Backend
+
+In the `mixer/contracts/` directory:
+
+1. Run `npm run build` if you haven't built the source already
+2. Run `npm run testnet`
+3. Run `npm run deploy`
+
+In the `mixer/backend/` directory:
+
+1. Run `npm run build` if you haven't built the source already
+2. Run `npm run test`
+
+### Integration tests
+
+### CircleCI
+
+## Deployment
+
+<!--This project uses Docker to handle -->
 
 ## Full documentation
 
