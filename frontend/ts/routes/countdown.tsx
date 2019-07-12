@@ -1,5 +1,6 @@
 import React, { Component, useState } from 'react'
 import ReactDOM from 'react-dom'
+import { useTimer } from 'react-timer-hook'
 import * as ethers from 'ethers'
 import { useWeb3Context } from 'web3-react'
 import { Redirect } from 'react-router-dom'
@@ -40,7 +41,11 @@ import {
 } from '../utils/ethAmts'
 
 const config = require('../exported_config')
+
+const pathPrefix = '/' + config.frontend.snarks.pathPrefix
 const isDev = config.env === 'local-dev'
+const endsAtMidnight = config.frontend.countdown.endsAtMidnight
+const endsAfterSecs = config.frontend.countdown.endsAfterSecs
 
 const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -52,13 +57,20 @@ export default () => {
     }
 
     const [txHash, setTxHash] = useState('')
+    const [withdrawStarted, setWithdrawStarted] = useState(false)
+    const [countdownDone, setCountdownDone] = useState(false)
+    const [proofGenProgress, setProofGenProgress] = useState('')
+
+    const progress = (line: string) => {
+        setProofGenProgress(line)
+    }
 
     const identityStored = getFirstUnwithdrawn()
     const recipientAddress = identityStored.recipientAddress
 
     const context = useWeb3Context()
 
-    const withdraw = async () => {
+    const withdraw = async (context) => {
         const provider = new ethers.providers.Web3Provider(
             await context.connector.getProvider(config.chain.chainId),
         )
@@ -71,7 +83,7 @@ export default () => {
         const broadcasterAddress = mixerContract.address
         const externalNullifier = mixerContract.address
 
-        console.log('Downloading leaves...')
+        progress('Downloading leaves...')
 
         const leaves = await mixerContract.getLeaves()
 
@@ -107,8 +119,8 @@ export default () => {
             }
         }
 
-        console.log('Downloading circuit...')
-        const cirDef = await (await fetch('/build/circuit.json')).json()
+        progress('Downloading circuit...')
+        const cirDef = await (await fetch(pathPrefix + '/circuit.json')).json()
         const circuit = genCircuit(cirDef)
 
         const w = genWitness(
@@ -131,17 +143,17 @@ export default () => {
             }
         }
 
-        console.log('Downloading proving key...')
+        progress('Downloading proving key...')
         const provingKey = new Uint8Array(
-            await (await fetch('/build/proving_key.bin')).arrayBuffer()
+            await (await fetch(pathPrefix + '/proving_key.bin')).arrayBuffer()
         )
 
-        console.log('Downloading verification key...')
+        progress('Downloading verification key...')
         const verifyingKey = unstringifyBigInts(
-            await (await fetch('/build/verification_key.json')).json()
+            await (await fetch(pathPrefix + '/verification_key.json')).json()
         )
 
-        console.log('Generating proof...')
+        progress('Generating proof...')
         const proof = await genProof(w, provingKey.buffer)
 
         const publicSignals = genPublicSignals(w, circuit)
@@ -169,7 +181,7 @@ export default () => {
             params,
         }
 
-        console.log('Sending JSON-RPC call to the relayer...')
+        progress('Sending JSON-RPC call to the relayer...')
         console.log(request)
 
         const response = await fetch(
@@ -185,6 +197,7 @@ export default () => {
 
         const responseJson = await response.json()
         if (responseJson.result) {
+            progress('')
             setTxHash(responseJson.result.txHash)
             console.log(responseJson.result.txHash)
             updateWithdrawTxHash(identityStored, responseJson.result.txHash)
@@ -192,33 +205,44 @@ export default () => {
             await sleep(4000)
 
             const recipientBalanceAfter = await provider.getBalance(recipientAddress)
-        console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
+            console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
         } else {
             throw responseJson.error
         }
     }
     
-    const utcMidnight = new Date()
-    utcMidnight.setUTCHours(0, 0, 0, 0)
-    utcMidnight.setDate(utcMidnight.getDate() + 1)
+    let expiryTimestamp = new Date()
 
-    const [currentTime, setCurrentTime] = useState(new Date())
+    // For production: countdown to midnight
+    if (endsAtMidnight) {
+        expiryTimestamp.setUTCHours(0, 0, 0, 0)
+        expiryTimestamp.setDate(expiryTimestamp.getDate() + 1)
+    } else {
+        // For dev only - just countdown 5s
+        expiryTimestamp = new Date()
+        expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + endsAfterSecs)
+    }
 
-    // update the clock every `interval` ms
-    const interval = 5000
-    setTimeout(function update(){
-        const time = new Date()
-        setCurrentTime(time)
-        setTimeout(update, interval)
-    }, interval)
+    const timer = useTimer({
+        expiryTimestamp,
+        onExpire: () => {
+            if (!countdownDone) {
+                setCountdownDone(true)
+            }
+        }
+    })
 
-    const secsLeft = Math.floor((utcMidnight.getTime() - currentTime.getTime()) / 1000)
-    const secsMod = secsLeft % 60
+    if (!withdrawStarted &&
+        countdownDone &&
+        context &&
+        timer.days + timer.hours + timer.minutes + timer.seconds === 0
+    ) {
+        setWithdrawStarted(true)
+        withdraw(context)
+    }
 
-    const hoursMod = Math.floor(secsLeft / 3600)
-    const minsMod = Math.floor((secsLeft - (hoursMod * 3600))/ 60)
-
-    const timeStr = `${utcMidnight.getDate()} ${months[utcMidnight.getMonth()]} ${utcMidnight.getFullYear()}, ${utcMidnight.toLocaleTimeString()}`
+    const timeStr = `${expiryTimestamp.getDate()} ${months[expiryTimestamp.getMonth()]} ` +
+        `${expiryTimestamp.getFullYear()}, ${expiryTimestamp.toLocaleTimeString()}`
 
     return (
         <div className='section'>
@@ -234,22 +258,45 @@ export default () => {
                                 {recipientAddress} 
                             </pre>
                             <br />
-                            will receive {mixAmtEth - operatorFeeEth * 2} ETH shortly
-                            after { timeStr }.
+                            will receive {mixAmtEth - operatorFeeEth * 2} ETH 
+                            { countdownDone ?
+                                <span>
+                                    &nbsp; soon.
+                                  { proofGenProgress.length > 0 && 
+                                      <div className="has-text-left">
+                                          <br />
+                                          <pre>
+                                              {proofGenProgress}
+                                          </pre>
+                                      </div>
+                                  }
+                                </span>
+                                :
+                                <span>
+                                    &nbsp; shortly after { timeStr }.
+                                </span>
+                            }
                         </h2>
 
-                        { isDev && txHash.length === 0 &&
+                        {/*
+                        { isDev && !withdrawStarted && txHash.length === 0 &&
                             <span
-                                onClick={withdraw}
+                                onClick={() => {
+                                    if (!withdrawStarted) {
+                                        setWithdrawStarted(true)
+                                        withdraw(context)
+                                    }
+                                }}
                                 className='button is-warning'>
                                 Dev only: tell the relayer to withdraw now
                             </span>
                         }
+                      */}
 
                         { isDev && txHash.length > 0 &&
                             <article className="message is-success">
                                 <div className="message-body">
-                                    Withdrawal successful. <a
+                                    Mix successful. <a
                                         href={"https://etherscan.io/tx/" + txHash}
                                         target="_blank">View on Etherscan.
                                     </a>
@@ -288,7 +335,7 @@ export default () => {
             <div className="columns has-text-centered">
                 <div className='column is-12'>
                         <h2 className='subtitle'>
-                            {hoursMod}h {minsMod}m {secsMod}s left
+                            {timer.hours}h {timer.minutes}m {timer.seconds}s left
                         </h2>
                     <h2 className='subtitle'>
                         Please keep this tab open.

@@ -26,6 +26,7 @@
         "react": "^16.8.6",
         "react-dom": "^16.8.6",
         "react-router-dom": "^5.0.1",
+        "react-timer-hook": "^1.1.6",
         "snarkjs": "^0.1.13",
         "web3-react": "^5.0.4"
     },
