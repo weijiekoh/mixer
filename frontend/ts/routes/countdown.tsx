@@ -218,7 +218,8 @@ export default () => {
     let expiryTimestamp = new Date(identityStored.timestamp)
 
     // For production: countdown to midnight
-    if (endsAtMidnight) {
+    //if (endsAtMidnight) {
+    if (true) {
         expiryTimestamp.setUTCHours(0, 0, 0, 0)
         expiryTimestamp.setDate(expiryTimestamp.getDate() + 1)
     } else {
@@ -239,9 +240,12 @@ export default () => {
         }
     })
 
+    const midnightOver = new Date() > expiryTimestamp
+
     if (!withdrawStarted &&
         countdownDone &&
         context &&
+        !midnightOver &&
         timer.days + timer.hours + timer.minutes + timer.seconds === 0
     ) {
         setWithdrawStarted(true)
@@ -261,10 +265,16 @@ export default () => {
                                 {recipientAddress} 
                             </pre>
                             <br />
-                            will receive {mixAmtEth - operatorFeeEth * 2} ETH 
+                            can receive {mixAmtEth - operatorFeeEth * 2} ETH 
                             { countdownDone ?
                                 <span>
-                                    &nbsp; soon.
+                                    { (txHash.length === 0 && midnightOver) ?
+                                        <span>.</span>
+                                        :
+                                        <span>
+                                            &nbsp; soon.
+                                        </span>
+                                    }
                                   { proofGenProgress.length > 0 && 
                                       <div className="has-text-left">
                                           <br />
@@ -281,8 +291,7 @@ export default () => {
                             }
                         </h2>
 
-                        {/*
-                        { isDev && !withdrawStarted && txHash.length === 0 &&
+                        { txHash.length === 0 && midnightOver && !withdrawStarted &&
                             <span
                                 onClick={() => {
                                     if (!withdrawStarted) {
@@ -291,10 +300,9 @@ export default () => {
                                     }
                                 }}
                                 className='button is-warning'>
-                                Dev only: tell the relayer to withdraw now
+                                Mix 0.1 ETH now
                             </span>
                         }
-                      */}
 
                         { isDev && txHash.length > 0 &&
                             <article className="message is-success">
@@ -311,40 +319,44 @@ export default () => {
                 </div>
             </div>
 
-            <div className='columns'>
-                <div className='column is-3 is-offset-3'>
-                    <p>
-                        To maximise anonymity, we only allow users to
-                        submit mix requests after midnight UTC.
-                        For example, if you deposit your funds at 3pm UTC
-                        on 1 Jan, this page will wait till midnight 2 Jan
-                        UTC to mix the funds.
-                    </p>
-                </div>
+            { !(txHash.length === 0 && midnightOver) &&
+                <div className='columns'>
+                    <div className='column is-3 is-offset-3'>
+                        <p>
+                            To maximise anonymity, we only allow users to
+                            submit mix requests after midnight UTC.
+                            For example, if you deposit your funds at 3pm UTC
+                            on 1 Jan, this page will wait till midnight 2 Jan
+                            UTC to mix the funds.
+                        </p>
+                    </div>
 
-                <div className='column is-3 is-offset-1'>
-                    <p>
-                        Please keep this tab open to automatically mix the
-                        funds. If you close this tab, you can reopen it any
-                        time, and withdraw it at a click of a button, even
-                        after midnight UTC.
-                    </p>
-                </div>
+                    <div className='column is-3 is-offset-1'>
+                        <p>
+                            Please keep this tab open to automatically mix the
+                            funds. If you close this tab, you can reopen it any
+                            time, and withdraw it at a click of a button, even
+                            after midnight UTC.
+                        </p>
+                    </div>
 
-            </div>
+                </div>
+            }
 
             <br />
 
-            <div className="columns has-text-centered">
-                <div className='column is-12'>
+            { txHash.length > 0 || !midnightOver &&
+                <div className="columns has-text-centered">
+                    <div className='column is-12'>
+                            <h2 className='subtitle'>
+                                {timer.hours}h {timer.minutes}m {timer.seconds}s left
+                            </h2>
                         <h2 className='subtitle'>
-                            {timer.hours}h {timer.minutes}m {timer.seconds}s left
+                            Please keep this tab open.
                         </h2>
-                    <h2 className='subtitle'>
-                        Please keep this tab open.
-                    </h2>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
     )
 }
