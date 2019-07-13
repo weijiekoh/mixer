@@ -1,0 +1,9 @@
+**/node_modules
+**/build
+**/*.log
+**/*.md
+**/.git
+contracts/compiled
+contracts/parity
+semaphore/docs
+semaphore/semaphorejs/blake2sdef.json

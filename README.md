@@ -72,6 +72,14 @@ discarded.
 <!--Take note of the filepath of `solc-0.4.25` as you will need to modify the next-->
 <!--command to use it.-->
 
+Install dependencies for the Semaphore submodule and compile its contracts:
+
+```bash
+cd semaphore/semaphorejs && \
+npm i && \
+npx truffle compile
+```
+
 Install dependencies and build the source code:
 
 <!--```bash-->
