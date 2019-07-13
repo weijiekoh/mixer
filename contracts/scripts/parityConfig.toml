@@ -11,6 +11,14 @@ no_download = true
 # Blockchain and settings will be stored in ~/parity.
 base_path = "~/parity"
 
+[rpc]
+disable = false
+port = 8545
+interface = "all"
+cors = ["all"]
+apis = ["web3", "eth", "pubsub", "net", "parity", "parity_pubsub", "traces", "rpc", "shh", "shh_pubsub"]
+hosts = ["all"]
+
 [account]
 # From: [0x627306090abab3a6e1400e9345bc60c78a8bef57,0xf17f52151ebef6c7334fad080c5704d77216b732,0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef,0x821aea9a577a9b44299b9c15c88cf3087f3b5544,0x0d1d4e623d10f9fba5db95830f7d3839406c6af2] you'll be able to send transactions without password.
 #unlock = ["0x627306090abab3a6e1400e9345bc60c78a8bef57", "0xf17f52151ebef6c7334fad080c5704d77216b732", "0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef", "0x821aea9a577a9b44299b9c15c88cf3087f3b5544", "0x0d1d4e623d10f9fba5db95830f7d3839406c6af2"]
