@@ -13,6 +13,8 @@ frontend/server.key
 contracts/.etherlime-store/
 contracts/compiled/
 contracts/.outputParameter
+contracts/scripts/parity
+
 frontend/dist/
 frontend/.cache/
 frontend/ts/abis

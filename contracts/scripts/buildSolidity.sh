@@ -5,6 +5,7 @@ echo 'Building contracts'
 
 # Delete old files
 rm -rf ../compiled/*
+rm -rf ../.etherlime-store
 
 # Copy the Semaphore contracts from the submodule into solidity/
 cp ../semaphore/semaphorejs/contracts/*.sol solidity/

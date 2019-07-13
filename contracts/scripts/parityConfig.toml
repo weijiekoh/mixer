@@ -1,0 +1,42 @@
+# This config should be placed in following path:
+#   ~/.local/share/io.parity.ethereum/config.toml
+
+[parity]
+# Local Development Chain
+chain = "TestChain"
+# No updates will be auto-installed
+auto_update = "none"
+# Disables auto downloading of new releases. Not recommended.
+no_download = true
+# Blockchain and settings will be stored in ~/parity.
+base_path = "~/parity"
+
+[account]
+# From: [0x627306090abab3a6e1400e9345bc60c78a8bef57,0xf17f52151ebef6c7334fad080c5704d77216b732,0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef,0x821aea9a577a9b44299b9c15c88cf3087f3b5544,0x0d1d4e623d10f9fba5db95830f7d3839406c6af2] you'll be able to send transactions without password.
+#unlock = ["0x627306090abab3a6e1400e9345bc60c78a8bef57", "0xf17f52151ebef6c7334fad080c5704d77216b732", "0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef", "0x821aea9a577a9b44299b9c15c88cf3087f3b5544", "0x0d1d4e623d10f9fba5db95830f7d3839406c6af2"]
+# Use drastically faster unlocking mode. This setting causes raw secrets to be stored unprotected in memory, so use with care.
+fast_unlock = true
+
+[websockets]
+# UI won't work and WebSockets server will be not available.
+disable = true
+
+[ipc]
+# You won't be able to use IPC to interact with Parity.
+disable = true
+
+[secretstore]
+# You won't be able to encrypt and decrypt secrets.
+disable = true
+
+[ipfs]
+# Enable IPFS-compatible HTTP API.
+enable = true
+
+[mining]
+# Prepare a block to seal even when there are no miners connected.
+force_sealing = true
+
+[snapshots]
+# Disables automatic periodic snapshots.
+disable_periodic = true

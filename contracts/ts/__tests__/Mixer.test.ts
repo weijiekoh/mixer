@@ -120,7 +120,7 @@ describe('Mixer', () => {
             chainId: config.get('chain.chainId'),
         },
     )
-    deployer.defaultOverrides = { gasLimit: 8800000 }
+    deployer.defaultOverrides = { gasLimit: 8000000 }
     deployer.setSigner(accounts[0])
 
     before(async () => {
