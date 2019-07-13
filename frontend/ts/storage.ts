@@ -15,6 +15,7 @@ interface IdentityStored {
     recipientAddress: string,
     depositTxHash: string,
     withdrawTxHash: string,
+    timestamp: number,
 }
 
 const localStorage = window.localStorage

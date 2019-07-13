@@ -57,6 +57,7 @@ export default () => {
     }
 
     const [txHash, setTxHash] = useState('')
+    const [firstLoadTime, setFirstLoadTime] = useState(new Date())
     const [withdrawStarted, setWithdrawStarted] = useState(false)
     const [countdownDone, setCountdownDone] = useState(false)
     const [proofGenProgress, setProofGenProgress] = useState('')
@@ -71,6 +72,9 @@ export default () => {
     const context = useWeb3Context()
 
     const withdraw = async (context) => {
+        if (!context.connector) {
+            return
+        }
         const provider = new ethers.providers.Web3Provider(
             await context.connector.getProvider(config.chain.chainId),
         )
@@ -211,17 +215,20 @@ export default () => {
         }
     }
     
-    let expiryTimestamp = new Date()
+    let expiryTimestamp = new Date(identityStored.timestamp)
 
     // For production: countdown to midnight
     if (endsAtMidnight) {
         expiryTimestamp.setUTCHours(0, 0, 0, 0)
         expiryTimestamp.setDate(expiryTimestamp.getDate() + 1)
     } else {
-        // For dev only - just countdown 5s
-        expiryTimestamp = new Date()
-        expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + endsAfterSecs)
+         //For dev only - just countdown 5s (+3s buffer for page load)
+        expiryTimestamp = new Date(firstLoadTime.getTime())
+        expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + endsAfterSecs + 3)
     }
+
+    const timeStr = `${expiryTimestamp.getDate()} ${months[expiryTimestamp.getMonth()]} ` +
+        `${expiryTimestamp.getFullYear()}, ${expiryTimestamp.toLocaleTimeString()}`
 
     const timer = useTimer({
         expiryTimestamp,
@@ -241,12 +248,8 @@ export default () => {
         withdraw(context)
     }
 
-    const timeStr = `${expiryTimestamp.getDate()} ${months[expiryTimestamp.getMonth()]} ` +
-        `${expiryTimestamp.getFullYear()}, ${expiryTimestamp.toLocaleTimeString()}`
-
     return (
         <div className='section'>
-
             <div className='columns has-text-centered'>
                 <div className='column is-8 is-offset-2'>
                     <div className='section'>
