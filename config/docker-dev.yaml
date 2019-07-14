@@ -8,6 +8,11 @@ chain:
   chainId: 1234
   mix:
     gasLimit: 8000000
+  deployedAddresses:
+    MiMC: '0x8CdaF0CD259887258Bc13a92C0a6dA92698644C0'
+    MultipleMerkleTree: '0xF12b5dd4EAD5F743C6BaA640B0216200e89B60Da'
+    Semaphore: '0x345cA3e014Aaf5dcA488057592ee47305D9B3e10'
+    Mixer: '0xf25186B5081Ff5cE73482AD761DB0eB0d25abfBF'
 
 backend:
   port: 3000

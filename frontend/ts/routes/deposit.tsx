@@ -4,8 +4,8 @@ import { Redirect } from 'react-router-dom'
 import * as ethers from 'ethers'
 import { Buffer } from 'buffer'
 import { useWeb3Context } from 'web3-react'
-const deployedAddresses = require('../deployedAddresses.json')
 const config = require('../exported_config')
+const deployedAddresses = config.chain.deployedAddresses
 import { TxButton, TxStatuses } from '../components/txButton'
 
 import {

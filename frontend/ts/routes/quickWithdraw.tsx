@@ -8,7 +8,8 @@ const config = require('../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
 import { quickWithdraw } from '../web3/quickWithdraw'
 import { getMixerContract, getSemaphoreContract } from '../web3/mixer'
-const deployedAddresses = require('../deployedAddresses.json')
+const deployedAddresses = config.chain.deployedAddresses
+
 import { 
     genMsg,
     signMsg,

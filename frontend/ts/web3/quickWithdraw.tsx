@@ -1,6 +1,5 @@
 import * as ethers from 'ethers'
 const mixerAbi = require('../abis/Mixer-abi.json')
-const deployedAddresses = require('../deployedAddresses.json')
 const config = require('../exported_config')
 import { getMixerContract } from './mixer'
 
