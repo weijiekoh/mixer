@@ -26,7 +26,6 @@
     "ethers": "^4.0.32",
     "solc": "^0.4.25",
     "truffle-artifactor": "^4.0.10",
-    "zkp-sbmtjs": "^0.3.0",
     "mixer-utils": "1.0.0"
   },
   "dependencies": {
