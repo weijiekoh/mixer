@@ -11,7 +11,7 @@ import {
 } from 'mixer-crypto'
 import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
-const deployedAddresses = require('@mixer-backend/deployedAddresses.json')
+const deployedAddresses = config.get('chain.deployedAddresses')
 
 const verificationKey = require('@mixer-backend/verification_key.json')
 
