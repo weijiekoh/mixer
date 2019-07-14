@@ -14,7 +14,7 @@ services:
       - "mixer-net"
 
     environment:
-      - NODE_ENV=docker_dev
+      - NODE_ENV=docker-dev
 
   mixer-testnet:
     container_name: mixer-testnet
@@ -29,7 +29,7 @@ services:
       - "mixer-net"
 
     environment:
-      - NODE_ENV=docker_dev
+      - NODE_ENV=docker-dev
 
 networks:
   mixer-net:
