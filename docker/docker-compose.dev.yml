@@ -9,16 +9,19 @@ services:
 
     ports:
       - "3000:3000"
+
     networks:
       - "mixer-net"
 
   mixer-testnet:
     container_name: mixer-testnet
+
     build:
       context: ../contracts
-      dockerfile: ../contracts/Dockerfile
+
     ports:
       - "8575:8575"
+
     networks:
       - "mixer-net"
 
