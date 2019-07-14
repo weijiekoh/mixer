@@ -13,7 +13,7 @@ services:
       - "mixer-net"
 
   mixer-testnet:
-    container-name: mixer-testnet
+    container_name: mixer-testnet
     build:
       context: ../contracts
       dockerfile: ../contracts/Dockerfile
