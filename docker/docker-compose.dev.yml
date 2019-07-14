@@ -1,16 +1,26 @@
-version '3.7'
+version: '3.7'
 
-services:
+services: 
+  mixer-backend: 
+    container_name: mixer-backend
 
-  mixer-testnet:
-    container-name: mixer-testnet
     build:
-      context: ../contracts
-      dockerfile: ../contracts/Dockerfile
+      context: ../backend
+
     ports:
-      - "8575:8575"
+      - "3000:3000"
     networks:
       - "mixer-net"
+  #mixer-testnet:
+    #container-name: mixer-testnet
+    #build:
+      #context: ../contracts
+      #dockerfile: ../contracts/Dockerfile
+    #ports:
+      #- "8575:8575"
+    #networks:
+      #- "mixer-net"
+
 
 networks:
   mixer-net:

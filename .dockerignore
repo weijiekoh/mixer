@@ -3,6 +3,7 @@
 **/*.log
 **/*.md
 **/.git
+**/package-lock.json
 contracts/compiled
 contracts/parity
 semaphore/docs
