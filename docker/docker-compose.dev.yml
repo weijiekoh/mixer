@@ -30,6 +30,9 @@ services:
     environment:
       - NODE_ENV=docker-dev
 
+    secrets:
+      - privateKeysPath
+
   mixer-frontend:
     container_name: mixer-frontend
 
@@ -64,3 +67,7 @@ services:
 
 networks:
   mixer-net:
+
+secrets:
+  privateKeysPath:
+    file: "../../MIXER_SECRETS/privateKeys.json"

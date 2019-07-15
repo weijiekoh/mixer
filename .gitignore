@@ -4,6 +4,7 @@ config/*-prod.yml
 
 verification_key.json
 contracts/.privateKeys.json
+contracts/privateKeys.json
 
 **/build
 
