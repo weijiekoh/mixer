@@ -43,7 +43,7 @@ services:
       context: ../frontend
 
     ports:
-      - "8001:80"
+      - "80:8001"
 
     networks:
       - "mixer-net"
