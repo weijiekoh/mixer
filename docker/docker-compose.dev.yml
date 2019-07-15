@@ -43,10 +43,7 @@ services:
       context: ../frontend
 
     ports:
-      - target: 8001
-      - published: 80
-      - protocol: tcp
-      - mode: host
+      - "8001:80"
 
     networks:
       - "mixer-net"
