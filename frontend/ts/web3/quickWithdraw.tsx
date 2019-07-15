@@ -45,7 +45,7 @@ const quickWithdraw = async (
                 fee: feeAmt,
             },
             {
-                gasLimit: 2000000,
+                gasLimit: 8000000,
             }
         )
 

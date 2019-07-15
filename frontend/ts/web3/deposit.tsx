@@ -24,7 +24,7 @@ const deposit = async (
 
         const mixerContract = await getMixerContract(context)
 
-        const tx = await mixerContract.deposit(identityCommitment, { value: mixAmt })
+        const tx = await mixerContract.deposit(identityCommitment, { value: mixAmt, gasLimit: 8000000 })
         return tx
     }
 }
