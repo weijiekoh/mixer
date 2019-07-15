@@ -6,6 +6,6 @@ COPY --from=mixer-base /mixer /mixer
 
 WORKDIR /mixer/contracts
 
-RUN npm run deploy
+#RUN npm run deploy
 
 CMD ["npm", "run", "ganache"]
