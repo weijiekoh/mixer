@@ -66,12 +66,12 @@ export default () => {
             const minedTx = await deposit(context, identityCommitment, mixAmt)
             const receipt = await minedTx.wait()
 
-
             storeDeposit(identity, recipientAddress)
             updateDepositTxStatus(identity, minedTx.hash)
             setTxStatus(TxStatuses.Mined)
 
         } catch (err) {
+            console.log(err)
             setTxStatus(TxStatuses.Err)
 
             if (

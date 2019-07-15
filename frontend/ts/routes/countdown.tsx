@@ -42,7 +42,6 @@ import {
 
 const config = require('../exported_config')
 
-const pathPrefix = '/' + config.frontend.snarks.pathPrefix
 const isDev = config.env === 'local-dev'
 const endsAtMidnight = config.frontend.countdown.endsAtMidnight
 const endsAfterSecs = config.frontend.countdown.endsAfterSecs
@@ -124,7 +123,7 @@ export default () => {
         }
 
         progress('Downloading circuit...')
-        const cirDef = await (await fetch(pathPrefix + '/circuit.json')).json()
+        const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
         const circuit = genCircuit(cirDef)
 
         const w = genWitness(
@@ -149,12 +148,12 @@ export default () => {
 
         progress('Downloading proving key...')
         const provingKey = new Uint8Array(
-            await (await fetch(pathPrefix + '/proving_key.bin')).arrayBuffer()
+            await (await fetch(config.frontend.snarks.paths.provingKey)).arrayBuffer()
         )
 
         progress('Downloading verification key...')
         const verifyingKey = unstringifyBigInts(
-            await (await fetch(pathPrefix + '/verification_key.json')).json()
+            await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
         )
 
         progress('Generating proof...')
@@ -216,16 +215,20 @@ export default () => {
     }
     
     let expiryTimestamp = new Date(identityStored.timestamp)
+    expiryTimestamp.setUTCHours(0, 0, 0, 0)
+    expiryTimestamp.setDate(expiryTimestamp.getDate() + 1)
 
-    // For production: countdown to midnight
-    //if (endsAtMidnight) {
-    if (true) {
-        expiryTimestamp.setUTCHours(0, 0, 0, 0)
-        expiryTimestamp.setDate(expiryTimestamp.getDate() + 1)
-    } else {
-         //For dev only - just countdown 5s (+3s buffer for page load)
-        expiryTimestamp = new Date(firstLoadTime.getTime())
-        expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + endsAfterSecs + 3)
+
+    // Whether the current time is greater than the expiry timestamp (i.e.
+    // UTC midnight 
+    const midnightOver = firstLoadTime > expiryTimestamp
+
+    // Dev only
+    if (!endsAtMidnight && !midnightOver) {
+        expiryTimestamp = new Date()
+        expiryTimestamp.setSeconds(
+            expiryTimestamp.getSeconds() + 5
+        )
     }
 
     const timeStr = `${expiryTimestamp.getDate()} ${months[expiryTimestamp.getMonth()]} ` +
@@ -239,8 +242,6 @@ export default () => {
             }
         }
     })
-
-    const midnightOver = new Date() > expiryTimestamp
 
     if (!withdrawStarted &&
         countdownDone &&
@@ -300,7 +301,7 @@ export default () => {
                                     }
                                 }}
                                 className='button is-warning'>
-                                Mix 0.1 ETH now
+                                Mix {mixAmtEth} ETH now
                             </span>
                         }
 

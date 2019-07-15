@@ -6,8 +6,11 @@ const eddsa = circomlib.eddsa
 const bigInt = snarkjs.bigInt
 
 import MemStorage from './memStorage'
-const MerkleTreeJs = require('zkp-sbmtjs/src/tree')
-const MimcSpongeHasher = require('zkp-sbmtjs/src/hasher/mimcsponge')
+
+// Don't import from zkp-sbmtjs to try to reduce build times
+// since it requires leveldb
+const MerkleTreeJs = require('./tree')
+const MimcSpongeHasher = require('./mimcsponge')
 
 import { convertWitness, prove, beBuff2int } from './utils'
 

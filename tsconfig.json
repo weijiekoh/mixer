@@ -2,6 +2,7 @@
     "compilerOptions": {
         "experimentalDecorators": true,
         "alwaysStrict": true,
+        "allowJs": true,
         "noImplicitAny": false,
         "forceConsistentCasingInFileNames": true,
         "noUnusedLocals": false,

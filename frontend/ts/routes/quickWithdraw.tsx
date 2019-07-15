@@ -134,7 +134,7 @@ export default () => {
 
             progress('Downloading circuit...')
 
-            const cirDef = await (await fetch('/build/circuit.json')).json()
+            const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             const w = genWitness(
@@ -160,13 +160,13 @@ export default () => {
             progress('Downloading proving key...')
 
             const provingKey = new Uint8Array(
-                await (await fetch('/build/proving_key.bin')).arrayBuffer()
+                await (await fetch(config.frontend.snarks.paths.provingKey)).arrayBuffer()
             )
 
             progress('Downloading verifying key')
 
             const verifyingKey = unstringifyBigInts(
-                await (await fetch('/build/verification_key.json')).json()
+                await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
             )
 
             progress('Generating proof')
@@ -182,7 +182,7 @@ export default () => {
                 }
             }
 
-            progress('Executing transaction')
+            progress('Performing transaction')
 
             const tx = await quickWithdraw(
                 context,

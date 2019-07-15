@@ -30,6 +30,10 @@ backend:
 frontend:
   snarks:
     pathPrefix: "build"
+    paths:
+      verificationKey: '/build/verification_key.json'
+      circuit: '/build/circuit.json'
+      provingKey: '/build/proving_key.bin'
   countdown:
     endsAtUtcMidnight: false
     endsAfterSecs: 5
