@@ -26,7 +26,10 @@ backend:
 
 frontend:
   snarks:
-    pathPrefix: "build"
+    paths:
+      verificationKey: "https://mixer-mvp.s3.us-east-2.amazonaws.com/verification_key.json"
+      circuit: "https://mixer-mvp.s3.us-east-2.amazonaws.com/circuit.json"
+      provingKey: "https://mixer-mvp.s3.us-east-2.amazonaws.com/proving_key.bin"
   countdown:
     endsAtUtcMidnight: false
     endsAfterSecs: 5
