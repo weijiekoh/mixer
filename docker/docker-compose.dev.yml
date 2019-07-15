@@ -56,14 +56,14 @@ services:
 
     image: jumanjiman/etcd
 
-  ports:
-    - "2379:2379"
+    ports:
+      - "2379:2379"
 
-  networks:
-    - "mixer-net"
+    networks:
+      - "mixer-net"
 
-  environment:
-    - NODE_ENV=docker-dev
+    environment:
+      - NODE_ENV=docker-dev
 
 networks:
   mixer-net:
