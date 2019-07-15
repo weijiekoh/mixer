@@ -15,6 +15,7 @@ contracts/.etherlime-store/
 contracts/compiled/
 contracts/.outputParameter
 frontend/dist/
+frontend/ts/exported_config.json
 frontend/.cache/
 frontend/ts/abis
 deployedAddresses.json

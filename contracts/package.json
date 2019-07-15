@@ -10,7 +10,7 @@
     "test-mix": "etherlime test --path=build/__tests__/Mixer.test.ts --skip-compilation --timeout 90000",
     "test-mix-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__/Mixer.test.ts --skip-compilation --timeout 90000",
     "watch": "tsc --watch",
-    "deploy": "NODE_ENV=local-dev ./scripts/deploy.sh",
+    "deploy": "./scripts/deploy.sh",
     "ganache": "./scripts/runGanache.sh"
   },
   "author": "Koh Wei Jie",

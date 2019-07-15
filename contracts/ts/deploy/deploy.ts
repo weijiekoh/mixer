@@ -45,11 +45,13 @@ const deploy = async (deployer: any, compiledContracts: string) => {
 
     console.log('Transferring ownership of Semaphore to Mixer')
     // @ts-ignore
-    await semaphoreContract.transferOwnership(mixerContract.contractAddress)
+    const tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
+    await tx.wait()
 
     console.log('Setting the external nullifier of the Semaphore contract')
     // @ts-ignore
     await mixerContract.setSemaphoreExternalNulllifier()
+    await tx.wait()
 
     return {
         mimcContract,
@@ -126,7 +128,11 @@ const main = async () => {
 }
 
 if (require.main === module) {
-    main()
+    try {
+        main()
+    } catch (err) {
+        console.error(err)
+    }
 }
 
 export { deploy }

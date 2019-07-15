@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { useWeb3Context, Connectors } from 'web3-react'
+const config = require('../exported_config')
+
+const networkName = config.frontend.supportedNetworkName
 
 const walletLearnUrl = 'https://ethereum.org/use/#_3-what-is-a-wallet' +
     '-and-which-one-should-i-use'
@@ -48,7 +51,7 @@ const WalletWidget = () => {
             return (
                 <p>
                     { circleIcon('warn') }
-                    Please connect to your local Ganache testnet.
+                    Please connect to your {networkName} testnet.
                 </p>
             )
         } else {

@@ -266,6 +266,7 @@ describe('the mixer_mix API call', () => {
         const resp = await post(1, 'mixer_mix', params)
         
         if (resp.data.error) {
+            console.log(params)
             console.error(resp.data.error)
         }
 

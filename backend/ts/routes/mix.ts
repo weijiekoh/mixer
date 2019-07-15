@@ -13,6 +13,14 @@ import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
 const deployedAddresses = config.get('chain.deployedAddresses')
 
+let hotWalletPrivKey
+
+if (config.get('env') === 'local-dev') {
+    hotWalletPrivKey = config.get('backend.hotWalletPrivKey')
+} else {
+    hotWalletPrivKey = require(config.get('backend.hotWalletPrivKeyPath')).privateKey
+}
+
 const verificationKey = require('@mixer-backend/verification_key.json')
 
 //struct DepositProof {
@@ -160,7 +168,7 @@ const mix = async (depositProof: DepositProof) => {
     )
 
     const signer = new ethers.Wallet(
-        config.get('backend.hotWalletPrivKey'),
+        hotWalletPrivKey,
         provider,
     )
 

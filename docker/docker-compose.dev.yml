@@ -15,6 +15,9 @@ services:
     environment:
       - NODE_ENV=docker-dev
 
+    secrets:
+      - hotWalletPrivKeyPath
+
   mixer-testnet:
     container_name: mixer-testnet
 
@@ -71,3 +74,6 @@ networks:
 secrets:
   privateKeysPath:
     file: "../../MIXER_SECRETS/privateKeys.json"
+
+  hotWalletPrivKeyPath:
+    file: "../../MIXER_SECRETS/hotWalletPrivKey.json"
