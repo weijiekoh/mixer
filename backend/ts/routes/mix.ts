@@ -1,4 +1,5 @@
 require('module-alias/register')
+import * as fs from 'fs'
 import * as ethers from 'ethers'
 import * as errors from '../errors'
 import { config } from 'mixer-config'
@@ -18,7 +19,9 @@ let hotWalletPrivKey
 if (config.get('env') === 'local-dev') {
     hotWalletPrivKey = config.get('backend.hotWalletPrivKey')
 } else {
-    hotWalletPrivKey = require(config.get('backend.hotWalletPrivKeyPath')).privateKey
+    hotWalletPrivKey = JSON.parse(
+        fs.readFileSync(config.get('backend.hotWalletPrivKeyPath'), 'utf-8')
+    ).privateKey
 }
 
 const verificationKey = require('@mixer-backend/verification_key.json')
