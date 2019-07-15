@@ -3,6 +3,9 @@ ARG NODE_VERSION=11.14.0
 FROM node:${NODE_VERSION}-stretch AS mixer-build
 WORKDIR /mixer
 
+ARG NODE_ENV
+ENV NODE_ENV=$NODE_ENV
+
 RUN npm i lerna -g
 COPY package.json lerna.json tsconfig.json /mixer/
 
