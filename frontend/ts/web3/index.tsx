@@ -3,7 +3,7 @@ const { InjectedConnector } = Connectors
 const config = require('../exported_config')
 
 const MetaMask = new InjectedConnector({
-    supportedNetworks: [config.frontend.supportedNetworkName]
+    supportedNetworks: [config.frontend.supportedNetwork]
 })
 
 export default { MetaMask }
