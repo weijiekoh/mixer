@@ -273,7 +273,7 @@ export default () => {
                                         <span>.</span>
                                         :
                                         <span>
-                                            &nbsp; soon.
+                                            {' '} soon.
                                         </span>
                                     }
                                   { proofGenProgress.length > 0 && 
@@ -287,7 +287,7 @@ export default () => {
                                 </span>
                                 :
                                 <span>
-                                    &nbsp; shortly after { timeStr }.
+                                    {' '} shortly after { timeStr }.
                                 </span>
                             }
                         </h2>
