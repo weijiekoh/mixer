@@ -4,16 +4,16 @@ mixAmtEth: "0.1"
 operatorFeeEth: "0.0005"
 
 chain:
-  url: "http://mixer-testnet:8545"
-  chainId: 1234
+  url: "https://kovan.infura.io/v3/5d37c494621a43558d77c90e368d4022"
+  chainId: 42
   mix:
     gasLimit: 8000000
   privateKeysPath: "/run/secrets/privateKeysPath"
   deployedAddresses:
-    MiMC: '0x8CdaF0CD259887258Bc13a92C0a6dA92698644C0'
-    MultipleMerkleTree: '0xF12b5dd4EAD5F743C6BaA640B0216200e89B60Da'
-    Semaphore: '0x345cA3e014Aaf5dcA488057592ee47305D9B3e10'
-    Mixer: '0xf25186B5081Ff5cE73482AD761DB0eB0d25abfBF'
+    MiMC: "0xA8Da3D8f5c959Ac76281E5BA417D2fBFB7911194"
+    MultipleMerkleTree: "0x8c27e86178336129fcf21c5d61a666cf8d66c59f"
+    Semaphore: "0x7ff3181a24a82e581099a6a8733dbb028debf7c7"
+    Mixer: "0xfb2bf70382a98c72d38bed63735ff5115ff243c6"
 
 backend:
   port: 3000
