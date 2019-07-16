@@ -44,7 +44,7 @@ const config = require('../exported_config')
 
 const isDev = config.env === 'local-dev'
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
-const endsAtMidnight = config.frontend.countdown.endsAtMidnight
+const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
 const endsAfterSecs = config.frontend.countdown.endsAfterSecs
 
 const months = [
