@@ -14,6 +14,9 @@ noncustodial and no third party can exit with users' funds.
 A technical specification of the mixer can be found
 [here](https://hackmd.io/qlKORn5MSOes1WtsEznu_g).
 
+This mixer is highly experimental and not yet audited. Do not use it to mix
+real funds yet.
+
 ## Getting started for local development and testing
 
 These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
