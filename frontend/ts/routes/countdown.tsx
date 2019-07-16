@@ -268,7 +268,7 @@ export default () => {
                             </pre>
                             <br />
                             can receive {mixAmtEth - operatorFeeEth * 2} ETH 
-                            { countdownDone ?
+                            { countdownDone || midnightOver ?
                                 <span>
                                     { (txHash.length === 0 && midnightOver) ?
                                         <span>.</span>
