@@ -18,23 +18,23 @@ services:
     secrets:
       - hotWalletPrivKeyPath
 
-  mixer-testnet:
-    container_name: mixer-testnet
+  #mixer-testnet:
+    #container_name: mixer-testnet
 
-    build:
-      context: ../contracts
+    #build:
+      #context: ../contracts
 
-    ports:
-      - "8575:8575"
+    #ports:
+      #- "8575:8575"
 
-    networks:
-      - "mixer-net"
+    #networks:
+      #- "mixer-net"
 
-    environment:
-      - NODE_ENV=docker-dev
+    #environment:
+      #- NODE_ENV=docker-dev
 
-    secrets:
-      - privateKeysPath
+    #secrets:
+      #- privateKeysPath
 
   mixer-frontend:
     container_name: mixer-frontend
