@@ -42,6 +42,8 @@ import {
     feeAmtWei,
 } from '../utils/ethAmts'
 
+const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
+
 const noItems = (
     <div className='section'>
         <div className='columns has-text-centered'>
@@ -295,7 +297,7 @@ export default () => {
                         <article className="message is-success">
                             <div className="message-body">
                                 Withdrawal successful. <a
-                                    href={"https://etherscan.io/tx/" + withdrawTxHash}
+                                    href={blockExplorerTxPrefix + withdrawTxHash}
                                     target="_blank">View on Etherscan.
                                 </a>
                             </div>

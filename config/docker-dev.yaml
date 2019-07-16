@@ -38,3 +38,4 @@ frontend:
     endsAfterSecs: 5
   supportedNetworkName: "Kovan"
   supportedNetwork: 42
+  blockExplorerTxPrefix: "https://kovan.etherscan.io/tx/"

@@ -43,6 +43,7 @@ import {
 const config = require('../exported_config')
 
 const isDev = config.env === 'local-dev'
+const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtMidnight
 const endsAfterSecs = config.frontend.countdown.endsAfterSecs
 
@@ -305,11 +306,11 @@ export default () => {
                             </span>
                         }
 
-                        { isDev && txHash.length > 0 &&
+                        { txHash.length > 0 &&
                             <article className="message is-success">
                                 <div className="message-body">
                                     Mix successful. <a
-                                        href={"https://etherscan.io/tx/" + txHash}
+                                        href={blockExplorerTxPrefix + txHash}
                                         target="_blank">View on Etherscan.
                                     </a>
                                 </div>
