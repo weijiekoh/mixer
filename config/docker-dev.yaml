@@ -27,12 +27,9 @@ backend:
 frontend:
   snarks:
     paths:
-      verificationKey: "https://mixer-mvp.s3.us-east-2.amazonaws.com/verification_key.json"
-      circuit: "https://mixer-mvp.s3.us-east-2.amazonaws.com/circuit.json"
-      provingKey: "https://mixer-mvp.s3.us-east-2.amazonaws.com/proving_key.bin"
-      #verificationKey: "http://localhost:8000/build/verification_key.json"
-      #circuit: "http://localhost:8000/build/circuit.json"
-      #provingKey: "http://localhost:8000/build/proving_key.bin"
+      verificationKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/verification_key.json'
+      provingKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/proving_key.bin'
+      circuit: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/circuit.json'
   countdown:
     endsAtUtcMidnight: true
     endsAfterSecs: 5
