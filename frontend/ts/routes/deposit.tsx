@@ -89,67 +89,83 @@ export default () => {
                 <div className='column is-12'>
                     <div className='section'>
                         <h2 className='subtitle'>
-                            MultiMix (working name) helps you hide your bags.
+                            MultiMix makes your Kovan ETH anonymous.
                         </h2>
-        </div>
-        <div className='section'>
-            <p>
-                {`You can mix ${mixAmtEth} ETH at a time.`}
-            </p>
-        <p>
-            {`The fee is ${operatorFeeEth * 2} ETH.`}
-        </p>
-        <p>
-            {`You can get back ${mixAmtEth - operatorFeeEth * 2} ETH at midnight, UTC.`}
-        </p>
-        </div>
 
-        <div className='column is-8 is-offset-2'>
-            <p>Recipient's address:</p>
-            <br />
-            <input
-                spellCheck={false}
-                className="input eth_address"
-                type="text"
-                placeholder="Recipient's ETH address" 
-                value={recipientAddress}
-                onChange={(e) => {
-                    setRecipientAddress(e.target.value)
-                }}
-            />
+                        <div className='column is-8 is-offset-2'>
+                            <p>
+                                MultiMix is an Ethereum mixer based on
+                                zero-knowledge proofs.
+                                It is highly experimental, likely insecure,
+                                and not yet audited. Do not use it to mix real
+                                funds yet.  Click <a
+                                    href="https://github.com/weijiekoh/mixer"
+                                    target="_blank">here</a> for more information.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className='section'>
+                        <p>
+                            {`You can mix ${mixAmtEth} ETH at a time.`}
+                        </p>
+                    <p>
+                        {`The fee is ${operatorFeeEth * 2} ETH.`}
+                    </p>
+                    <p>
+                        {`You can get back ${mixAmtEth - operatorFeeEth * 2} ETH at midnight, UTC.`}
+                    </p>
+                </div>
+
+                <div className='column is-8 is-offset-2'>
+                </div>
+
+                    <div className='column is-8 is-offset-2'>
+                        <p>Recipient's address:</p>
+                        <br />
+                        <input
+                            spellCheck={false}
+                            className="input eth_address"
+                            type="text"
+                            placeholder="Recipient's ETH address" 
+                            value={recipientAddress}
+                            onChange={(e) => {
+                                setRecipientAddress(e.target.value)
+                            }}
+                        />
+                    </div>
+
+                    <div className='section'>
+                        <TxButton
+                            onClick={handleDepositBtnClick}
+                            txStatus={txStatus}
+                            isDisabled={depositBtnDisabled}
+                            label={`Mix ${mixAmtEth} ETH`}
+                        />
+                        
+                        <br />
+                        <br />
+
+                        { txStatus === TxStatuses.Mined &&
+                            <article className="message is-success">
+                              <div className="message-body">
+                                  Transaction mined.
+                              </div>
+                              <Redirect to='/countdown' />
+                            </article>
+                        }
+
+                        { txStatus === TxStatuses.Err &&
+                            <article className="message is-danger">
+                              <div className="message-body">
+                                {errorMsg}
+                              </div>
+                          </article>
+                        }
+
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div className='section'>
-            <TxButton
-                onClick={handleDepositBtnClick}
-                txStatus={txStatus}
-                isDisabled={depositBtnDisabled}
-                label={`Mix ${mixAmtEth} ETH`}
-            />
-            
-            <br />
-            <br />
-
-            { txStatus === TxStatuses.Mined &&
-                <article className="message is-success">
-                  <div className="message-body">
-                      Transaction mined.
-                  </div>
-                  <Redirect to='/countdown' />
-                </article>
-            }
-
-            { txStatus === TxStatuses.Err &&
-                <article className="message is-danger">
-                  <div className="message-body">
-                    {errorMsg}
-                  </div>
-              </article>
-            }
-
-        </div>
-    </div>
-        </div>
-    </div>
     )
 }
