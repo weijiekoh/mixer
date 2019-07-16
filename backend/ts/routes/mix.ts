@@ -235,6 +235,7 @@ const mix = async (depositProof: DepositProof) => {
         value: 0,
         data: callData,
         nonce,
+        gasPrice: ethers.utils.parseUnits('20', 'gwei'),
         gasLimit: config.get('chain.mix.gasLimit'),
     }
 
