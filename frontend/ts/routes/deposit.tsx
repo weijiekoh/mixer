@@ -7,6 +7,7 @@ import { useWeb3Context } from 'web3-react'
 const config = require('../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
 import { TxButton, TxStatuses } from '../components/txButton'
+import { sleep } from 'mixer-utils'
 
 import {
     initStorage,
@@ -63,11 +64,17 @@ export default () => {
         try {
             setTxStatus(TxStatuses.Pending)
 
-            const minedTx = await deposit(context, identityCommitment, mixAmt)
-            const receipt = await minedTx.wait()
+            const tx = await deposit(context, identityCommitment, mixAmt)
 
             storeDeposit(identity, recipientAddress)
-            updateDepositTxStatus(identity, minedTx.hash)
+
+            if (config.env === 'local-dev') {
+                await sleep(3000)
+            }
+
+            const receipt = await tx.wait()
+
+            updateDepositTxStatus(identity, tx.hash)
             setTxStatus(TxStatuses.Mined)
 
         } catch (err) {
@@ -78,7 +85,8 @@ export default () => {
                 err.code === ethers.errors.UNSUPPORTED_OPERATION &&
                 err.reason === 'contract not deployed'
             ) {
-                setErrorMsg(`The mixer contract was not deployed to the expected address ${deployedAddresses.Mixer}`)
+                setErrorMsg(`The mixer contract was not deployed to the expected ` +
+                    `address ${deployedAddresses.Mixer}`)
             }
         }
     }
@@ -117,53 +125,59 @@ export default () => {
                     </p>
                 </div>
 
-                <div className='column is-8 is-offset-2'>
-                </div>
+                { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') ?
+                    <p>
+                        To continue, please connect to the correct Ethereum network.
+                    </p>
+                    :
 
-                    <div className='column is-8 is-offset-2'>
-                        <p>Recipient's address:</p>
-                        <br />
-                        <input
-                            spellCheck={false}
-                            className="input eth_address"
-                            type="text"
-                            placeholder="Recipient's ETH address" 
-                            value={recipientAddress}
-                            onChange={(e) => {
-                                setRecipientAddress(e.target.value)
-                            }}
-                        />
+                    <div>
+                        <div className='column is-8 is-offset-2'>
+                            <p>Recipient's address:</p>
+                            <br />
+                            <input
+                                spellCheck={false}
+                                className="input eth_address"
+                                type="text"
+                                placeholder="Recipient's ETH address" 
+                                value={recipientAddress}
+                                onChange={(e) => {
+                                    setRecipientAddress(e.target.value)
+                                }}
+                            />
+                        </div>
+
+                        <div className='section'>
+                            <TxButton
+                                onClick={handleDepositBtnClick}
+                                txStatus={txStatus}
+                                isDisabled={depositBtnDisabled}
+                                label={`Mix ${mixAmtEth} ETH`}
+                            />
+                            
+                            <br />
+                            <br />
+
+                            { txStatus === TxStatuses.Mined &&
+                                <article className="message is-success">
+                                  <div className="message-body">
+                                      Transaction mined.
+                                  </div>
+                                  <Redirect to='/countdown' />
+                                </article>
+                            }
+
+                            { txStatus === TxStatuses.Err &&
+                                <article className="message is-danger">
+                                  <div className="message-body">
+                                    {errorMsg}
+                                  </div>
+                              </article>
+                            }
+                        </div>
                     </div>
+                }
 
-                    <div className='section'>
-                        <TxButton
-                            onClick={handleDepositBtnClick}
-                            txStatus={txStatus}
-                            isDisabled={depositBtnDisabled}
-                            label={`Mix ${mixAmtEth} ETH`}
-                        />
-                        
-                        <br />
-                        <br />
-
-                        { txStatus === TxStatuses.Mined &&
-                            <article className="message is-success">
-                              <div className="message-body">
-                                  Transaction mined.
-                              </div>
-                              <Redirect to='/countdown' />
-                            </article>
-                        }
-
-                        { txStatus === TxStatuses.Err &&
-                            <article className="message is-danger">
-                              <div className="message-body">
-                                {errorMsg}
-                              </div>
-                          </article>
-                        }
-
-                    </div>
                 </div>
             </div>
         </div>

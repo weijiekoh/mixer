@@ -44,15 +44,19 @@ import {
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 
+const noItemsCol = (
+    <div className='column is-8 is-offset-2'>
+        <h2 className='subtitle'>
+            Nothing to withdraw. To get started,
+            please <a href='/'>make a deposit</a>.
+        </h2>
+    </div>
+)
+
 const noItems = (
     <div className='section'>
         <div className='columns has-text-centered'>
-            <div className='column is-8 is-offset-2'>
-                <h2 className='subtitle'>
-                    Nothing to withdraw. To get started,
-                    please <a href='/'>make a deposit</a>.
-                </h2>
-            </div>
+            {noItemsCol}
         </div>
     </div>
 )
@@ -229,11 +233,6 @@ export default () => {
         }
     }
 
-    //const handle = () => {
-        //updateWithdrawTxHash(identityStored, '0xabc')
-        //setCompletedWithdraw(true)
-    //}
-
     return (
         <div className='section'>
             <div className='columns has-text-centered'>
@@ -292,7 +291,7 @@ export default () => {
                    </div>
                }
 
-               { withdrawTxHash &&
+               { withdrawTxHash && completedWithdraw &&
                     <div className='column is-8 is-offset-2'>
                         <article className="message is-success">
                             <div className="message-body">
@@ -304,6 +303,10 @@ export default () => {
                         </article>
                         <a href='/'>Make another deposit</a>.
                    </div>
+               }
+
+               { withdrawTxHash && !completedWithdraw &&
+                   noItemsCol
                }
             </div>
         </div>
