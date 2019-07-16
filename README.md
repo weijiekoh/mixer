@@ -28,13 +28,6 @@ These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
     - The relayer server requires an `etcd` server to lock the account nonce of
       its hot wallet.
 
-- Python 3
-    - The built-in
-      [`http.server`](https://docs.python.org/3/library/http.server.html) is
-      helpful during local development to serve static zk-SNARK circuit and key
-      files to the frontend via HTTP. You may choose any other method to do
-      this.
-
 ### Local development
 
 Install `npx` if you haven't already:
@@ -123,8 +116,9 @@ npm run watch
 Finally, launch a HTTP server to serve the zk-SNARK content:
 
 ```bash
+npm i -g http-server && \
 cd semaphore/semaphorejs/build && \
-python3 -m http.server
+http-server -p 8000 --cors
 ```
 
 You can now run the frontend at http://127.0.0.1:1234.
