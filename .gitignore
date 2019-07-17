@@ -11,11 +11,12 @@ contracts/privateKeys.json
 frontend/server.cert
 frontend/server.key
 
+frontend/ts/exported_config.json
+
 contracts/.etherlime-store/
 contracts/compiled/
 contracts/.outputParameter
 frontend/dist/
-frontend/ts/exported_config.json
 frontend/.cache/
 frontend/ts/abis
 deployedAddresses.json
