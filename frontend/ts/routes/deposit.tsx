@@ -7,6 +7,7 @@ import { useWeb3Context } from 'web3-react'
 const config = require('../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
 import { TxButton, TxStatuses } from '../components/txButton'
+import { TxHashMessage } from '../components/txHashMessage'
 import { sleep } from 'mixer-utils'
 
 import {
@@ -22,9 +23,12 @@ import {
     genIdentityCommitment,
 } from 'mixer-crypto'
 
+const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
+
 export default () => {
     initStorage()
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
+    const [txHash, setTxHash] = useState('')
     const [recipientAddress, setRecipientAddress] = useState('')
     const [errorMsg, setErrorMsg] = useState('')
 
@@ -66,6 +70,8 @@ export default () => {
 
             const tx = await deposit(context, identityCommitment, mixAmt)
 
+            setTxHash(tx.hash)
+
             storeDeposit(identity, recipientAddress)
 
             if (config.env === 'local-dev') {
@@ -87,6 +93,8 @@ export default () => {
             ) {
                 setErrorMsg(`The mixer contract was not deployed to the expected ` +
                     `address ${deployedAddresses.Mixer}`)
+            } else {
+                setErrorMsg('An error with the transaction occurred.')
             }
         }
     }
@@ -154,7 +162,17 @@ export default () => {
                                 isDisabled={depositBtnDisabled}
                                 label={`Mix ${mixAmtEth} ETH`}
                             />
-                            
+
+                            { txHash.length > 0 &&
+                                <div>
+                                    <br />
+                                    <TxHashMessage 
+                                        mixSuccessful={false}
+                                        txHash={txHash}
+                                        txStatus={TxStatuses.Pending} />
+                                </div>
+                            }
+                                
                             <br />
                             <br />
 

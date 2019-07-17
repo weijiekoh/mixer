@@ -4,8 +4,10 @@ import { useWeb3Context } from 'web3-react'
 import * as snarkjs from 'snarkjs'
 import * as ethers from 'ethers'
 import { utils } from 'mixer-contracts'
+import { sleep } from 'mixer-utils'
 const config = require('../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
+import { TxHashMessage } from '../components/txHashMessage'
 import { quickWithdraw } from '../web3/quickWithdraw'
 import { getMixerContract, getSemaphoreContract } from '../web3/mixer'
 const deployedAddresses = config.chain.deployedAddresses
@@ -68,6 +70,7 @@ export default () => {
     }
 
     const [proofGenProgress, setProofGenProgress] = useState('')
+    const [pendingTxHash, setPendingTxHash] = useState('')
     const [completedWithdraw, setCompletedWithdraw] = useState(false)
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
     const [consentChecked, setConsentChecked] = useState(false)
@@ -199,7 +202,15 @@ export default () => {
                 feeAmtWei,
             )
 
+            setPendingTxHash(tx.hash)
+            setProofGenProgress('')
+
+            if (config.env === 'local-dev') {
+                await sleep(3000)
+            }
+
             const receipt = await tx.wait()
+
             if (receipt.status === 1) {
                 updateWithdrawTxHash(identityStored, tx.hash)
                 setCompletedWithdraw(true)
@@ -208,8 +219,6 @@ export default () => {
                     code: ErrorCodes.TX_FAILED,
                 }
             }
-            setProofGenProgress('')
-
 
         } catch (err) {
             console.error(err)
@@ -268,6 +277,17 @@ export default () => {
                               isDisabled={withdrawBtnDisabled}
                               label={`Withdraw ${mixAmtEth - operatorFeeEth * 2} ETH`}
                           />
+
+                          { pendingTxHash.length > 0 &&
+                              <div>
+                                  <br />
+                                  <TxHashMessage 
+                                      mixSuccessful={false}
+                                      txHash={pendingTxHash}
+                                      txStatus={TxStatuses.Pending} />
+                              </div>
+                          }
+
                           <br />
                           <br />
 
@@ -293,14 +313,10 @@ export default () => {
 
                { withdrawTxHash && completedWithdraw &&
                     <div className='column is-8 is-offset-2'>
-                        <article className="message is-success">
-                            <div className="message-body">
-                                Withdrawal successful. <a
-                                    href={blockExplorerTxPrefix + withdrawTxHash}
-                                    target="_blank">View on Etherscan.
-                                </a>
-                            </div>
-                        </article>
+                        <TxHashMessage 
+                            mixSuccessful={true}
+                            txHash={withdrawTxHash}
+                            txStatus={TxStatuses.Mined} />
                         <a href='/'>Make another deposit</a>.
                    </div>
                }
