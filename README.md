@@ -181,7 +181,32 @@ In the `mixer/backend/` directory:
 This project uses Docker to containerise its various components, and Docker
 Compose to orchestrate them.
 
-To run build and run the Docker containers, run:
+To run build and run the Docker containers, first create a `MIXER_SECRETS`
+directory as a sibling of the `mixer` directory:
+
+```bash
+# Assuming you are in mixer/
+
+cd .. && \
+mkdir -p MIXER_SECRETS
+```
+
+Create a file named `hotWalletPrivKey.json` in `MIXER_SECRETS/` with the private key
+which will serve as the operator's hot wallet:
+
+```json
+{
+        "privateKey": "0x................................................................"
+}
+```
+
+Change its file permissions:
+
+```bash
+chmod 400 MIXER_SECRETS/hotWalletPrivKey.json
+```
+
+Next, run:
 
 ```bash
 NODE_ENV=docker-dev ./scripts/buildImages.sh && \
@@ -209,7 +234,6 @@ CONTAINER ID        IMAGE                   COMMAND                  PORTS      
 Note that setting `NODE_ENV` to `docker-dev` in the above command will make the
 frontend and backend use the [`config/docker-dev.yaml`](config/docker-dev.yaml)
 config file.
-
 
 <!--## Full documentation-->
 
