@@ -197,6 +197,14 @@ If you use a terminal multiplexer like `tmux`, your screen might now look like t
 
 <img src="/docs/img/dev_screens.png" />
 
+Clockwise from top right:
+
+1. Ganache (`runGanache.sh`)
+2. Frontend (`npm run watch`)
+3. Deployed contracts (`npm run deploy`)
+4. HTTP server (`http-server`)
+5. Backend (`npm run server`)
+
 ## Testing
 
 ### Unit tests
