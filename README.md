@@ -193,6 +193,10 @@ first make sure that you have `npm run watch` running in a terminal. For
 instance, while you edit `backend/ts/index.ts`, have a terminal open at
 `backend/` and then run `npm run watch`.
 
+If you use a terminal multiplexer like `tmux`, your screen might now look like this:
+
+<img src="/docs/img/dev_screens.png" />
+
 ## Testing
 
 ### Unit tests
