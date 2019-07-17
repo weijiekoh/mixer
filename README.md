@@ -27,13 +27,16 @@ The current version of this mixer is a simple MVP with the following features:
 
 1. A user interface which allows:
 
-    - One deposit of 0.1 ETH per account per day. This is enforced only by the UI.
+    - One deposit per day.
 
-    - Immediate withdrawals in case the user wants their ETH back at the cost of privacy.
+    - Immediate withdrawals in case the user wants their ETH back at the cost
+      of privacy.
 
-    - Automatic ETH withdrawal if the user keeps the page open till midnight UTC.
+    - Automatic ETH withdrawal if the user keeps the page open till midnight
+      UTC.
 
-    - One-click ETH withdrawal if the user closes the page and comes back to this site after midnight.
+    - One-click ETH withdrawal if the user closes the page and comes back to
+      this site after midnight.
 
 2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
     
@@ -50,9 +53,10 @@ The current version of this mixer is a simple MVP with the following features:
         
         - Accepts deposits
 
-        - Accepts mix requests. Each request comprises of a zk-SNARK proof that a deposit
-          had been made in the past and has not already been claimed. If the proof is
-          valid, it transfers funds to the recipient and takes an operator's fee.
+        - Accepts mix requests. Each request comprises of a zk-SNARK proof that
+          a deposit had been made in the past and has not already been claimed.
+          If the proof is valid, it transfers funds to the recipient and takes an
+          operator's fee.
         
         - Allows the operator to withdraw all accurred fees.
 
@@ -138,6 +142,15 @@ In a new terminal, run Ganche:
 
 cd contracts && \
 ./scripts/runGanache.sh
+```
+
+In another terminal, deploy the contracts:
+
+```bash
+# Assuming you are in mixer/
+
+cd contracts && \
+npm run deploy
 ```
 
 In another terminal, run `etcd`:
