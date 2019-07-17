@@ -21,6 +21,36 @@ A technical specification of the mixer can be found
 This mixer is highly experimental and not yet audited. Do not use it to mix
 real funds yet.
 
+## Supported features
+
+The current version of this mixer is a simple MVP with the following features:
+
+1. A user interface which allows:
+
+    - One deposit of 0.1 ETH per account per day. This is enforced only by the UI.
+
+    - Immediate withdrawals in case the user wants their ETH back at the cost of privacy.
+
+    - Automatic ETH withdrawal if the user keeps the page open till midnight UTC.
+
+    - One-click ETH withdrawal if the user closes the page and comes back to this site after midnight.
+
+2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
+    
+    - Accepts, verifies, and submits a zk-SNARK proof (generated in the user's
+      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0xfb2bf70382a98c72d38bed63735ff5115ff243c6).
+
+3. Ethereum contracts:
+
+    - A modified version of the
+      [Semaphore](https://github.com/kobigurk/semaphore/) zero-knowledge
+      signalling system as a base layer.
+
+    - A Mixer contract with functions which, accepts deposits; accepts a
+      zk-SNARK proof of a deposit, transfers funds to the recipient, and takes
+      an operator's fee; and allows the operator to withdraw all accurred
+      fees.
+
 ## Local development and testing
 
 These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
@@ -88,7 +118,9 @@ Install dependencies and build the source code:
 <!--```-->
 
 ```bash
-cd ../../ && \ # if you are still in semaphore/semaphorejs/
+cd ../../
+# if you are still in semaphore/semaphorejs/
+
 npm i && \
 npm run bootstrap && \
 npm run build
