@@ -182,7 +182,7 @@ Finally, launch a HTTP server to serve the zk-SNARK content:
 ```bash
 # Assuming you are in mixer/
 
-cd semaphore/semaphorejs/build && \
+cd semaphore/semaphorejs/ && \
 http-server -p 8000 --cors
 ```
 
