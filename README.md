@@ -37,10 +37,10 @@ These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
 
 ### Local development
 
-Install `npx` if you haven't already:
+Install `npx` and `http-server` if you haven't already:
 
 ```bash
-npm install -g npx
+npm install -g npx http-server
 ```
 
 Clone this repository and its `semaphore` submodule:
@@ -97,6 +97,8 @@ npm run build
 In a new terminal, run Ganche:
 
 ```bash
+# Assuming you are in mixer/
+
 cd contracts && \
 ./scripts/runGanache.sh
 ```
@@ -110,6 +112,8 @@ etcd
 In another terminal, run the relayer server:
 
 ```bash
+# Assuming you are in mixer/
+
 cd backend && \
 npm run server
 ```
@@ -117,6 +121,8 @@ npm run server
 In another terminal, launch the frontend:
 
 ```bash
+# Assuming you are in mixer/
+
 cd frontend && \
 npm run watch
 ```
@@ -124,14 +130,15 @@ npm run watch
 Finally, launch a HTTP server to serve the zk-SNARK content:
 
 ```bash
-npm i -g http-server && \
+# Assuming you are in mixer/
+
 cd semaphore/semaphorejs/build && \
 http-server -p 8000 --cors
 ```
 
-You can now run the frontend at http://127.0.0.1:1234.
+You can now run the frontend at http://localhost:1234.
 
-To automatically compile the TypeScript source code whenever you make a change,
+To automatically compile the TypeScript source code whenever you change it,
 first make sure that you have `npm run watch` running in a terminal. For
 instance, while you edit `backend/ts/index.ts`, have a terminal open at
 `backend/` and then run `npm run watch`.
