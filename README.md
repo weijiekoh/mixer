@@ -27,6 +27,15 @@ real funds yet. It only supports Kovan ETH for now. Get Kovan ETH from a faucet
 [here](https://faucet.kovan.network/) or
 [here](https://gitter.im/kovan-testnet/faucet).
 
+
+## Screenshots
+
+<img src="/docs/img/deposit.png" width=380 />
+<img src="/docs/img/countdown.png" width=380 />
+<br />
+<br />
+<img src="/docs/img/quick_withdraw.png" width=380 />
+
 ## Supported features
 
 The current version of this mixer is a simple MVP with the following features:
