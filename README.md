@@ -46,10 +46,15 @@ The current version of this mixer is a simple MVP with the following features:
       [Semaphore](https://github.com/kobigurk/semaphore/) zero-knowledge
       signalling system as a base layer.
 
-    - A Mixer contract with functions which, accepts deposits; accepts a
-      zk-SNARK proof of a deposit, transfers funds to the recipient, and takes
-      an operator's fee; and allows the operator to withdraw all accurred
-      fees.
+    - A Mixer contract with functions which
+        
+        - Accepts deposits
+
+        - Accepts mix requests. Each request comprises of a zk-SNARK proof that a deposit
+          had been made in the past and has not already been claimed. If the proof is
+          valid, it transfers funds to the recipient and takes an operator's fee.
+        
+        - Allows the operator to withdraw all accurred fees.
 
 ## Local development and testing
 
