@@ -1,9 +1,11 @@
 # MultiMix: A noncustodial Ethereum mixer
 
-<img src="/docs/img/logo.png" />
+<a href="https://multimix.app">
+    <img src="/docs/img/logo.png" />
+</a>
 
 This is the monorepo for all code and documentation for a noncustodial Ethereum
-mixer.
+mixer. Try it at [multimix.app](https://multimix.app).
 
 A mixer moves Ether from one address to another in a way that nobody
 except the sender can know for sure that these addresses are linked. This
@@ -21,7 +23,9 @@ A technical specification of the mixer can be found
 [here](https://hackmd.io/qlKORn5MSOes1WtsEznu_g).
 
 This mixer is highly experimental and not yet audited. Do not use it to mix
-real funds yet.
+real funds yet. It only supports Kovan ETH for now. Get Kovan ETH from a faucet
+[here](https://faucet.kovan.network/) or
+[here](https://gitter.im/kovan-testnet/faucet).
 
 ## Supported features
 
