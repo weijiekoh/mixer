@@ -1,7 +1,10 @@
 #!/bin/bash
 
-VERIFIER_SOL="https://www.dropbox.com/s/e095d2m8hlxoen7/verifier.sol?dl=1"
-VERIFICATION_KEY_JSON="https://www.dropbox.com/s/5qrvbnv5yakf7wn/verification_key.json?dl=1"
+VERIFIER_SOL="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/verifier.sol"
+PROVING_KEY_JSON="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/proving_key.json"
+VERIFICATION_KEY_JSON="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/verification_key.json"
+PROVING_KEY_BIN="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/proving_key.bin"
+CIRCUIT_JSON="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/circuit.json"
 
 mkdir -p semaphore/semaphorejs/build
 
@@ -15,13 +18,13 @@ if [ "$1" = "--only-verifier" ]; then
 else
     mkdir -p semaphore/semaphorejs/build
     echo "Downloading circuit.json"
-    wget --quiet -nc https://www.dropbox.com/s/93fr9wmv2ynjsah/circuit.json?dl=1 -O semaphore/semaphorejs/build/circuit.json
+    wget --quiet -nc $CIRCUIT_JSON -O semaphore/semaphorejs/build/circuit.json
 
     echo "Downloading proving_key.bin"
-    wget --quiet -nc https://www.dropbox.com/s/1xv2k21h75s8esc/proving_key.bin?dl=1 -O semaphore/semaphorejs/build/proving_key.bin
+    wget --quiet -nc $PROVING_KEY_BIN -O semaphore/semaphorejs/build/proving_key.bin
 
     echo "Downloading proving_key.json"
-    wget --quiet -nc https://www.dropbox.com/s/a2ryrbnfk43q25l/proving_key.json?dl=1 -O semaphore/semaphorejs/build/proving_key.json
+    wget --quiet -nc $PROVING_KEY_JSON -O semaphore/semaphorejs/build/proving_key.json
 
     echo "Downloading verification_key.json"
     wget --quiet -nc $VERIFICATION_KEY_JSON -O semaphore/semaphorejs/build/verification_key.json
