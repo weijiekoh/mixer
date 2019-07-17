@@ -233,7 +233,12 @@ CONTAINER ID        IMAGE                   COMMAND                  PORTS      
 
 Note that setting `NODE_ENV` to `docker-dev` in the above command will make the
 frontend and backend use the [`config/docker-dev.yaml`](config/docker-dev.yaml)
-config file.
+config file, which in turn points to the Kovan testnet.
+
+In contrast, the local instances run via `npm run watch` in
+`frontend/` and `npm run server` in `backend` respectively use
+[`config/local-dev.yaml`](config/local-dev.yaml), which uses any network at
+`http://localhost:8545` with a chain ID of `1234`.
 
 <!--## Full documentation-->
 
