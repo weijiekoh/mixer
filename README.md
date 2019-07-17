@@ -1,5 +1,7 @@
 # MultiMix: A noncustodial Ethereum mixer
 
+<img src="/docs/img/logo.png" />
+
 This is the monorepo for all code and documentation for a noncustodial Ethereum
 mixer.
 
