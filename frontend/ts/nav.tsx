@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
+import logo from '../img/logo.png'
 
 import WalletWidget from './components/walletWidget'
 
@@ -13,7 +14,7 @@ const Nav = () => {
         <nav className='navbar' role='navigation' aria-label='main navigation'>
             <div className='navbar-brand'>
                 <a className='navbar-item' href='/'>
-                    MultiMix
+                    <img src={logo} />
                 </a>
 
                 <a role='button' className={burgerClassName} 
