@@ -18,10 +18,11 @@ mix the funds. To speed up this process for testing purposes, you can set the
 timestamp of the last entry in the localStorage `MIXER` JSON array to `0`, and
 a yellow button will appear which you can click to trigger the mix.
 
-This mix process downloads about 200MB worth of zk-SNARK keys and circuit data,
-generates a proof, and submits it to a centralised but noncustodial relayer.
-The relayer verifies the proof and submits a `mix()` transaction to the mixer
-contract located [here](https://kovan.etherscan.io/address/0xfb2bf70382a98c72d38bed63735ff5115ff243c6).
+This mix process downloads about 50MB worth of gzipped zk-SNARK keys and
+circuit data, generates a proof, and submits it to a centralised but
+noncustodial relayer. The relayer verifies the proof and submits a `mix()`
+transaction to the mixer contract located
+[here](https://kovan.etherscan.io/address/0xfb2bf70382a98c72d38bed63735ff5115ff243c6).
 
 ## Development
 
