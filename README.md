@@ -1,4 +1,4 @@
-# Minimal Ethereum Mixer
+# MultiMix: A noncustodial Ethereum mixer
 
 This is the monorepo for all code and documentation for a noncustodial Ethereum
 mixer.
