@@ -21,7 +21,7 @@ A technical specification of the mixer can be found
 This mixer is highly experimental and not yet audited. Do not use it to mix
 real funds yet.
 
-## Getting started for local development and testing
+## Local development and testing
 
 These instructions have been tested with Ubuntu 18.0.4 and Node 11.14.0.
 
@@ -168,17 +168,52 @@ In the `mixer/backend/` directory:
 1. Run `npm run build` if you haven't built the source already
 2. Run `npm run test`
 
-### Integration tests
+<!--### Integration tests-->
 
-### CircleCI
+<!--TODO-->
+
+<!--### CircleCI-->
+
+<!--TODO-->
 
 ## Deployment
 
-<!--This project uses Docker to handle -->
+This project uses Docker to containerise its various components, and Docker
+Compose to orchestrate them.
 
-## Full documentation
+To run build and run the Docker containers, run:
 
-**TODO**
+```bash
+NODE_ENV=docker-dev ./scripts/buildImages.sh && \
+./scripts/runImages.sh
+```
+
+This will produce the following images and containers (edited for brevity):
+
+```
+REPOSITORY              TAG                 SIZE
+docker_mixer-frontend   latest              23.2MB
+docker_mixer-backend    latest              2.09GB
+mixer-base              latest              2.09GB
+mixer-build             latest              3.24GB
+nginx                   1.17.1-alpine       20.6MB
+jumanjiman/etcd         latest              35MB
+node                    11.14.0-stretch     904MB
+
+CONTAINER ID        IMAGE                   COMMAND                  PORTS                          NAMES
+............        docker_mixer-backend    "node build/index.js"    0.0.0.0:3000->3000/tcp         mixer-backend
+............        docker_mixer-frontend   "/bin/sh -c 'nginx -…"   80/tcp, 0.0.0.0:80->8001/tcp   mixer-frontend
+............        jumanjiman/etcd         "etcd --listen-clien…"   0.0.0.0:2379->2379/tcp         mixer-etcd
+```
+
+Note that setting `NODE_ENV` to `docker-dev` in the above command will make the
+frontend and backend use the [`config/docker-dev.yaml`](config/docker-dev.yaml)
+config file.
+
+
+<!--## Full documentation-->
+
+<!--**TODO**-->
 
 ### Directory structure
 
@@ -192,18 +227,16 @@ See the frontend documentation [here](./frontend).
 
 ## Contributing pull requests
 
-Please make pull requests against the `develop` branch.
-
 Each PR should contain a clear description of the feature it adds or problem it
 solves (the **why**), and walk the user through a summary of **how** it solves
 it.
 
 Each PR should also add to the unit and/or integration tests as appropriate.
 
-## Governance and project management
+<!--## Governance and project management-->
 
-**TODO**
+<!--**TODO**-->
 
-## Code of conduct and reporting
+<!--## Code of conduct and reporting-->
 
-**TODO**
+<!--**TODO**-->
