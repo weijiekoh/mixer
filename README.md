@@ -1,15 +1,19 @@
 # Minimal Ethereum Mixer
 
 This is the monorepo for all code and documentation for a noncustodial Ethereum
-mixer. A mixer moves Ether from one address to another in a way that nobody,
-except the sender, knows with full certainty the destination address. This
-mixer lets senders deposit fixed amounts of Ether into a contract, and when the
+mixer.
+
+A mixer moves Ether from one address to another in a way that nobody
+except the sender can know for sure that these addresses are linked. This
+mixer lets a user deposit fixed amounts of Ether into a contract, and when the
 pool is large enough, anonymously submit zero-knowledge proofs which
 show that the submitter had previously made a deposit, thus authorising the
-contract to release funds to the recipient. As a transaction relayer pays the
-gas of this transaction, there is no certain on-chain connection between the
-sender and recipient. Although this relayer is centralised, the mixer is
-noncustodial and no third party can exit with users' funds.
+contract to release funds to the recipient.
+
+As a transaction relayer pays the gas of this transaction, there is no certain
+on-chain connection between the sender and recipient. Although this relayer is
+centralised, the mixer is noncustodial and no third party can exit with users'
+funds.
 
 A technical specification of the mixer can be found
 [here](https://hackmd.io/qlKORn5MSOes1WtsEznu_g).
@@ -84,6 +88,7 @@ Install dependencies and build the source code:
 <!--```-->
 
 ```bash
+cd ../../ && \ # if you are still in semaphore/semaphorejs/
 npm i && \
 npm run bootstrap && \
 npm run build
