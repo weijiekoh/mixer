@@ -17,10 +17,7 @@ const TxButton = ({
 }) => {
     let className = 'button is-large is-primary '
 
-    if (txStatus === TxStatuses.None) {
-        //className += 'is-primary'
-
-    } else if (txStatus === TxStatuses.Pending) {
+    if (txStatus === TxStatuses.Pending) {
         className += 'is-loading '
         isDisabled = true
 

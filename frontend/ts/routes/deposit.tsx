@@ -17,6 +17,7 @@ import {
     getNumUnwithdrawn,
 } from '../storage'
 
+import { getBalance } from '../web3/balance'
 import { deposit } from '../web3/deposit'
 import {
     genIdentity,
@@ -31,6 +32,7 @@ export default () => {
     const [txHash, setTxHash] = useState('')
     const [recipientAddress, setRecipientAddress] = useState('')
     const [errorMsg, setErrorMsg] = useState('')
+    const [enoughEth, setEnoughEth] = useState(true)
 
     const operatorFeeEth = config.operatorFeeEth
     const mixAmtEth = config.mixAmtEth
@@ -99,6 +101,14 @@ export default () => {
         }
     }
 
+    getBalance(context).then((balance) => {
+        if (balance) {
+            const enough = balance.gte(ethers.utils.parseEther('0.11'))
+            console.log(enough)
+            setEnoughEth(enough)
+        }
+    })
+
     return (
         <div className='columns has-text-centered'>
             <div className='column is-12'>
@@ -132,12 +142,21 @@ export default () => {
                 </p>
             </div>
 
-            { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') ?
+            { !enoughEth &&
+                <p>
+                    To continue, please top up your account with at least 0.11
+                    KETH (0.1 to deposit and 0.01 for gas). You can get KETH
+                    from a <a href="https://github.com/kovan-testnet/faucet"
+                        target="_blank">faucet</a>.
+                </p>
+            }
+
+            { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
                 <p>
                     To continue, please connect to the correct Ethereum network.
                 </p>
-                :
-
+            }
+            { enoughEth && context.error == null &&
                 <div>
                     <div className='column is-8 is-offset-2'>
                         <p>Recipient's address:</p>
