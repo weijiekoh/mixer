@@ -1,0 +1,42 @@
+.advanced, .chevron-up, .chevron-down {
+    cursor: pointer;
+}
+
+.chevron-down::after {
+    border: 3px solid;
+    border-radius: 2px;
+    border-right: 0;
+    border-top: 0;
+    content: " ";
+    display: inline-block;
+    height: 0.625em;
+    margin-top: -0.4375em;
+    pointer-events: none;
+    /*position: absolute;*/
+    /*top: 50%;*/
+    cursor: pointer;
+    margin-left: 15px;
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+    -webkit-transform-origin: center;
+    transform-origin: center;
+    width: 0.625em;
+}
+
+.chevron-up::after {
+    border: 3px solid;
+    border-radius: 2px;
+    border-right: 0;
+    border-top: 0;
+    content: " ";
+    display: inline-block;
+    height: 0.625em;
+    margin-top: 0.4375em;
+    pointer-events: none;
+    margin-left: 37px;
+    -webkit-transform: rotate(135deg);
+    transform: rotate(135deg);
+    -webkit-transform-origin: left;
+    transform-origin: left;
+    width: 0.625em;
+}

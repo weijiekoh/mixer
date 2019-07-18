@@ -102,7 +102,7 @@ export default () => {
     return (
         <div className='columns has-text-centered'>
             <div className='column is-12'>
-                <div className='titles'>
+                <div className='section first-section'>
                     <h2 className='subtitle'>
                         MultiMix makes your Kovan ETH anonymous.
                     </h2>

@@ -42,7 +42,6 @@ import {
 
 const config = require('../exported_config')
 
-const isDev = config.env === 'local-dev'
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
 const endsAfterSecs = config.frontend.countdown.endsAfterSecs
@@ -61,6 +60,8 @@ export default () => {
     const [withdrawStarted, setWithdrawStarted] = useState(false)
     const [countdownDone, setCountdownDone] = useState(false)
     const [proofGenProgress, setProofGenProgress] = useState('')
+    const [showAdvanced, setShowAdvanced] = useState(false)
+    const [withdrawBtnClicked, setWithdrawBtnClicked] = useState(false)
 
     const progress = (line: string) => {
         setProofGenProgress(line)
@@ -228,7 +229,7 @@ export default () => {
     if (!endsAtMidnight && !midnightOver) {
         expiryTimestamp = new Date()
         expiryTimestamp.setSeconds(
-            expiryTimestamp.getSeconds() + 5
+            expiryTimestamp.getSeconds() + endsAfterSecs
         )
     }
 
@@ -254,8 +255,25 @@ export default () => {
         withdraw(context)
     }
 
+    const withdrawBtn = (
+        <span
+            onClick={() => {
+                setWithdrawBtnClicked(true)
+                if (showAdvanced) {
+                    setShowAdvanced(false)
+                }
+                if (!withdrawStarted) {
+                    setWithdrawStarted(true)
+                    withdraw(context)
+                }
+            }}
+            className='button is-warning'>
+            Mix {mixAmtEth} ETH now
+        </span>
+    )
+
     return (
-        <div className='section'>
+        <div className='section first-section'>
             <div className='columns has-text-centered'>
                 <div className='column is-8 is-offset-2'>
                     <div className='section'>
@@ -268,7 +286,7 @@ export default () => {
                             </pre>
                             <br />
                             can receive {mixAmtEth - operatorFeeEth * 2} ETH 
-                            { countdownDone || midnightOver ?
+                            { countdownDone || midnightOver || withdrawBtnClicked ?
                                 <span>
                                     { (txHash.length === 0 && midnightOver) ?
                                         <span>.</span>
@@ -294,16 +312,7 @@ export default () => {
                         </h2>
 
                         { txHash.length === 0 && midnightOver && !withdrawStarted &&
-                            <span
-                                onClick={() => {
-                                    if (!withdrawStarted) {
-                                        setWithdrawStarted(true)
-                                        withdraw(context)
-                                    }
-                                }}
-                                className='button is-warning'>
-                                Mix {mixAmtEth} ETH now
-                            </span>
+                            withdrawBtn
                         }
 
                         { txHash.length > 0 &&
@@ -347,15 +356,53 @@ export default () => {
 
             <br />
 
-            { txHash.length > 0 || !midnightOver &&
-                <div className="columns has-text-centered">
-                    <div className='column is-12'>
+            { !(txHash.length === 0 && midnightOver && !withdrawStarted) && !withdrawBtnClicked &&
+                <div>
+                    <div className="columns has-text-centered">
+                        <div className='column is-12'>
+                                <h2 className='subtitle'>
+                                    {timer.hours}h {timer.minutes}m {timer.seconds}s left
+                                </h2>
                             <h2 className='subtitle'>
-                                {timer.hours}h {timer.minutes}m {timer.seconds}s left
+                                Please keep this tab open.
                             </h2>
-                        <h2 className='subtitle'>
-                            Please keep this tab open.
-                        </h2>
+                        </div>
+                    </div>
+
+                    <div className="columns has-text-centered">
+                        <div className='column is-12'>
+                            <p className='subtitle advanced' onClick={
+                                () => {
+                                    setShowAdvanced(!showAdvanced)
+                                }
+                            }>
+                                Advanced options 
+                                <span 
+                                    className={
+                                        showAdvanced ? "chevron-up" : "chevron-down"
+                                    }>
+                                </span>
+                            </p>
+
+                            { showAdvanced &&
+                                <article className="message is-info">
+                                    <div className="message-body">
+                                        <p>
+                                            If you'd like, you may request to
+                                            mix your funds now. Note that if
+                                            you so now, may not have as much
+                                            anonymity than if you were to wait
+                                            till after midnight UTC or later.
+                                        </p>
+                                    </div>
+
+                                    {withdrawBtn}
+
+                                    <br />
+                                    <br />
+                                </article>
+                            }
+                        </div>
                     </div>
                 </div>
             }

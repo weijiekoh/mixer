@@ -243,13 +243,15 @@ export default () => {
     }
 
     return (
-        <div className='section'>
+        <div className='section first-section'>
             <div className='columns has-text-centered'>
               { (!withdrawTxHash && !completedWithdraw) &&
                   <div className='column is-8 is-offset-2'>
                       <div className='section'>
                           <h2 className='subtitle'>
                               You can immediately withdraw { mixAmtEth - operatorFeeEth * 2 } ETH to
+                              <br />
+                              <br />
                               <pre>
                                   {recipientAddress} 
                               </pre>
