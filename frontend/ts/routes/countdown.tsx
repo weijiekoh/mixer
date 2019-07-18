@@ -356,7 +356,9 @@ export default () => {
 
             <br />
 
-            { !(txHash.length === 0 && midnightOver && !withdrawStarted) && !withdrawBtnClicked &&
+            { !(txHash.length === 0 && midnightOver && !withdrawStarted) &&
+                !withdrawBtnClicked &&
+                !withdrawStarted &&
                 <div>
                     <div className="columns has-text-centered">
                         <div className='column is-12'>
