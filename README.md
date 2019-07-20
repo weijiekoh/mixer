@@ -1,11 +1,11 @@
-# MultiMix: A noncustodial Ethereum mixer
+# MicroMix: A noncustodial Ethereum mixer
 
-<a href="https://multimix.app">
+<a href="https://micromix.app">
     <img src="/docs/img/logo.png" />
 </a>
 
 This is the monorepo for all code and documentation for a noncustodial Ethereum
-mixer. Try it at [multimix.app](https://multimix.app).
+mixer. Try it at [micromix.app](https://micromix.app).
 
 A mixer moves Ether from one address to another in a way that nobody
 except the sender can know for sure that these addresses are linked. This
@@ -19,7 +19,7 @@ on-chain connection between the sender and recipient. Although this relayer is
 centralised, the mixer is noncustodial and no third party can exit with users'
 funds.
 
-A technical specification of the mixer can be found
+A technical specification of the mixer is
 [here](https://hackmd.io/qlKORn5MSOes1WtsEznu_g).
 
 This mixer is highly experimental and not yet audited. Do not use it to mix
@@ -38,20 +38,27 @@ real funds yet. It only supports Kovan ETH for now. Get Kovan ETH from a faucet
 
 ## Supported features
 
-The current version of this mixer is a simple MVP with the following features:
+The current version of this mixer is a simple MVP for desktop Chrome, Brave, or
+Firefox. You should also have [MetaMask](https://metamask.io/) installed, and
+at least 0.11 Kovan ETH.
+
+It has the following features:
 
 1. A user interface which allows:
 
     - One deposit per day.
-
-    - Immediate withdrawals in case the user wants their ETH back at the cost
-      of privacy.
 
     - Automatic ETH withdrawal if the user keeps the page open till midnight
       UTC.
 
     - One-click ETH withdrawal if the user closes the page and comes back to
       this site after midnight.
+
+    - Immediate self-withdrawals in case the user wants their ETH back at the cost
+      of privacy.
+    
+    - Immediate withdraw requests if the user wishes the operator to mix the
+      funds immediately, which also comes at the cost of some privacy.
 
 2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
     
@@ -66,7 +73,7 @@ The current version of this mixer is a simple MVP with the following features:
 
     - A Mixer contract with functions which
         
-        - Accepts deposits
+        - Accepts 0.1 ETH deposits.
 
         - Accepts mix requests. Each request comprises of a zk-SNARK proof that
           a deposit had been made in the past and has not already been claimed.
@@ -74,6 +81,9 @@ The current version of this mixer is a simple MVP with the following features:
           operator's fee.
         
         - Allows the operator to withdraw all accurred fees.
+
+    - Gas use is currently high (1.2 million per deposit; 1.9 million per
+      withdrawal), but will be lower in future versions of the mixer.
 
 ## Local development and testing
 
