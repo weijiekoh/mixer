@@ -104,7 +104,6 @@ export default () => {
     getBalance(context).then((balance) => {
         if (balance) {
             const enough = balance.gte(ethers.utils.parseEther('0.11'))
-            console.log(enough)
             setEnoughEth(enough)
         }
     })
@@ -114,12 +113,12 @@ export default () => {
             <div className='column is-12'>
                 <div className='section first-section'>
                     <h2 className='subtitle'>
-                        MultiMix makes your Kovan ETH anonymous.
+                        MicroMix makes your Kovan ETH anonymous.
                     </h2>
 
                     <div className='column is-8 is-offset-2'>
                         <p>
-                            MultiMix is an Ethereum mixer based on
+                            MicroMix is an Ethereum mixer based on
                             zero-knowledge proofs.
                             It is highly experimental, likely insecure,
                             and not yet audited. Do not use it to mix real
