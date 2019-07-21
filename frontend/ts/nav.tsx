@@ -33,11 +33,9 @@ const Nav = () => {
                         <WalletWidget />
                     </div>
 
-                    {/*
                     <a className='navbar-item' href='/about'>
                         About
                     </a>
-                    */}
 
                     <div className='navbar-item has-dropdown is-hoverable'>
                         <a className='navbar-link' id='options-link'>

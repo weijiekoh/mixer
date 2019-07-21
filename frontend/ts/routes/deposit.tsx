@@ -150,8 +150,7 @@ export default () => {
                 <p>
                     To continue, please top up your account with at least 0.11
                     KETH (0.1 to deposit and 0.01 for gas). You can get KETH
-                    from a <a href="https://github.com/kovan-testnet/faucet"
-                        target="_blank">faucet</a>.
+                    from a faucet <a target="_blank" href="https://faucet.kovan.network/">here</a> or <a target="_blank" href="https://gitter.im/kovan-testnet/faucet">here</a>.
                 </p>
             }
 
