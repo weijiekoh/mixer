@@ -26,6 +26,8 @@ import {
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 
+const name = 'MicroMix'
+
 export default () => {
     initStorage()
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
@@ -113,18 +115,21 @@ export default () => {
             <div className='column is-12'>
                 <div className='section first-section'>
                     <h2 className='subtitle'>
-                        MicroMix makes your Kovan ETH anonymous.
+                        {name} makes your Kovan ETH anonymous.
                     </h2>
 
                     <div className='column is-8 is-offset-2'>
                         <p>
-                            MicroMix is an Ethereum mixer based on
+                            {name} is an Ethereum mixer based on
                             zero-knowledge proofs.
                             It is highly experimental, likely insecure,
                             and not yet audited. Do not use it to mix real
-                            funds yet.  Click <a
+                            funds yet. We recommend that you use desktop
+                            Chrome, Firefox, or Brave with <a
+                                href="https://metamask.io">MetaMask</a> for best
+        results. <br /><br />Click <a
                                 href="https://github.com/weijiekoh/mixer"
-                                target="_blank">here</a> for more information.
+                                target="_blank">here</a> for more information about {name}.
                         </p>
                     </div>
                 </div>
