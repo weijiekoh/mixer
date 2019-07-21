@@ -306,7 +306,7 @@ export default () => {
                                 </span>
                                 :
                                 <span>
-                                    {' '} shortly after { timeStr }.
+                                    {' '} shortly after { timeStr } local time.
                                 </span>
                             }
                         </h2>
@@ -332,20 +332,14 @@ export default () => {
 
             { !(txHash.length === 0 && midnightOver) &&
                 <div className='columns'>
-                    <div className='column is-3 is-offset-3'>
+                    <div className='column is-6 is-offset-3'>
                         <p>
-                            To maximise anonymity, we only allow users to
-                            submit mix requests after midnight UTC.
+                            To mix your funds with optimal anonymity, leave
+                            this page open till after midnight UTC.
                             For example, if you deposit your funds at 3pm UTC
                             on 1 Jan, this page will wait till midnight 2 Jan
                             UTC to mix the funds.
-                        </p>
-                    </div>
-
-                    <div className='column is-3 is-offset-1'>
-                        <p>
-                            Please keep this tab open to automatically mix the
-                            funds. If you close this tab, you can reopen it any
+                            If you close this page, you can reopen it any
                             time, and withdraw it at a click of a button, even
                             after midnight UTC.
                         </p>
