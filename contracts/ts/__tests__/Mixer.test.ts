@@ -399,6 +399,11 @@ describe('Mixer', () => {
             owedFeesAfter = await mixerContract.getFeesOwedToOperator()
         })
 
+        it('calcBurntFees() should return a correct value', async () => {
+            const c = await mixerContract.calcBurntFees()
+            assert.equal(c.toString(), burnFee.toString())
+        })
+
         it('should increase the recipient\'s balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
             assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')

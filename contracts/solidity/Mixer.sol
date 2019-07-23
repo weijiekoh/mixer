@@ -7,6 +7,7 @@ contract Mixer {
     using SafeMath for uint256;
 
     address public operator;
+    uint256 public totalMixes;
     uint256 public burnFee;
     uint256 public mixAmt;
     uint256 public feesOwedToOperator;
@@ -78,7 +79,7 @@ contract Mixer {
      * withdraw this amount of ETH, we consider it burnt.
      */
     function calcBurntFees() public view returns (uint256) {
-        return address(this).balance.sub(feesOwedToOperator);
+        return totalMixes.mul(burnFee);
     }
 
     /*
@@ -157,6 +158,8 @@ contract Mixer {
         // Transfer the ETH owed to the recipient, minus the fee 
         uint256 recipientMixAmt = mixAmt.sub(_proof.fee);
         _proof.recipientAddress.transfer(recipientMixAmt);
+
+        totalMixes ++;
 
         emit Mixed(_proof.recipientAddress, recipientMixAmt, feeEarned);
     }
