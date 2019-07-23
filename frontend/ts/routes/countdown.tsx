@@ -145,12 +145,11 @@ export default () => {
                     broadcasterAddress,
                 )
             } catch (err) {
+                console.error(err)
                 throw {
-                    code: ErrorCodes.INVALID_WITNESS,
+                    code: ErrorCodes.WITNESS_GEN_ERROR,
                 }
             }
-
-            const witnessRoot = extractWitnessRoot(circuit, w)
 
             if (!circuit.checkWitness(w)) {
                 throw {
@@ -234,6 +233,8 @@ export default () => {
                 err.reason === 'contract not deployed'
             ) {
                 setErrorMsg(`The mixer contract was not deployed to the expected address ${deployedAddresses.Mixer}`)
+            } else if (err.code === ErrorCodes.WITNESS_GEN_ERROR) {
+                setErrorMsg('Could not generate witness.')
             } else if (err.code === ErrorCodes.INVALID_WITNESS) {
                 setErrorMsg('Invalid witness.')
             } else if (err.code === ErrorCodes.INVALID_PROOF) {

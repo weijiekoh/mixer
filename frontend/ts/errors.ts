@@ -1,4 +1,5 @@
 enum ErrorCodes {
+    WITNESS_GEN_ERROR,
     INVALID_WITNESS,
     INVALID_PROOF,
     INVALID_SIG,
