@@ -124,7 +124,7 @@ contract Mixer {
         // their discretion as to whether to relay transactions depending on
         // the fee specified
         require(_proof.fee >= burnFee);
-        require(_proof.fee <= mixAmt);
+        require(_proof.fee < mixAmt);
 
         // Hash the recipient's address, mixer contract address, and fee
         bytes32 computedSignal = keccak256(
