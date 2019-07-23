@@ -62,6 +62,7 @@ export default () => {
     const [proofGenProgress, setProofGenProgress] = useState('')
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [withdrawBtnClicked, setWithdrawBtnClicked] = useState(false)
+    const [errorMsg, setErrorMsg] = useState('')
 
     const progress = (line: string) => {
         setProofGenProgress(line)
@@ -128,17 +129,22 @@ export default () => {
         const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
         const circuit = genCircuit(cirDef)
 
-        const w = genWitness(
-            circuit,
-            pubKey,
-            signature,
-            signalHash,
-            externalNullifier,
-            identityStored.identityNullifier,
-            identityPathElements,
-            identityPathIndex,
-            broadcasterAddress,
-        )
+        let w
+        try {
+            w = genWitness(
+                circuit,
+                pubKey,
+                signature,
+                signalHash,
+                externalNullifier,
+                identityStored.identityNullifier,
+                identityPathElements,
+                identityPathIndex,
+                broadcasterAddress,
+            )
+        } catch (err) {
+            setErrorMsg('Error: could not calculate witness')
+        }
 
         const witnessRoot = extractWitnessRoot(circuit, w)
 
@@ -212,6 +218,7 @@ export default () => {
             const recipientBalanceAfter = await provider.getBalance(recipientAddress)
             console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
         } else {
+            setErrorMsg('Error: ' + responseJson.error.message)
             throw responseJson.error
         }
     }
@@ -328,7 +335,17 @@ export default () => {
 
                     </div>
                 </div>
+
             </div>
+
+            { errorMsg.length > 0 &&
+                <article className="message is-danger">
+                    <div className="message-body">
+                        {errorMsg}
+                    </div>
+                </article>
+            }
+
 
             { !(txHash.length === 0 && midnightOver) &&
                 <div className='columns'>
