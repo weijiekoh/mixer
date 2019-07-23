@@ -48,7 +48,7 @@ const admin = accounts[0]
 
 const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('operatorFeeEth')) * 2).toString()
+    (parseFloat(config.get('burnFeeEth')) * 2).toString()
 )
 
 const users = accounts.map((user) => user.address)

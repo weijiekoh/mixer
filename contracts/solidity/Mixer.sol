@@ -119,6 +119,13 @@ contract Mixer {
      *               fees, to the recipient if the proof is valid.
      */
     function mix(DepositProof _proof) public {
+        // The fee must be high enough, but not larger than the mix
+        // denomination; note that a self-interested operator would exercise
+        // their discretion as to whether to relay transactions depending on
+        // the fee specified
+        require(_proof.fee >= burnFee);
+        require(_proof.fee <= mixAmt);
+
         // Hash the recipient's address, mixer contract address, and fee
         bytes32 computedSignal = keccak256(
             abi.encodePacked(
