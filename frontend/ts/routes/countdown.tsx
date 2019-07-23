@@ -41,6 +41,7 @@ import {
 } from '../utils/ethAmts'
 
 const config = require('../exported_config')
+const deployedAddresses = config.chain.deployedAddresses
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
@@ -84,142 +85,167 @@ export default () => {
         const recipientBalanceBefore = await provider.getBalance(recipientAddress)
         console.log('The recipient has', ethers.utils.formatEther(recipientBalanceBefore), 'ETH')
 
-        const mixerContract = await getMixerContract(context)
-
-        const broadcasterAddress = mixerContract.address
-        const externalNullifier = mixerContract.address
-
-        progress('Downloading leaves...')
-
-        const leaves = await mixerContract.getLeaves()
-
-        const tree = await genTree(leaves)
-
-        const pubKey = genPubKey(identityStored.privKey)
-
-        const identityCommitment = genIdentityCommitment(
-            identityStored.identityNullifier,
-            pubKey,
-        )
-
-        const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
-            tree,
-            identityCommitment,
-        )
-
-        const { signalHash, signal } = genSignalAndSignalHash(
-            recipientAddress, broadcasterAddress, feeAmtWei,
-        )
-
-        const msg = genMsg(
-            externalNullifier,
-            signalHash, 
-            broadcasterAddress,
-        )
-
-        const signature = signMsg(identityStored.privKey, msg)
-        const validSig = verifySignature(msg, signature, pubKey)
-        if (!validSig) {
-            throw {
-                code: ErrorCodes.INVALID_SIG,
-            }
-        }
-
-        progress('Downloading circuit...')
-        const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
-        const circuit = genCircuit(cirDef)
-
-        let w
         try {
-            w = genWitness(
-                circuit,
-                pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
+            const mixerContract = await getMixerContract(context)
+
+            const broadcasterAddress = mixerContract.address
+            const externalNullifier = mixerContract.address
+
+            progress('Downloading leaves...')
+
+            const leaves = await mixerContract.getLeaves()
+
+            const tree = await genTree(leaves)
+
+            const pubKey = genPubKey(identityStored.privKey)
+
+            const identityCommitment = genIdentityCommitment(
                 identityStored.identityNullifier,
-                identityPathElements,
-                identityPathIndex,
+                pubKey,
+            )
+
+            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
+                tree,
+                identityCommitment,
+            )
+
+            const { signalHash, signal } = genSignalAndSignalHash(
+                recipientAddress, broadcasterAddress, feeAmtWei,
+            )
+
+            const msg = genMsg(
+                externalNullifier,
+                signalHash, 
                 broadcasterAddress,
             )
-        } catch (err) {
-            setErrorMsg('Error: could not calculate witness')
-        }
 
-        const witnessRoot = extractWitnessRoot(circuit, w)
-
-        if (!circuit.checkWitness(w)) {
-            throw {
-                code: ErrorCodes.INVALID_WITNESS,
-            }
-        }
-
-        progress('Downloading proving key...')
-        const provingKey = new Uint8Array(
-            await (await fetch(config.frontend.snarks.paths.provingKey)).arrayBuffer()
-        )
-
-        progress('Downloading verification key...')
-        const verifyingKey = unstringifyBigInts(
-            await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
-        )
-
-        progress('Generating proof...')
-        const proof = await genProof(w, provingKey.buffer)
-
-        const publicSignals = genPublicSignals(w, circuit)
-
-        const isVerified = verifyProof(verifyingKey, proof, publicSignals)
-
-        if (!isVerified) {
-            throw {
-                code: ErrorCodes.INVALID_PROOF,
-            }
-        }
-
-        const params = genMixParams(
-            signal,
-            proof,
-            recipientAddress,
-            BigInt(feeAmtWei.toString()),
-            publicSignals,
-        )
-
-        const request = {
-            jsonrpc: '2.0',
-            id: (new Date()).getTime(),
-            method: 'mixer_mix',
-            params,
-        }
-
-        progress('Sending JSON-RPC call to the relayer...')
-        console.log(request)
-
-        const response = await fetch(
-            '/api',
-            {
-                method: 'POST',
-                body: JSON.stringify(request),
-                headers: {
-                    'Content-Type': 'application/json',
+            const signature = signMsg(identityStored.privKey, msg)
+            const validSig = verifySignature(msg, signature, pubKey)
+            if (!validSig) {
+                throw {
+                    code: ErrorCodes.INVALID_SIG,
                 }
-            },
-        )
+            }
 
-        const responseJson = await response.json()
-        if (responseJson.result) {
-            progress('')
-            setTxHash(responseJson.result.txHash)
-            console.log(responseJson.result.txHash)
-            updateWithdrawTxHash(identityStored, responseJson.result.txHash)
+            progress('Downloading circuit...')
+            const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
+            const circuit = genCircuit(cirDef)
 
-            await sleep(4000)
+            let w
+            try {
+                w = genWitness(
+                    circuit,
+                    pubKey,
+                    signature,
+                    signalHash,
+                    externalNullifier,
+                    identityStored.identityNullifier,
+                    identityPathElements,
+                    identityPathIndex,
+                    broadcasterAddress,
+                )
+            } catch (err) {
+                throw {
+                    code: ErrorCodes.INVALID_WITNESS,
+                }
+            }
 
-            const recipientBalanceAfter = await provider.getBalance(recipientAddress)
-            console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
-        } else {
-            setErrorMsg('Error: ' + responseJson.error.message)
-            throw responseJson.error
+            const witnessRoot = extractWitnessRoot(circuit, w)
+
+            if (!circuit.checkWitness(w)) {
+                throw {
+                    code: ErrorCodes.INVALID_WITNESS,
+                }
+            }
+
+            progress('Downloading proving key...')
+            const provingKey = new Uint8Array(
+                await (await fetch(config.frontend.snarks.paths.provingKey)).arrayBuffer()
+            )
+
+            progress('Downloading verification key...')
+            const verifyingKey = unstringifyBigInts(
+                await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
+            )
+
+            progress('Generating proof...')
+            const proof = await genProof(w, provingKey.buffer)
+
+            const publicSignals = genPublicSignals(w, circuit)
+
+            const isVerified = verifyProof(verifyingKey, proof, publicSignals)
+
+            if (!isVerified) {
+                throw {
+                    code: ErrorCodes.INVALID_PROOF,
+                }
+            }
+
+            const params = genMixParams(
+                signal,
+                proof,
+                recipientAddress,
+                BigInt(feeAmtWei.toString()),
+                publicSignals,
+            )
+
+            const request = {
+                jsonrpc: '2.0',
+                id: (new Date()).getTime(),
+                method: 'mixer_mix',
+                params,
+            }
+
+            progress('Sending JSON-RPC call to the relayer...')
+            console.log(request)
+
+            const response = await fetch(
+                '/api',
+                {
+                    method: 'POST',
+                    body: JSON.stringify(request),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                },
+            )
+
+            const responseJson = await response.json()
+            if (responseJson.result) {
+                progress('')
+                setTxHash(responseJson.result.txHash)
+                console.log(responseJson.result.txHash)
+                updateWithdrawTxHash(identityStored, responseJson.result.txHash)
+
+                await sleep(4000)
+
+                const recipientBalanceAfter = await provider.getBalance(recipientAddress)
+                console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
+            } else if (responseJson.error.name === 'BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID') {
+                throw {
+                    code: ErrorCodes.PRE_BROADCAST_CHECK_FAILED
+                }
+            }
+        } catch (err) {
+            console.error(err)
+
+            if (
+                err.code === ethers.errors.UNSUPPORTED_OPERATION &&
+                err.reason === 'contract not deployed'
+            ) {
+                setErrorMsg(`The mixer contract was not deployed to the expected address ${deployedAddresses.Mixer}`)
+            } else if (err.code === ErrorCodes.INVALID_WITNESS) {
+                setErrorMsg('Invalid witness.')
+            } else if (err.code === ErrorCodes.INVALID_PROOF) {
+                setErrorMsg('Invalid proof.')
+            } else if (err.code === ErrorCodes.INVALID_SIG) {
+                setErrorMsg('Invalid signature.')
+            } else if (err.code === ErrorCodes.TX_FAILED) {
+                setErrorMsg('The transaction failed.')
+            } else if (err.code === ErrorCodes.PRE_BROADCAST_CHECK_FAILED) {
+                setErrorMsg('The pre-broadcast check failed')
+            }
+
         }
     }
     
@@ -318,8 +344,14 @@ export default () => {
                             }
                         </h2>
 
-                        { txHash.length === 0 && midnightOver && !withdrawStarted &&
+                        { context.error == null && txHash.length === 0 && midnightOver && !withdrawStarted &&
                             withdrawBtn
+                        }
+
+                        { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
+                            <p>
+                                To continue, please connect to the correct Ethereum network.
+                            </p>
                         }
 
                         { txHash.length > 0 &&
@@ -341,7 +373,7 @@ export default () => {
             { errorMsg.length > 0 &&
                 <article className="message is-danger">
                     <div className="message-body">
-                        {errorMsg}
+                        {'Error: ' + errorMsg}
                     </div>
                 </article>
             }
@@ -409,7 +441,13 @@ export default () => {
                                         </p>
                                     </div>
 
-                                    {withdrawBtn}
+                                    {context.error == null && withdrawBtn}
+
+                                    { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
+                                        <p>
+                                            To continue, please connect to the correct Ethereum network.
+                                        </p>
+                                    }
 
                                     <br />
                                     <br />

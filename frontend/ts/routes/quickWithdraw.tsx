@@ -146,17 +146,25 @@ export default () => {
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
-            const w = genWitness(
-                circuit,
-                pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
-                identityStored.identityNullifier,
-                identityPathElements,
-                identityPathIndex,
-                broadcasterAddress,
-            )
+            let w
+
+            try {
+                w = genWitness(
+                    circuit,
+                    pubKey,
+                    signature,
+                    signalHash,
+                    externalNullifier,
+                    identityStored.identityNullifier,
+                    identityPathElements,
+                    identityPathIndex,
+                    broadcasterAddress,
+                )
+            } catch (err) {
+                throw {
+                    code: ErrorCodes.INVALID_WITNESS,
+                }
+            }
 
             const witnessRoot = extractWitnessRoot(circuit, w)
 
@@ -265,9 +273,9 @@ export default () => {
                                       setConsentChecked(!consentChecked)
                                   }}
                                   type="checkbox" className="consent_checkbox" />
-                              I understand that this transaction won't be private
-                              as it will link your deposit address to the
-                              receiver's address.
+                              I understand that this transaction will not be
+                              private as it will link your deposit address to
+                              the receiver's address.
                          </label>
 
                           <br />
@@ -293,14 +301,6 @@ export default () => {
                           <br />
                           <br />
 
-                          { txStatus === TxStatuses.Err &&
-                              <article className="message is-danger">
-                                <div className="message-body">
-                                  {errorMsg}
-                                </div>
-                            </article>
-                          }
-
                           { proofGenProgress.length > 0 && 
                               <div className="has-text-left">
                                   <br />
@@ -309,6 +309,18 @@ export default () => {
                                   </pre>
                               </div>
                           }
+
+                          <br />
+                          <br />
+
+                          { txStatus === TxStatuses.Err &&
+                              <article className="message is-danger">
+                                  <div className="message-body">
+                                      {'Error: ' + errorMsg}
+                                  </div>
+                              </article>
+                          }
+
                        </div>
                    </div>
                }
