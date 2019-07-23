@@ -221,7 +221,7 @@ export default () => {
 
                 const recipientBalanceAfter = await provider.getBalance(recipientAddress)
                 console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
-            } else if (responseJson.error.name === 'BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID') {
+            } else if (responseJson.error.data.name === 'BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID') {
                 throw {
                     code: ErrorCodes.PRE_BROADCAST_CHECK_FAILED
                 }
