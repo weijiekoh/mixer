@@ -63,7 +63,7 @@ It has the following features:
 2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
     
     - Accepts, verifies, and submits a zk-SNARK proof (generated in the user's
-      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0xfb2bf70382a98c72d38bed63735ff5115ff243c6).
+      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0x1B260ea27FdBa80E5bD430ff9eddd29509d28109).
 
 3. Ethereum contracts:
 
@@ -264,6 +264,16 @@ In the `mixer/backend/` directory:
 <!--TODO-->
 
 ## Deployment
+
+<!--### Ethereum contracts-->
+
+<!--First, copy `config/local-dev.yaml` to `config/local-prod.yaml` and modify it as such:-->
+
+<!--- Change `chain.url` to an Ethereum node of a network of your choice, e.g.-->
+  <!--`"https://kovan.infura.io/v3/<api_key>`-->
+<!--- Change `chain.chainId` to the corresponding chain ID. e.g. `42` for Kovan.-->
+
+### Docker containers
 
 This project uses Docker to containerise its various components, and Docker
 Compose to orchestrate them.
