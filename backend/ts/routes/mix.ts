@@ -50,8 +50,29 @@ const areEqualAddresses = (a: string, b: string) => {
     return a.toLowerCase() === b.toLowerCase()
 }
 
+const burnFeeWei = ethers.utils.parseUnits(config.get('burnFeeEth'), 'ether')
+
+// This operator accepts a fee that is greater than or equal to the burn fee
+const operatorFeeWei = burnFeeWei
+
 const mix = async (depositProof: DepositProof) => {
     const publicInputs = depositProof.input.map(bigInt)
+
+    // verify the fee
+    const fee = ethers.utils.parseUnits(BigInt(depositProof.fee).toString(), 'wei')
+    const enoughFees = fee.gte(operatorFeeWei.add(burnFeeWei))
+
+    if (!enoughFees) {
+        const errorMsg = 'the fee is to low'
+        throw {
+            code: errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE,
+            message: errorMsg,
+            data: errors.genError(
+                errors.MixerErrorNames.BACKEND_MIX_INSUFFICIENT_FEE,
+                errorMsg,
+            )
+        }
+    }
 
     // verify the external nullifier
     if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[3])) {

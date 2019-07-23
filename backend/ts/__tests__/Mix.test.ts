@@ -67,7 +67,7 @@ const cirDef = JSON.parse(
 const circuit = genCircuit(cirDef)
 
 const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('operatorFeeEth')) * 2).toString()
+    (parseFloat(config.get('burnFeeEth')) * 2).toString()
 )
 
 const validProof = {
@@ -122,6 +122,10 @@ broadcasterAddressInvalidProof.input[4] = '0x00000000000000000000000000000000000
 // deep copy and make the external nullifier invalid
 const externalNullifierInvalidProof = JSON.parse(JSON.stringify(validProof))
 externalNullifierInvalidProof.input[3] = '0x0000000000000000000000000000000000000000'
+
+// deep copy and make the fee too low
+const lowFeeProof = JSON.parse(JSON.stringify(validProof))
+lowFeeProof.fee = '0x0001'
 
 const schemaInvalidProof = {
     signal: 'INVALID<<<<<<<<<<<<<<<<<<<<<<<<<<<<<',
@@ -186,6 +190,12 @@ describe('the mixer_mix API call', () => {
         const resp = await post(1, 'mixer_mix', broadcasterAddressInvalidProof)
 
         expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID)
+    })
+
+    test('rejects a proof where the fee is too low', async () => {
+        const resp = await post(1, 'mixer_mix', lowFeeProof)
+
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE)
     })
 
     test('accepts a valid proof and credits the recipient', async () => {

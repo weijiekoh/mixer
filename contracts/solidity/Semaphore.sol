@@ -29,9 +29,7 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
     uint8 signal_tree_index;
     uint8 id_tree_index;
 
-    uint8 constant root_history_size = 100;
-    uint256[root_history_size] root_history;
-    uint8 current_root_index = 0;
+    uint256[] root_history;
 
     mapping (uint => bool) nullifiers_set;
 
@@ -59,12 +57,12 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
 
     function insertIdentity(uint256 leaf) public onlyOwner {
         insert(id_tree_index, leaf);
-        root_history[current_root_index++ % root_history_size] = tree_roots[id_tree_index];
+        root_history.push(tree_roots[id_tree_index]);
     }
 
     function updateIdentity(uint256 old_leaf, uint256 leaf, uint32 leaf_index, uint256[] memory old_path, uint256[] memory path) public onlyOwner {
         update(id_tree_index, old_leaf, leaf, leaf_index, old_path, path);
-        root_history[current_root_index++ % root_history_size] = tree_roots[id_tree_index];
+        root_history.push(tree_roots[id_tree_index]);
     }
 
     function hasNullifier(uint n) public view returns (bool) {

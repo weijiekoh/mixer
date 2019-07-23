@@ -43,8 +43,14 @@ const admin = accounts[0]
 
 const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('operatorFeeEth')) * 2).toString()
+    (parseFloat(config.get('burnFeeEth')) * 2).toString()
 )
+
+const burnFee = ethers.utils.parseEther(
+    (parseFloat(config.get('burnFeeEth'))).toString()
+)
+
+const operatorFee = burnFee
 
 const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
@@ -142,13 +148,13 @@ describe('Mixer', () => {
                     {},
                     '0x0000000000000000000000000000000000000000',
                     ethers.utils.parseEther(config.mixAmtEth),
-                    ethers.utils.parseEther(config.operatorFeeEth),
+                    ethers.utils.parseEther(config.burnFeeEth),
                 )
             )
             await sleep(1000)
         })
 
-        it('should not deploy Mixer if the operatorFee is invalid', async () => {
+        it('should not deploy Mixer if the burnFee is invalid', async () => {
             assert.revert(
                 deployer.deploy(
                     Mixer,
@@ -168,7 +174,7 @@ describe('Mixer', () => {
                     {},
                     semaphoreContract.contractAddress,
                     ethers.utils.parseEther('0'),
-                    ethers.utils.parseEther(config.operatorFeeEth),
+                    ethers.utils.parseEther(config.burnFeeEth),
                 )
             )
             await sleep(1000)
@@ -199,6 +205,37 @@ describe('Mixer', () => {
             const semaphoreExtNullifier = await semaphoreContract.external_nullifier()
             const mixerAddress = mixerContract.contractAddress
             assert.equal(mixerAddress.toLowerCase(), semaphoreExtNullifier.toHexString().toLowerCase())
+        })
+    })
+
+    describe('Burn fee and operator fee', () => {
+        it('should match right after deployment', async () => {
+            const b = await mixerContract.burnFee()
+
+            assert.equal(b.toString(), burnFee.toString())
+        })
+
+        it('setBurnFee should work', async () => {
+            const originalBurnFee = await mixerContract.burnFee()
+
+            const newBurnFeeStr = '10000000000000'
+
+            // Set the new fees
+            await mixerContract.setBurnFee(newBurnFeeStr)
+
+            // Get the new fees
+            const burnFee = await mixerContract.burnFee()
+
+            // Check the values
+            assert.equal(burnFee.toString(), newBurnFeeStr)
+
+            // Reset the fees to the original values
+            await mixerContract.setBurnFee(originalBurnFee)
+
+            assert.equal(
+                (await mixerContract.burnFee()).toString(),
+                originalBurnFee.toString()
+            )
         })
     })
 

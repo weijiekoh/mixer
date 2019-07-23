@@ -23,6 +23,10 @@ import {
     genIdentity,
     genIdentityCommitment,
 } from 'mixer-crypto'
+import {
+    mixAmtEth,
+    operatorFeeEth,
+} from '../utils/ethAmts'
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 
@@ -36,8 +40,8 @@ export default () => {
     const [errorMsg, setErrorMsg] = useState('')
     const [enoughEth, setEnoughEth] = useState(true)
 
-    const operatorFeeEth = config.operatorFeeEth
-    const mixAmtEth = config.mixAmtEth
+    // The operator's fee is equal to the burn fee by default but this isn't
+    // enforced by the contract
     const mixAmt = ethers.utils.parseEther(mixAmtEth)
 
     const validRecipientAddress= !recipientAddress.match(/^0x[a-fA-F0-9]{40}$/)

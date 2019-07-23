@@ -383,18 +383,18 @@ export default () => {
                 <div className='columns'>
                     <div className='column is-6 is-offset-3'>
                         <p>
-                            To mix your funds with the most anonymity, leave
-                            your deposit untouched for as long as possible.
+                            To enjoy most anonymity, leave your deposit
+                            untouched for as long as possible.
                         </p>
                         <br />
                         <p>
                             To let this page automatically mix your funds at an
                             optimal time, leave this page open till after
                             midnight UTC. For example, if you deposit your
-                            funds at 3pm UTC on 1 Jan, this page will wait till
-                            midnight 2 Jan UTC to mix the funds. If you close
-                            this page, you can reopen it any time, and withdraw
-                            it at a click of a button, even after midnight UTC.
+                            funds at 3pm UTC on 1 Jan, this page will wait for
+                            9 hours to mix the funds. If you close this page,
+                            you can reopen it any time, and withdraw it at a
+                            click of a button, even after midnight UTC.
                         </p>
                     </div>
 

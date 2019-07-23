@@ -40,7 +40,7 @@ const deploy = async (deployer: any, compiledContracts: string) => {
         {},
         semaphoreContract.contractAddress,
         ethers.utils.parseEther(config.mixAmtEth),
-        ethers.utils.parseEther(config.operatorFeeEth),
+        ethers.utils.parseEther(config.burnFeeEth),
     )
 
     console.log('Transferring ownership of Semaphore to Mixer')

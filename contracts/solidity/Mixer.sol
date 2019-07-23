@@ -7,14 +7,14 @@ contract Mixer {
     using SafeMath for uint256;
 
     address public operator;
-    uint256 public operatorFee;
+    uint256 public burnFee;
     uint256 public mixAmt;
     uint256 public feesOwedToOperator;
     Semaphore public semaphore;
     uint256[] public identityCommitments;
 
     event Deposited(address indexed depositor, uint256 indexed mixAmt, uint256 identityCommitment);
-    event Mixed(address indexed recipient, uint256 indexed mixAmt, uint256 indexed operatorFee);
+    event Mixed(address indexed recipient, uint256 indexed mixAmt, uint256 indexed operatorFeeEarned);
 
     // input = [root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address]
     struct DepositProof {
@@ -30,10 +30,10 @@ contract Mixer {
     /*
      * Constructor
      */
-    constructor (address _semaphore, uint256 _mixAmt, uint256 _operatorFee) public {
+    constructor (address _semaphore, uint256 _mixAmt, uint256 _burnFee) public {
         require(_semaphore != address(0));
-        require(_operatorFee != 0);
-        require(_mixAmt > _operatorFee);
+        require(_burnFee != 0);
+        require(_mixAmt > _burnFee);
 
         // Set the operator as the contract deployer
         operator = msg.sender;
@@ -41,8 +41,8 @@ contract Mixer {
         // Set the fixed mixing amount
         mixAmt = _mixAmt;
 
-        // Set the fixed operator's fee
-        operatorFee = _operatorFee;
+        // Set the burn fee.
+        burnFee = _burnFee;
 
         // Set the Semaphore contract
         semaphore = Semaphore(_semaphore);
@@ -58,6 +58,14 @@ contract Mixer {
     }
 
     /*
+     * Set the burn fee
+     */
+    function setBurnFee(uint256 _newBurnFee) public {
+        require(mixAmt >_newBurnFee);
+        burnFee = _newBurnFee;
+    }
+
+    /*
      * @return The amount of fees owed to the operator in wei
      */
     function getFeesOwedToOperator() public view returns (uint256) {
@@ -65,18 +73,9 @@ contract Mixer {
     }
 
     /*
-     * @return The fee in wei which each user has to pay to mix their funds.
-     */
-    function getTotalFee() public view returns (uint256) {
-        return operatorFee * 2;
-    }
-
-    /*
-     * @return The total amount of fees burnt. This is equivalent to
-     * `operatorFee` multipled by the number of deposits. To save gas, we do
-     * not send the burnt fees to a burn address. As this contract provides no
-     * way for anyone - not even the operator - to withdraw this amount of ETH,
-     * we consider it burnt.
+     * @return The total amount of fees burnt.
+     * As this contract provides no way for anyone - not even the operator - to
+     * withdraw this amount of ETH, we consider it burnt.
      */
     function calcBurntFees() public view returns (uint256) {
         return address(this).balance.sub(feesOwedToOperator);
@@ -120,9 +119,6 @@ contract Mixer {
      *               fees, to the recipient if the proof is valid.
      */
     function mix(DepositProof _proof) public {
-        // Check whether the fee matches the one quoted by this contract
-        require(_proof.fee == getTotalFee());
-
         // Hash the recipient's address, mixer contract address, and fee
         bytes32 computedSignal = keccak256(
             abi.encodePacked(
@@ -144,18 +140,17 @@ contract Mixer {
             _proof.input
         );
 
-        // Increase the operator's fee balance
-        feesOwedToOperator = feesOwedToOperator.add(operatorFee);
+        // Increase the operator's fee balance, which is the fee minus the burn
+        // amount. Since the remainder is stuck in this contract, it's as good
+        // as burned. As such, we don't need to transfer the ETH to a burn
+        // addreess like 0x0000.
+        uint256 feeEarned = _proof.fee.sub(burnFee);
+        feesOwedToOperator = feesOwedToOperator.add(feeEarned);
 
-        // Transfer the ETH owed to the recipient, minus the totalFee (to
-        // prevent griefing).
-        // Note that totalFee = operatorFee * 2.
-        // Since the remainder is stuck in this contract, it's as good as
-        // burned. As such, we don't need to transfer the ETH to 0x0000..., and
-        // we can save gas too.
-        uint256 recipientMixAmt = mixAmt.sub(operatorFee.mul(2));
+        // Transfer the ETH owed to the recipient, minus the fee 
+        uint256 recipientMixAmt = mixAmt.sub(_proof.fee);
         _proof.recipientAddress.transfer(recipientMixAmt);
 
-        emit Mixed(_proof.recipientAddress, recipientMixAmt, operatorFee);
+        emit Mixed(_proof.recipientAddress, recipientMixAmt, feeEarned);
     }
 }

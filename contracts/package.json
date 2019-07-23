@@ -7,8 +7,10 @@
     "build": "tsc && ./scripts/buildSolidity.sh",
     "test": "etherlime test --path=build/__tests__ --skip-compilation --timeout 90000",
     "test-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__ --skip-compilation --timeout 90000",
-    "test-mix": "etherlime test --path=build/__tests__/Mixer.test.ts --skip-compilation --timeout 90000",
-    "test-mix-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__/Mixer.test.ts --skip-compilation --timeout 90000",
+    "test-mix": "etherlime test --path=build/__tests__/Mixer.test.js --skip-compilation --timeout 90000",
+    "test-mix-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__/Mixer.test.js --skip-compilation --timeout 90000",
+    "test-mix-stress": "etherlime test --path=build/__tests__/MixerStress.test.js --skip-compilation --timeout 5000000",
+    "test-mix-stress-debug": "node --inspect-brk ./node_modules/.bin/etherlime test --path=build/__tests__/MixerStress.test.js --skip-compilation --timeout 5000000",
     "watch": "tsc --watch",
     "deploy": "./scripts/deploy.sh",
     "ganache": "./scripts/runGanache.sh"
