@@ -143,8 +143,8 @@ const genPathElementsAndIndex = async (tree, identityCommitment) => {
     const identityPath = await tree.path(leafIndex)
     const identityPathElements = identityPath.path_elements
     const identityPathIndex = identityPath.path_index
-    return { identityPathElements, identityPathIndex }
 
+    return { identityPathElements, identityPathIndex }
 }
 
 const verifySignature = (
@@ -192,11 +192,11 @@ const genWitness = (
         'auth_sig_r[1]': signature.R8[1],
         auth_sig_s: signature.S,
         signal_hash: signalHash,
-        external_nullifier: externalNullifier,
+        external_nullifier: bigInt(externalNullifier),
         identity_nullifier: identityNullifier,
         identity_path_elements: identityPathElements,
         identity_path_index: identityPathIndex,
-        broadcaster_address: broadcasterAddress,
+        broadcaster_address: bigInt(broadcasterAddress),
     })
 }
 

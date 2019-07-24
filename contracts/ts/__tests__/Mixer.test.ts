@@ -20,6 +20,7 @@ import {
     genEddsaKeyPair,
     genMsg,
     genCircuit,
+    genSignedMsg,
     signMsg,
     verifySignature,
     genSignalAndSignalHash,
@@ -325,11 +326,12 @@ describe('Mixer', () => {
                 recipientAddress, broadcasterAddress, feeAmt,
             )
 
-            const msg = genMsg(
-                externalNullifier,
-                signalHash, 
-                mixerContract.contractAddress,
-            )
+            //const msg = genMsg(
+                //externalNullifier,
+                //signalHash, 
+                //mixerContract.contractAddress,
+            //)
+            //const signature = signMsg(identity.privKey, msg)
 
             // signature = signEddsa(
             //     privKey,
@@ -344,7 +346,12 @@ describe('Mixer', () => {
             //     )
             // )
 
-            const signature = signMsg(identity.privKey, msg)
+            const { signature, msg } = genSignedMsg(
+                identity.privKey,
+                externalNullifier,
+                signalHash, 
+                broadcasterAddress,
+            )
 
             assert.isTrue(verifySignature(msg, signature, identity.pubKey))
 

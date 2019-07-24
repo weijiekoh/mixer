@@ -7,8 +7,7 @@ import { Redirect } from 'react-router-dom'
 import { getMixerContract } from '../web3/mixer'
 import { genMixParams, sleep } from 'mixer-utils'
 import { 
-    genMsg,
-    signMsg,
+    genSignedMsg,
     genPubKey,
     genTree,
     genWitness,
@@ -19,7 +18,6 @@ import {
     genPublicSignals,
     verifySignature,
     unstringifyBigInts,
-    extractWitnessRoot,
     genProof,
     verifyProof,
 } from 'mixer-crypto'
@@ -110,20 +108,26 @@ export default () => {
                 identityCommitment,
             )
 
-            console.log('identityCommitment:', identityCommitment)
-            console.log('identityPathIndex:', identityPathIndex)
+            const leafIndex = await tree.element_index(identityCommitment)
+            const identityPath = await tree.path(leafIndex)
 
             const { signalHash, signal } = genSignalAndSignalHash(
                 recipientAddress, broadcasterAddress, feeAmtWei,
             )
 
-            const msg = genMsg(
+            const { signature, msg } = genSignedMsg(
+                identityStored.privKey,
                 externalNullifier,
                 signalHash, 
                 broadcasterAddress,
             )
 
-            const signature = signMsg(identityStored.privKey, msg)
+            console.log({
+                externalNullifier,
+                signalHash, 
+                broadcasterAddress,
+            })
+
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
                 throw {

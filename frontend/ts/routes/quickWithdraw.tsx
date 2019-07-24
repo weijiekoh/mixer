@@ -134,7 +134,9 @@ export default () => {
                 signalHash, 
                 broadcasterAddress,
             )
+
             const validSig = verifySignature(msg, signature, pubKey)
+
             if (!validSig) {
                 throw {
                     code: ErrorCodes.INVALID_SIG,
