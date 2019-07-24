@@ -10,10 +10,10 @@ chain:
     gasLimit: 8000000
   privateKeysPath: "/run/secrets/privateKeysPath"
   deployedAddresses:
-    MiMC: "0xA8Da3D8f5c959Ac76281E5BA417D2fBFB7911194"
-    MultipleMerkleTree: "0x8c27e86178336129fcf21c5d61a666cf8d66c59f"
-    Semaphore: "0x7ff3181a24a82e581099a6a8733dbb028debf7c7"
-    Mixer: "0xfb2bf70382a98c72d38bed63735ff5115ff243c6"
+    MiMC: "0xEa2F49D59Edaa5cab95AF5DE5C14c6e0a730cEBa"
+    MultipleMerkleTree: "0xA20Ca36803DaB1d7B97576f0e7A0ABe876953C20"
+    Semaphore: "0x532E2E4F972F79E086e65a8a7EAe82ac4bFB8eD4"
+    Mixer: "0x08F3fA6B5256fe583281738eB79A0Cb75C3E7f5B"
 
 backend:
   port: 3000

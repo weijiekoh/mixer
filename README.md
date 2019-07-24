@@ -63,7 +63,7 @@ It has the following features:
 2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
     
     - Accepts, verifies, and submits a zk-SNARK proof (generated in the user's
-      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0xfb2bF70382A98C72D38bed63735Ff5115fF243C6).
+      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0x08F3fA6B5256fe583281738eB79A0Cb75C3E7f5B).
 
 3. Ethereum contracts:
 
