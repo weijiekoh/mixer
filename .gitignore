@@ -1,6 +1,10 @@
 # prod config
 config/*-prod.yaml
 config/*-prod.yml
+config/local-dev.yaml
+config/local-dev.yml
+
+frontend/ts/exported_config.json
 
 verification_key.json
 contracts/.privateKeys.json
@@ -10,8 +14,6 @@ contracts/privateKeys.json
 
 frontend/server.cert
 frontend/server.key
-
-frontend/ts/exported_config.json
 
 contracts/.etherlime-store/
 contracts/compiled/

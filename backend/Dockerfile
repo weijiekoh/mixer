@@ -10,4 +10,6 @@ FROM mixer-base AS mixer-backend
 
 WORKDIR /mixer/backend
 
+RUN rm -rf /mixer/frontend
+
 CMD ["node", "build/index.js"]
