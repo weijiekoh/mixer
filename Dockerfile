@@ -35,14 +35,18 @@ RUN npm config set depth 0 && \
     lerna bootstrap --no-progress && \
     lerna run build
 
-ENV NODE_ENV_BAK=$NODE_ENV
-ENV NODE_ENV=production
+#ENV NODE_ENV_BAK=$NODE_ENV
+#ENV NODE_ENV=production
 
-RUN echo "Building frontend with NODE_ENV=production" && \
+#RUN echo "Building frontend with NODE_ENV=production" && \
+    #cd frontend && \
+    #npm run build
+
+#ENV NODE_ENV=$NODE_ENV_BAK
+
+RUN echo "Building frontend" && \
     cd frontend && \
     npm run build
-
-ENV NODE_ENV=$NODE_ENV_BAK
 
 FROM node:${NODE_VERSION}-stretch AS mixer-base
 

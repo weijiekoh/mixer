@@ -97,6 +97,8 @@ export default () => {
             const tree = await genTree(leaves)
 
             const pubKey = genPubKey(identityStored.privKey)
+            console.log('Privkey:', identityStored.privKey)
+            console.log('Pubkey:', pubKey)
 
             const identityCommitment = genIdentityCommitment(
                 identityStored.identityNullifier,
@@ -134,6 +136,8 @@ export default () => {
                     code: ErrorCodes.INVALID_SIG,
                 }
             }
+
+            console.log(validSig)
 
             progress('Downloading circuit...')
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()

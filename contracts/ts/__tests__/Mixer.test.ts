@@ -326,13 +326,6 @@ describe('Mixer', () => {
                 recipientAddress, broadcasterAddress, feeAmt,
             )
 
-            //const msg = genMsg(
-                //externalNullifier,
-                //signalHash, 
-                //mixerContract.contractAddress,
-            //)
-            //const signature = signMsg(identity.privKey, msg)
-
             // signature = signEddsa(
             //     privKey,
             //     mimcHash(
