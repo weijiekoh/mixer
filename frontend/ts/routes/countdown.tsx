@@ -135,36 +135,36 @@ export default () => {
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
-            const w = genWitness(
-                circuit,
+            console.log({
                 pubKey,
                 signature,
                 signalHash,
                 externalNullifier,
-                identityStored.identityNullifier,
+                identityNullifier: identityStored.identityNullifier,
                 identityPathElements,
                 identityPathIndex,
                 broadcasterAddress,
-            )
-            //let w
-            //try {
-                //w = genWitness(
-                    //circuit,
-                    //pubKey,
-                    //signature,
-                    //signalHash,
-                    //externalNullifier,
-                    //identityStored.identityNullifier,
-                    //identityPathElements,
-                    //identityPathIndex,
-                    //broadcasterAddress,
-                //)
-            //} catch (err) {
-                //console.error(err)
-                //throw {
-                    //code: ErrorCodes.WITNESS_GEN_ERROR,
-                //}
-            //}
+            })
+
+            let w
+            try {
+                w = genWitness(
+                    circuit,
+                    pubKey,
+                    signature,
+                    signalHash,
+                    externalNullifier,
+                    identityStored.identityNullifier,
+                    identityPathElements,
+                    identityPathIndex,
+                    broadcasterAddress,
+                )
+            } catch (err) {
+                console.error(err)
+                throw {
+                    code: ErrorCodes.WITNESS_GEN_ERROR,
+                }
+            }
 
             if (!circuit.checkWitness(w)) {
                 throw {

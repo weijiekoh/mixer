@@ -25,6 +25,7 @@ import {
     genSignalAndSignalHash,
     genWitness,
     extractWitnessRoot,
+    genPathElementsAndIndex,
     genProof,
     genPublicSignals,
     verifyProof,
@@ -315,6 +316,11 @@ describe('Mixer', () => {
 
             const identityPath = await tree.path(nextIndex)
 
+            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
+                tree,
+                identityCommitment,
+            )
+
             const { signalHash, signal } = genSignalAndSignalHash(
                 recipientAddress, broadcasterAddress, feeAmt,
             )
@@ -349,8 +355,8 @@ describe('Mixer', () => {
                 signalHash,
                 externalNullifier,
                 identity.identityNullifier,
-                identityPath.path_elements,
-                identityPath.path_index,
+                identityPathElements,
+                identityPathIndex,
                 broadcasterAddress
             )
 
