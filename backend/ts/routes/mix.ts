@@ -47,7 +47,7 @@ interface DepositProof {
 }
 
 const areEqualAddresses = (a: string, b: string) => {
-    return a.toLowerCase() === b.toLowerCase()
+    return BigInt(a) === BigInt(b)
 }
 
 const burnFeeWei = ethers.utils.parseUnits(config.get('burnFeeEth'), 'ether')
