@@ -94,6 +94,7 @@ export default () => {
             progress('Downloading leaves...')
 
             const leaves = await mixerContract.getLeaves()
+            console.log('Leaves:', leaves)
 
             const tree = await genTree(leaves)
 
@@ -108,6 +109,9 @@ export default () => {
                 tree,
                 identityCommitment,
             )
+
+            console.log('identityCommitment:', identityCommitment)
+            console.log('identityPathIndex:', identityPathIndex)
 
             const { signalHash, signal } = genSignalAndSignalHash(
                 recipientAddress, broadcasterAddress, feeAmtWei,
@@ -384,7 +388,7 @@ export default () => {
                 <div className='columns'>
                     <div className='column is-6 is-offset-3'>
                         <p>
-                            To enjoy most anonymity, leave your deposit
+                            To enjoy the most anonymity, leave your deposit
                             untouched for as long as possible.
                         </p>
                         <br />
