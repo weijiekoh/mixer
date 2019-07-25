@@ -4,8 +4,6 @@ ARG NODE_VERSION=11.14.0
 
 #COPY --from=mixer-base /mixer /mixer
 
-#RUN rm -rf /mixer/frontend
-
 FROM mixer-base AS mixer-backend
 
 WORKDIR /mixer/backend
