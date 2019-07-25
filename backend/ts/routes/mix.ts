@@ -14,15 +14,9 @@ import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
 const deployedAddresses = config.get('chain.deployedAddresses')
 
-let hotWalletPrivKey
-
-if (config.get('env') === 'local-dev') {
-    hotWalletPrivKey = config.get('backend.hotWalletPrivKey')
-} else {
-    hotWalletPrivKey = JSON.parse(
-        fs.readFileSync(config.get('backend.hotWalletPrivKeyPath'), 'utf-8')
-    ).privateKey
-}
+const hotWalletPrivKey = JSON.parse(
+    fs.readFileSync(config.get('backend.hotWalletPrivKeyPath'), 'utf-8')
+).privateKey
 
 const verificationKey = require('@mixer-backend/verification_key.json')
 

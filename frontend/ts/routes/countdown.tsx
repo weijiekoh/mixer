@@ -92,13 +92,10 @@ export default () => {
             progress('Downloading leaves...')
 
             const leaves = await mixerContract.getLeaves()
-            console.log('Leaves:', leaves)
 
             const tree = await genTree(leaves)
 
             const pubKey = genPubKey(identityStored.privKey)
-            console.log('Privkey:', identityStored.privKey)
-            console.log('Pubkey:', pubKey)
 
             const identityCommitment = genIdentityCommitment(
                 identityStored.identityNullifier,
@@ -124,12 +121,6 @@ export default () => {
                 broadcasterAddress,
             )
 
-            console.log({
-                externalNullifier,
-                signalHash, 
-                broadcasterAddress,
-            })
-
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
                 throw {
@@ -137,22 +128,9 @@ export default () => {
                 }
             }
 
-            console.log(validSig)
-
             progress('Downloading circuit...')
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
-
-            console.log({
-                pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
-                identityNullifier: identityStored.identityNullifier,
-                identityPathElements,
-                identityPathIndex,
-                broadcasterAddress,
-            })
 
             let w
             try {
