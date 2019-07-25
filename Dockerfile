@@ -35,14 +35,14 @@ RUN rm -rf /mixer/frontend/build /mixer/frontend/dist
 RUN npx lerna bootstrap --no-progress && \
     npx lerna run build
 
-ENV NODE_ENV_BAK=$NODE_ENV
-ENV NODE_ENV=production
+#ENV NODE_ENV_BAK=$NODE_ENV
+#ENV NODE_ENV=production
 
-RUN echo "Building frontend with NODE_ENV=production" && \
-    cd frontend && \
-    npm run build
+#RUN echo "Building frontend with NODE_ENV=production" && \
+    #cd frontend && \
+    #npm run build
 
-ENV NODE_ENV=$NODE_ENV_BAK
+#ENV NODE_ENV=$NODE_ENV_BAK
 
 FROM node:${NODE_VERSION}-stretch AS mixer-base
 
