@@ -31,6 +31,8 @@ COPY crypto /mixer/crypto
 COPY backend /mixer/backend
 COPY frontend /mixer/frontend
 
+RUN rm -rf /mixer/frontend/build /mixer/frontend/dist
+
 RUN npm config set depth 0 && \
     lerna bootstrap --no-progress && \
     lerna run build
@@ -52,7 +54,10 @@ COPY --from=mixer-build /mixer/utils /mixer/utils
 COPY --from=mixer-build /mixer/crypto /mixer/crypto
 COPY --from=mixer-build /mixer/backend /mixer/backend
 COPY --from=mixer-build /mixer/frontend /mixer/frontend
-COPY --from=mixer-build /mixer/*.json /mixer/
+
+COPY --from=mixer-build /mixer/package.json /mixer/package.json
+COPY --from=mixer-build /mixer/lerna.json /mixer/lerna.json
+COPY --from=mixer-build /mixer/tsconfig.json /mixer/tsconfig.json
 
 RUN rm -rf /mixer/contracts/ts/ \
     /mixer/config/ts/ \

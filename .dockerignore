@@ -3,6 +3,10 @@
 **/*.log
 **/*.md
 **/.git
+frontend/dist
+frontend/build
+frontend/.cache
+frontend/server.*
 **/package-lock.json
 contracts/compiled
 contracts/parity
