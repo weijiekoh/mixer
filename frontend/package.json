@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "watch": "node server.js",
-        "build": "echo 'Building frontend' && rm -rf build && NODE_ENV=production parcel build index.html --no-source-maps --out-dir=build",
+        "build": "echo 'Building frontend' && rm -rf build && parcel build index.html --no-minify --no-source-maps --out-dir=build",
         "lint": "tslint --project . 'js/**/*.ts[x]'",
         "lint-fix": "tslint --project . 'js/**/*.ts[x]' --fix"
     },
