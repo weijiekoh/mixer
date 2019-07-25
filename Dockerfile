@@ -6,7 +6,6 @@ WORKDIR /mixer
 ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 
-RUN npm i lerna -g
 COPY package.json lerna.json tsconfig.json /mixer/
 
 RUN npm install --quiet && \
@@ -18,11 +17,11 @@ COPY semaphore /mixer/semaphore
 RUN cd /mixer/ && \
     ./scripts/downloadSnarks.sh --only-verifier
 
-RUN cd /mixer/semaphore/sbmtjs && \
-    npm install --quiet && \
-    cd ../semaphorejs && \
-    npm install --quiet && \
-    npx truffle compile
+#RUN cd /mixer/semaphore/sbmtjs && \
+    #npm install --quiet && \
+    #cd ../semaphorejs && \
+    #npm install --quiet && \
+    #npx truffle compile
 
 COPY contracts /mixer/contracts
 COPY config /mixer/config
@@ -33,9 +32,8 @@ COPY frontend /mixer/frontend
 
 RUN rm -rf /mixer/frontend/build /mixer/frontend/dist
 
-RUN npm config set depth 0 && \
-    lerna bootstrap --no-progress && \
-    lerna run build
+RUN npx lerna bootstrap --no-progress && \
+    npx lerna run build
 
 #ENV NODE_ENV_BAK=$NODE_ENV
 #ENV NODE_ENV=production
