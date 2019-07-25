@@ -36,6 +36,7 @@ import { ErrorCodes } from '../errors'
 import {
     getItems,
     updateWithdrawTxHash,
+    getFirstUnwithdrawn,
 } from '../storage'
 
 import {
@@ -83,8 +84,9 @@ export default () => {
         setProofGenProgress(line)
     }
 
-    // Just use the last stored item
-    const identityStored = items[items.length - 1]
+    //// Just use the last stored item
+    //const identityStored = items[items.length - 1]
+    const identityStored = getFirstUnwithdrawn()
 
     const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
