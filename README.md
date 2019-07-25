@@ -136,6 +136,24 @@ discarded.
 <!--Take note of the filepath of `solc-0.4.25` as you will need to modify the next-->
 <!--command to use it.-->
 
+Create a file named `hotWalletPrivKey.json` in a location outside this
+repository with a private key which will serve as the operator's hot wallet.
+The following private key corresponds to the address
+`0x627306090abab3a6e1400e9345bc60c78a8bef57`, the first Ethereum address which
+can be derived from the well-known `candy maple cake sugar...` mnemonic. Don't
+use this in production.
+
+```json
+{
+    "privateKey": "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3"
+}
+```
+
+Copy `config/local-dev.yaml.example` to `config/config.example.yaml` and modify it as such:
+
+- Change `backend.hotWalletPrivKeyPath` to the absolute path to the
+  `hotWalletPrivKey.json` file you just created.
+
 Install dependencies for the Semaphore submodule and compile its contracts:
 
 ```bash
@@ -293,7 +311,7 @@ which will serve as the operator's hot wallet:
 
 ```json
 {
-        "privateKey": "0x................................................................"
+    "privateKey": "0x................................................................"
 }
 ```
 

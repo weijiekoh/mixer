@@ -179,6 +179,7 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     // TODO: check whether the contract has been deployed
+    // Best to do this on server startup
     
     const provider = new ethers.providers.JsonRpcProvider(
         config.get('chain.url'),
@@ -205,7 +206,7 @@ const mix = async (depositProof: DepositProof) => {
     const etcdAddress = config.get('backend.etcd.host') + ':' +
         config.get('backend.etcd.port')
 
-    // TODO: handle error where etcd isn't running
+    // TODO: handle the case if etcd isn't working
     const locker = new Locker({
         address: etcdAddress,
     })
