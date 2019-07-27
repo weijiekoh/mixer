@@ -31,9 +31,8 @@ COPY backend /mixer/backend
 COPY frontend /mixer/frontend
 
 RUN rm -rf /mixer/frontend/build /mixer/frontend/dist
-
-RUN npx lerna bootstrap --no-progress && \
-    npx lerna run build
+RUN npx lerna bootstrap --no-progress
+RUN npx lerna run build
 
 #ENV NODE_ENV_BAK=$NODE_ENV
 #ENV NODE_ENV=production
