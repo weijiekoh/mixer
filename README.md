@@ -149,7 +149,8 @@ use this in production.
 }
 ```
 
-Copy `config/local-dev.yaml.example` to `config/config.example.yaml` and modify it as such:
+Copy `config/local-dev.yaml.example` to `config/config.example.yaml` and modify
+it as such:
 
 - Change `backend.hotWalletPrivKeyPath` to the absolute path to the
   `hotWalletPrivKey.json` file you just created.

@@ -3,6 +3,7 @@
 **/*.log
 **/*.md
 **/.git
+.gitattributes
 frontend/dist
 frontend/build
 frontend/.cache

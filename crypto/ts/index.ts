@@ -5,12 +5,10 @@ import * as ethers from 'ethers'
 const eddsa = circomlib.eddsa
 const bigInt = snarkjs.bigInt
 
-import MemStorage from './memStorage'
-
-// Don't import from zkp-sbmtjs to try to reduce build times
-// since it requires leveldb
-const MerkleTreeJs = require('./tree')
-const MimcSpongeHasher = require('./mimcsponge')
+import { storage, hashers, tree } from 'semaphore-merkle-tree'
+const MemStorage = storage.MemStorage
+const MerkleTree = tree.MerkleTree
+const MimcSpongeHasher = hashers.MimcSpongeHasher
 
 import { convertWitness, prove, beBuff2int } from './utils'
 
@@ -242,7 +240,7 @@ const setupTree = () => {
     const hasher = new MimcSpongeHasher()
     const prefix = 'semaphore'
 
-    return new MerkleTreeJs(
+    return new MerkleTree(
         prefix,
         storage,
         hasher,
