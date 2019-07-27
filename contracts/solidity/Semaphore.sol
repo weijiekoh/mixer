@@ -18,7 +18,7 @@
  * along with semaphorejs.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pragma solidity >=0.4.21;
+pragma solidity ^0.5.0;
 
 import "./verifier.sol";
 import "./MerkleTreeLib.sol";
@@ -26,27 +26,22 @@ import "./Ownable.sol";
 
 contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
     uint256 public external_nullifier;
-    uint8 signal_tree_index;
-    uint8 id_tree_index;
+    uint8 public id_tree_index;
 
-    uint256[] root_history;
+    mapping (uint256 => bool) root_history;
+    uint8 current_root_index = 0;
 
     mapping (uint => bool) nullifiers_set;
 
-    uint256 reward;
+    mapping (uint => bytes) public signals;
+    uint public current_signal_index = 0;
 
     event SignalBroadcast(bytes signal, uint256 nullifiers_hash, uint256 external_nullifier);
 
-    uint256 public gas_price_max = 30000000000;
-
-    constructor(uint8 tree_levels, uint256 zero_value, uint256 external_nullifier_in, uint256 reward_amount_in_max_gas_price) Ownable() public 
+    constructor(uint8 tree_levels, uint256 zero_value, uint256 external_nullifier_in) Ownable() public
     {
-
         external_nullifier = external_nullifier_in;
         id_tree_index = init_tree(tree_levels, zero_value);
-        signal_tree_index = init_tree(tree_levels, zero_value);
-
-        reward = reward_amount_in_max_gas_price;
     }
 
     event Funded(uint256 amount);
@@ -57,12 +52,12 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
 
     function insertIdentity(uint256 leaf) public onlyOwner {
         insert(id_tree_index, leaf);
-        root_history.push(tree_roots[id_tree_index]);
+        root_history[tree_roots[id_tree_index]] = true;
     }
 
     function updateIdentity(uint256 old_leaf, uint256 leaf, uint32 leaf_index, uint256[] memory old_path, uint256[] memory path) public onlyOwner {
         update(id_tree_index, old_leaf, leaf, leaf_index, old_path, path);
-        root_history.push(tree_roots[id_tree_index]);
+        root_history[tree_roots[id_tree_index]] = true;
     }
 
     function hasNullifier(uint n) public view returns (bool) {
@@ -70,82 +65,61 @@ contract Semaphore is Verifier, MultipleMerkleTree, Ownable {
     }
 
     function isInRootHistory(uint n) public view returns (bool) {
-        bool found = false;
-        for (uint8 i = 0; i < root_history.length; i++) {
-            if (root_history[i] == n) {
-                found = true;
-                break;
-            }
-        }
-
-        return found;
+        return root_history[n];
     }
 
     function preBroadcastCheck (
-        uint[5] input,
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[5] memory input,
         uint256 signal_hash
     ) public view returns (bool) {
-        // TODO: figure out why verifyProof() causes an invalid opcode error if
-        // called outside of mix()
-
         return hasNullifier(input[1]) == false &&
             signal_hash == input[2] &&
             external_nullifier == input[3] &&
-            isInRootHistory(input[0]);
+            isInRootHistory(input[0]) &&
+            verifyProof(a, b, c, input);
     }
 
     function broadcastSignal(
         bytes memory signal,
-        uint[2] a,
-        uint[2][2] b,
-        uint[2] c,
-        uint[5] input // (root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address)
+        uint[2] memory a,
+        uint[2][2] memory b,
+        uint[2] memory c,
+        uint[5] memory input // (root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address)
     ) public {
-        //uint256 start_gas = gasleft();
         uint256 signal_hash = uint256(sha256(signal)) >> 8;
 
-        // Verify the broadcaster address
-        require(address(input[4]) == msg.sender);
-
         // Check the inputs
-        require(preBroadcastCheck(input, signal_hash) == true);
+        require(preBroadcastCheck(a, b, c, input, signal_hash) == true);
 
-        // Verify the proof
-        require(verifyProof(a, b, c, input));
+        // Verify the broadcaster's address
+        address broadcaster = address(input[4]);
+        require(broadcaster == msg.sender);
 
-        insert(signal_tree_index, signal_hash);
+        signals[current_signal_index++] = signal;
         nullifiers_set[input[1]] = true;
         emit SignalBroadcast(signal, input[1], external_nullifier);
-
-        //uint256 gas_price = gas_price_max;
-        //if (tx.gasprice < gas_price) {
-          //gas_price = tx.gasprice;
-        //}
-        //uint256 gas_used = start_gas - gasleft();
-
-        //// pay back gas: 21000 constant cost + gas used + reward
-        ////require((msg.sender).send((21000 + gas_used)*tx.gasprice + reward));
-        //require((msg.sender).send((21000 + gas_used + reward)*gas_price));
-        ////require(msg.sender.send(1 wei));
     }
 
     function roots(uint8 tree_index) public view returns (uint256 root) {
       root = tree_roots[tree_index];
     }
 
+    function leaves(uint8 tree_index) public view returns (uint256[] memory) {
+      return tree_leaves[tree_index];
+    }
+
+    function leaf(uint8 tree_index, uint256 leaf_index) public view returns (uint256) {
+      return tree_leaves[tree_index][leaf_index];
+    }
+
     function getIdTreeIndex() public view returns (uint8 index) {
       index = id_tree_index;
     }
 
-    function getSignalTreeIndex() public  view returns (uint8 index) {
-      index = signal_tree_index;
-    }
-
     function setExternalNullifier(uint256 new_external_nullifier) public onlyOwner {
       external_nullifier = new_external_nullifier;
-    }
-
-    function setMaxGasPrice(uint256 new_max_gas_price) public onlyOwner {
-      gas_price_max = new_max_gas_price;
     }
 }

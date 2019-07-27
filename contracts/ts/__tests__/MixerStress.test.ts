@@ -1,5 +1,6 @@
 // Make Typescript happy
 declare var assert: any
+declare var before: any
 require('events').EventEmitter.defaultMaxListeners = 0
 
 const fs = require('fs');
@@ -8,6 +9,7 @@ import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
 import { config } from 'mixer-config'
+import { genMixInputs } from './utils'
 
 import { sleep } from 'mixer-utils'
 import {
@@ -84,26 +86,7 @@ for (let i=0; i < testAccounts.length; i++) {
 
 const mix = async (mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt) => {
 
-    return await mixerContract.mix(
-        {
-            signal,
-            a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
-            b: [ 
-                [ proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString() ],
-                [ proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString() ],
-            ],
-            c: [ proof.pi_c[0].toString(), proof.pi_c[1].toString() ],
-            input: [
-                publicSignals[0].toString(),
-                publicSignals[1].toString(),
-                publicSignals[2].toString(),
-                publicSignals[3].toString(),
-                publicSignals[4].toString()
-            ],
-            recipientAddress,
-            fee: feeAmt,
-        }
-    )
+    return await mixerContract.mix(genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt))
 }
 
 let mimcContract
@@ -131,7 +114,7 @@ describe('Mixer', () => {
 
         for (let account of testAccounts) {
             const balance = await deployer.provider.getBalance(account.address)
-            if (ethers.utils.parseUnits('15', 'ether').lt(balance.toString())) {
+            if (ethers.utils.parseUnits('5', 'ether').gt(balance.toString())) {
                 await sender.sendTransaction({
                     to: account.address,
                     gasPrice: 1,
@@ -154,7 +137,7 @@ describe('Mixer', () => {
         it('users should have enough ETH ', async () => {
             for (let account of testAccounts) {
                 const balance = await deployer.provider.getBalance(account.address)
-                assert.isTrue(ethers.utils.parseUnits('15', 'ether').lte(balance.toString()))
+                assert.isTrue(ethers.utils.parseUnits('1', 'ether').lte(balance.toString()))
             }
         })
     })
@@ -294,13 +277,6 @@ describe('Mixer', () => {
                 assert.isTrue(isVerified)
 
                 recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-
-                // check some inputs using preBroadcastCheck()
-                const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
-                    publicSignals.map((x) => x.toString()),
-                    signalHash.toString(),
-                )
-                assert.isTrue(preBroadcastChecked)
 
                 const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
 

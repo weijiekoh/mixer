@@ -18,11 +18,9 @@
   "author": "Koh Wei Jie",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "@types/chai": "^4.1.7",
-    "@types/mocha": "^5.2.7",
     "argparse": "^1.0.10",
     "circomlib": "git+https://github.com/kobigurk/circomlib.git",
-    "etherlime": "^2.1.2",
+    "etherlime": "^2.1.4",
     "etherlime-lib": "^1.1.0",
     "ganache-cli": "^6.4.4",
     "ethers": "^4.0.32",
@@ -32,9 +30,9 @@
   },
   "dependencies": {
     "config": "^3.1.0",
-    "openzeppelin-solidity": "^1.11.0",
-    "mixer-crypto": "1.0.0",
     "mixer-config": "1.0.0",
-    "mixer-utils": "1.0.0"
+    "mixer-crypto": "1.0.0",
+    "mixer-utils": "1.0.0",
+    "openzeppelin-solidity": "^2.3.0"
   }
 }

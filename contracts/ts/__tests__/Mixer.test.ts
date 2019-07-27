@@ -1,5 +1,6 @@
 // Make Typescript happy
 declare var assert: any
+declare var before: any
 require('events').EventEmitter.defaultMaxListeners = 0
 
 const fs = require('fs');
@@ -8,6 +9,7 @@ import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
 import { config } from 'mixer-config'
+import { genMixInputs } from './utils'
 
 import { sleep } from 'mixer-utils'
 import {
@@ -90,26 +92,7 @@ for (let i=0; i < users.length; i++) {
 
 const mix = async (mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt) => {
 
-    return await mixerContract.mix(
-        {
-            signal,
-            a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
-            b: [ 
-                [ proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString() ],
-                [ proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString() ],
-            ],
-            c: [ proof.pi_c[0].toString(), proof.pi_c[1].toString() ],
-            input: [
-                publicSignals[0].toString(),
-                publicSignals[1].toString(),
-                publicSignals[2].toString(),
-                publicSignals[3].toString(),
-                publicSignals[4].toString()
-            ],
-            recipientAddress,
-            fee: feeAmt,
-        }
-    )
+    return await mixerContract.mix(genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt))
 }
 
 let mimcContract
@@ -376,14 +359,17 @@ describe('Mixer', () => {
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
             owedFeesBefore = await mixerContract.getFeesOwedToOperator()
 
-            // check some inputs using preBroadcastCheck()
+            const mixInputs = await genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt)
+
+            // check inputs to mix() using preBroadcastCheck()
             const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
-                //proof.pi_a.slice(0, 2).map((x) => x.toString()),
-                //proof.pi_b.slice(0, 2).map((x) => x.map((y) => y.toString())),
-                //proof.pi_c.slice(0, 2).map((x) => x.toString()),
-                publicSignals.map((x) => x.toString()),
+                mixInputs.a,
+                mixInputs.b,
+                mixInputs.c,
+                mixInputs.input,
                 signalHash.toString(),
             )
+
             assert.isTrue(preBroadcastChecked)
 
             const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)

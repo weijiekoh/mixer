@@ -1,5 +1,6 @@
 // Make Typescript happy
 declare var assert: any
+declare var before: any
 require('events').EventEmitter.defaultMaxListeners = 0
 
 const fs = require('fs');

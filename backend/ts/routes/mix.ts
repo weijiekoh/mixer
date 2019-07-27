@@ -219,6 +219,9 @@ const mix = async (depositProof: DepositProof) => {
 
     // Use the preBroadcastCheck view function to checks some inputs
     const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
+        depositProof.a,
+        depositProof.b,
+        depositProof.c,
         depositProof.input,
         '0x' + signalHash.toString(16),
     )

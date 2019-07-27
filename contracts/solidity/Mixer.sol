@@ -1,12 +1,12 @@
 pragma experimental ABIEncoderV2;
-pragma solidity >=0.4.21;
+pragma solidity ^0.5.0;
 import "./Semaphore.sol";
-import "node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./SafeMath.sol";
 
 contract Mixer {
     using SafeMath for uint256;
 
-    address public operator;
+    address payable public operator;
     uint256 public totalMixes;
     uint256 public burnFee;
     uint256 public mixAmt;
@@ -24,12 +24,16 @@ contract Mixer {
         uint[2][2] b;
         uint[2] c;
         uint[5] input;
-        address recipientAddress;
+        address payable recipientAddress;
         uint256 fee;
     }
 
     /*
      * Constructor
+     * @param _semaphore The address of the Semaphore contract which should
+     * have been deployed earlier
+     * @param _mixAmt The amount of Ether a user can mix at a time, in wei
+     * @parm _burnFee The amount of Ether which gets burnt per withdraw, in wei
      */
     constructor (address _semaphore, uint256 _mixAmt, uint256 _burnFee) public {
         require(_semaphore != address(0));
@@ -67,7 +71,7 @@ contract Mixer {
     }
 
     /*
-     * @return The amount of fees owed to the operator in wei
+     * @return The amount of fees owed to the operator, in wei
      */
     function getFeesOwedToOperator() public view returns (uint256) {
         return feesOwedToOperator;
@@ -86,7 +90,7 @@ contract Mixer {
      * Returns the list of all identity commitments, which are the leaves of
      * the Merkle tree
      */
-    function getLeaves() public view returns (uint256[]) {
+    function getLeaves() public view returns (uint256[] memory) {
         return identityCommitments;
     }
 
@@ -119,7 +123,7 @@ contract Mixer {
      * @param _proof A deposit proof. This function will send `mixAmt`, minus
      *               fees, to the recipient if the proof is valid.
      */
-    function mix(DepositProof _proof) public {
+    function mix(DepositProof memory _proof) public {
         // The fee must be high enough, but not larger than the mix
         // denomination; note that a self-interested operator would exercise
         // their discretion as to whether to relay transactions depending on

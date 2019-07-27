@@ -63,7 +63,7 @@ It has the following features:
 2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
     
     - Accepts, verifies, and submits a zk-SNARK proof (generated in the user's
-      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0x08F3fA6B5256fe583281738eB79A0Cb75C3E7f5B).
+      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0xA54d5013e5aEa383Ff18B4B6bd0a11876D02F384).
 
 3. Ethereum contracts:
 
@@ -82,8 +82,7 @@ It has the following features:
         
         - Allows the operator to withdraw all accurred fees.
 
-    - Gas use is currently high (1.2 million per deposit; 1.9 million per
-      withdrawal), but will be lower in future versions of the mixer.
+    - Gas use is currently 1.2 million per deposit and 886k per withdrawal.
 
 ## Local development and testing
 
