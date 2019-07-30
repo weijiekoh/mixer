@@ -36,9 +36,9 @@ contract Mixer {
      * @parm _burnFee The amount of Ether which gets burnt per withdraw, in wei
      */
     constructor (address _semaphore, uint256 _mixAmt, uint256 _burnFee) public {
-        require(_semaphore != address(0));
-        require(_burnFee != 0);
-        require(_mixAmt > _burnFee);
+        require(_semaphore != address(0), "Mixer: invalid Semaphore address");
+        require(_burnFee != 0, "Mixer: burn fee is 0");
+        require(_mixAmt > _burnFee, "Mixer: mixAmt lte burn fee");
 
         // Set the operator as the contract deployer
         operator = msg.sender;
@@ -66,7 +66,7 @@ contract Mixer {
      * Set the burn fee
      */
     function setBurnFee(uint256 _newBurnFee) public {
-        require(mixAmt >_newBurnFee);
+        require(mixAmt >_newBurnFee, "Mixer: mixAmt lte new burn fee");
         burnFee = _newBurnFee;
     }
 
@@ -99,7 +99,7 @@ contract Mixer {
      * owed to 0
      */
     function withdrawFees() public {
-        require(msg.sender == operator);
+        require(msg.sender == operator, "Mixer: only operator can withdraw fees");
         operator.transfer(feesOwedToOperator);
         feesOwedToOperator = 0;
     }
@@ -111,8 +111,8 @@ contract Mixer {
      *        identity nullifier)
      */
     function deposit(uint256 _identityCommitment) public payable {
-        require(msg.value == mixAmt);
-        require(_identityCommitment != 0);
+        require(msg.value == mixAmt, "Mixer: wrong mixAmt deposited");
+        require(_identityCommitment != 0, "Mixer: invalid identity commitment");
         semaphore.insertIdentity(_identityCommitment);
         identityCommitments.push(_identityCommitment);
         emit Deposited(msg.sender, msg.value, _identityCommitment);
@@ -128,8 +128,8 @@ contract Mixer {
         // denomination; note that a self-interested operator would exercise
         // their discretion as to whether to relay transactions depending on
         // the fee specified
-        require(_proof.fee >= burnFee);
-        require(_proof.fee < mixAmt);
+        require(_proof.fee >= burnFee, "Mixer: quoted fee lt burnFee");
+        require(_proof.fee < mixAmt, "Mixer: quoted fee gte mixAmt");
 
         // Hash the recipient's address, mixer contract address, and fee
         bytes32 computedSignal = keccak256(
@@ -141,7 +141,7 @@ contract Mixer {
         );
 
         // Check whether the signal hash provided matches the one computed above
-        require(computedSignal == _proof.signal);
+        require(computedSignal == _proof.signal, "Mixer: invalid computed signal");
 
         // Broadcast the signal
         semaphore.broadcastSignal(
