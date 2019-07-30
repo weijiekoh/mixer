@@ -35,6 +35,7 @@ import { ErrorCodes } from '../errors'
 
 import {
     getItems,
+    getNumUnwithdrawn,
     updateWithdrawTxHash,
     getFirstUnwithdrawn,
 } from '../storage'
@@ -65,8 +66,7 @@ const noItems = (
 )
 
 export default () => {
-    const items = getItems()
-    if (items.length == 0) {
+    if (getNumUnwithdrawn() === 0) {
         return noItems
     }
 
