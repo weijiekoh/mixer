@@ -196,7 +196,6 @@ describe('Mixer', () => {
 
         const circuit = genCircuit(cirDef)
 
-        const operatorAddress = accounts[0].address
         const recipientAddress = accounts[1].address
         let nextIndex
 

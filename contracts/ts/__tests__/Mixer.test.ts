@@ -43,6 +43,7 @@ const Mixer = require('../../compiled/Mixer.json')
 import { deploy } from '../deploy/deploy'
 
 const accounts = genAccounts()
+const relayerAddress = accounts[0].address
 const admin = accounts[0]
 
 const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
@@ -54,7 +55,7 @@ const burnFee = ethers.utils.parseEther(
     (parseFloat(config.get('burnFeeEth'))).toString()
 )
 
-const operatorFee = burnFee
+const relayerEarnedFee = burnFee
 
 const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
@@ -193,7 +194,7 @@ describe('Mixer', () => {
         })
     })
 
-    describe('Burn fee and operator fee', () => {
+    describe('Burn fee', () => {
         it('should match right after deployment', async () => {
             const b = await mixerContract.burnFee()
 
@@ -249,17 +250,20 @@ describe('Mixer', () => {
         const circuit = genCircuit(cirDef)
 
         const identity = identities[users[0]]
-        const operatorAddress = accounts[0].address
         const recipientAddress = accounts[1].address
         const identityCommitment = identity.identityCommitment
         let nextIndex
 
         let recipientBalanceBefore
         let recipientBalanceAfter
-        let owedFeesDiff
-        let owedFeesBefore
-        let owedFeesAfter
         let recipientBalanceDiff
+
+        let relayerBalanceBefore
+        let relayerBalanceAfter
+        let relayerBalanceDiff
+
+        let mixReceipt
+        let mixTxFee
 
         it('should generate identity commitments', async () => {
             for (const user of users) {
@@ -356,9 +360,6 @@ describe('Mixer', () => {
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
 
-            recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-            owedFeesBefore = await mixerContract.getFeesOwedToOperator()
-
             const mixInputs = await genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt)
 
             // check inputs to mix() using preBroadcastCheck()
@@ -372,23 +373,28 @@ describe('Mixer', () => {
 
             assert.isTrue(preBroadcastChecked)
 
-            const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
+            recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
+            relayerBalanceBefore = await deployer.provider.getBalance(relayerAddress)
 
-            //console.log(signal)
-            //console.log(proof.pi_a.map((x) => '0x' + x.toString(16)))
-            //console.log(proof.pi_b.map((b) => b.map((x) => '0x' + x.toString(16))))
-            //console.log(proof.pi_c.map((x) => '0x' + x.toString(16)))
-            //console.log(publicSignals.map((x) => '0x' + x.toString(16)))
-            //console.log(feeAmt.toHexString())
-
-            // Wait till the transaction is mined
-            const receipt = await mixerContract.verboseWaitForTransaction(mixTx)
-
-            const gasUsed = receipt.gasUsed.toString()
-            console.log('Gas used for this withdrawal:', gasUsed)
+            const mixTx = await mix(
+                mixerContract,
+                signal,
+                proof,
+                publicSignals,
+                recipientAddress,
+                feeAmt,
+            )
 
             recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
-            owedFeesAfter = await mixerContract.getFeesOwedToOperator()
+            relayerBalanceAfter = await deployer.provider.getBalance(relayerAddress) 
+
+            // Wait till the transaction is mined
+            mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
+
+            const gasUsed = mixReceipt.gasUsed.toString()
+            console.log('Gas used for this withdrawal:', gasUsed)
+
+            mixTxFee = mixTx.gasPrice.mul(mixReceipt.gasUsed)
         })
 
         it('calcBurntFees() should return a correct value', async () => {
@@ -396,29 +402,14 @@ describe('Mixer', () => {
             assert.equal(c.toString(), burnFee.toString())
         })
 
+        it('should increase the relayer\'s balance', () => {
+            relayerBalanceDiff = relayerBalanceAfter.sub(relayerBalanceBefore)
+            assert.equal(mixTxFee.add(relayerBalanceDiff).toString(), relayerEarnedFee.toString())
+        })
+
         it('should increase the recipient\'s balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
             assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
-        })
-
-        it('should increase the operator\'s claimable fee balance', () => {
-            owedFeesDiff = owedFeesAfter.sub(owedFeesBefore).toString()
-            assert.equal(ethers.utils.formatEther(owedFeesDiff), '0.0005')
-        })
-
-        it('should allow the operator to withdraw all owed fees', async () => {
-            const operatorBalanceBefore = await deployer.provider.getBalance(operatorAddress)
-
-            const tx = await mixerContract.withdrawFees()
-            const receipt = await mixerContract.verboseWaitForTransaction(tx)
-
-            const operatorBalanceAfter = await deployer.provider.getBalance(operatorAddress)
-
-            const operatorBalanceDiff = operatorBalanceAfter.sub(operatorBalanceBefore).toString()
-            const balancePlusGas = tx.gasPrice.mul(receipt.gasUsed).add(operatorBalanceDiff).toString()
-
-            assert.equal(balancePlusGas, owedFeesDiff)
-            assert.equal(await mixerContract.getFeesOwedToOperator(), 0)
         })
 
         it('should make another deposit and withdrawal', async () => {
@@ -480,7 +471,6 @@ describe('Mixer', () => {
             assert.isTrue(isVerified)
 
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-            owedFeesBefore = await mixerContract.getFeesOwedToOperator()
 
             const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
 
