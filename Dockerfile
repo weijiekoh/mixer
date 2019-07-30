@@ -36,13 +36,6 @@ COPY crypto/package*.json /mixer/crypto/
 COPY backend/package*.json /mixer/backend/
 COPY frontend/package*.json /mixer/frontend/
 
-COPY config/tsconfig.json /mixer/config/
-COPY contracts/tsconfig.json /mixer/contracts/
-COPY utils/tsconfig.json /mixer/utils/
-COPY crypto/tsconfig.json /mixer/crypto/
-COPY backend/tsconfig.json /mixer/backend/
-COPY frontend/tsconfig.json /mixer/frontend/
-
 RUN npx lerna bootstrap --no-progress
 
 COPY contracts /mixer/contracts
