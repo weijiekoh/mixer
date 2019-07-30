@@ -6,8 +6,6 @@ import "./SafeMath.sol";
 contract Mixer {
     using SafeMath for uint256;
 
-    uint256 public totalMixes;
-    uint256 public burnFee;
     uint256 public mixAmt;
     Semaphore public semaphore;
     uint256[] public identityCommitments;
@@ -31,18 +29,13 @@ contract Mixer {
      * @param _semaphore The address of the Semaphore contract which should
      * have been deployed earlier
      * @param _mixAmt The amount of Ether a user can mix at a time, in wei
-     * @parm _burnFee The amount of Ether which gets burnt per withdraw, in wei
      */
-    constructor (address _semaphore, uint256 _mixAmt, uint256 _burnFee) public {
+    constructor (address _semaphore, uint256 _mixAmt) public {
         require(_semaphore != address(0), "Mixer: invalid Semaphore address");
-        require(_burnFee != 0, "Mixer: burn fee is 0");
-        require(_mixAmt > _burnFee, "Mixer: mixAmt lte burn fee");
+        require(_mixAmt != 0, "Mixer: invalid mixAmt");
 
         // Set the fixed mixing amount
         mixAmt = _mixAmt;
-
-        // Set the burn fee.
-        burnFee = _burnFee;
 
         // Set the Semaphore contract
         semaphore = Semaphore(_semaphore);
@@ -55,23 +48,6 @@ contract Mixer {
      */
     function setSemaphoreExternalNulllifier () public {
         semaphore.setExternalNullifier(uint256(address(this)));
-    }
-
-    /*
-     * Set the burn fee
-     */
-    function setBurnFee(uint256 _newBurnFee) public {
-        require(mixAmt >_newBurnFee, "Mixer: mixAmt lte new burn fee");
-        burnFee = _newBurnFee;
-    }
-
-    /*
-     * @return The total amount of fees burnt.
-     * As this contract provides no way for anyone to withdraw this amount of
-     * ETH, we consider it burnt.
-     */
-    function calcBurntFees() public view returns (uint256) {
-        return totalMixes.mul(burnFee);
     }
 
     /*
@@ -101,15 +77,14 @@ contract Mixer {
      * @param _proof A deposit proof. This function will send `mixAmt`, minus
      *               fees, to the recipient if the proof is valid.
      */
-    function mix(DepositProof memory _proof) public {
+    function mix(DepositProof memory _proof, address payable relayer) public {
         // The fee must be high enough, but not larger than the mix
         // denomination; note that a self-interested relayer would exercise
         // their discretion as to whether to relay transactions depending on
         // the fee specified
-        require(_proof.fee >= burnFee, "Mixer: quoted fee lt burnFee");
         require(_proof.fee < mixAmt, "Mixer: quoted fee gte mixAmt");
 
-        // Hash the recipient's address, mixer contract address, and fee
+        // Hash the recipient's address, the mixer contract's address, and fee
         bytes32 computedSignal = keccak256(
             abi.encodePacked(
                 _proof.recipientAddress,
@@ -130,19 +105,13 @@ contract Mixer {
             _proof.input
         );
 
-        // Transfer the fee minus burnFee to the sender (aka the relayer).
-        // Since the remainder is stuck in this contract, it's as good as
-        // burned. As such, we don't need to transfer the ETH to a burn
-        // addreess like 0x0000.
-        uint256 feeEarned = _proof.fee.sub(burnFee);
-        msg.sender.transfer(feeEarned);
+        // Transfer the fee to the relayer
+        relayer.transfer(_proof.fee);
 
         // Transfer the ETH owed to the recipient, minus the fee 
         uint256 recipientMixAmt = mixAmt.sub(_proof.fee);
         _proof.recipientAddress.transfer(recipientMixAmt);
 
-        totalMixes ++;
-
-        emit Mixed(_proof.recipientAddress, recipientMixAmt, feeEarned);
+        emit Mixed(_proof.recipientAddress, recipientMixAmt, _proof.fee);
     }
 }

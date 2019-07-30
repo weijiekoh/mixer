@@ -67,7 +67,7 @@ const cirDef = JSON.parse(
 const circuit = genCircuit(cirDef)
 
 const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('burnFeeEth')) * 2).toString()
+    (parseFloat(config.get('feeAmtEth'))).toString()
 )
 
 const validProof = {
@@ -243,24 +243,6 @@ describe('the mixer_mix API call', () => {
 
         const proof = await genProof(w, provingKey.buffer)
         const hex = (x) => '0x' + x.toString(16)
-
-        //const depositProof = {
-            //signal,
-            //a: proof.pi_a.slice(0, 2).map(hex),
-            //b: [ 
-                //[proof.pi_b[0][1], proof.pi_b[0][0]].map(hex),
-                //[proof.pi_b[1][1], proof.pi_b[1][0]].map(hex),
-            //],
-            //c: proof.pi_c.slice(0, 2).map(hex),
-            //input: publicSignals.map(hex),
-            //recipientAddress,
-            //fee: feeAmt,
-        //}
-
-        //const mixTx = await mixerContract.mix(depositProof)
-        //const mixReceipt = await mixTx.wait()
-        //console.log(mixReceipt.status)
-        //return
 
         const params = genMixParams(
             signal,

@@ -1,3 +1,26 @@
+
+const mix = async (
+    mixerContract,
+    signal,
+    proof,
+    publicSignals,
+    recipientAddress,
+    feeAmt,
+    relayerAddress,
+) => {
+
+    return await mixerContract.mix(
+        genMixInputs(
+            signal,
+            proof,
+            publicSignals,
+            recipientAddress,
+            feeAmt,
+        ),
+        relayerAddress,
+    )
+}
+
 const genMixInputs = (signal, proof, publicSignals, recipientAddress, feeAmt) => {
     return {
         signal,
@@ -19,6 +42,12 @@ const genMixInputs = (signal, proof, publicSignals, recipientAddress, feeAmt) =>
     }
 }
 
+const areEqualAddresses = (a: string, b: string) => {
+    return BigInt(a) === BigInt(b)
+}
+
 export {
-    genMixInputs
+    genMixInputs,
+    areEqualAddresses,
+    mix,
 }

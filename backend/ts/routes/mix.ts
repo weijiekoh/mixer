@@ -44,17 +44,15 @@ const areEqualAddresses = (a: string, b: string) => {
     return BigInt(a) === BigInt(b)
 }
 
-const burnFeeWei = ethers.utils.parseUnits(config.get('burnFeeEth'), 'ether')
-
-// This operator accepts a fee that is greater than or equal to the burn fee
-const operatorFeeWei = burnFeeWei
+// This operator accepts a fee that is large enough
+const operatorFeeWei = ethers.utils.parseUnits(config.get('feeAmtEth'), 'ether')
 
 const mix = async (depositProof: DepositProof) => {
     const publicInputs = depositProof.input.map(bigInt)
 
     // verify the fee
     const fee = ethers.utils.parseUnits(BigInt(depositProof.fee).toString(), 'wei')
-    const enoughFees = fee.gte(operatorFeeWei.add(burnFeeWei))
+    const enoughFees = fee.gte(operatorFeeWei)
 
     if (!enoughFees) {
         const errorMsg = 'the fee is to low'
@@ -247,7 +245,7 @@ const mix = async (depositProof: DepositProof) => {
 
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const funcInterface = iface.functions.mix
-    const callData = funcInterface.encode([depositProof])
+    const callData = funcInterface.encode([depositProof, signer.address])
 
     const unsignedTx = {
         to: mixerContract.address,

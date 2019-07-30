@@ -9,7 +9,7 @@ import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
 import { config } from 'mixer-config'
-import { genMixInputs } from './utils'
+import { mix } from './utils'
 
 import { sleep } from 'mixer-utils'
 import {
@@ -41,16 +41,17 @@ const Mixer = require('../../compiled/Mixer.json')
 
 import { deploy } from '../deploy/deploy'
 
-const NUM_CYCLES = 10
+const NUM_CYCLES = 10 
 
 const mnemonic = 'candy maple cake sugar pudding cream honey rich smooth crumble sweet treat'
 const accounts = genAccounts()
 const testAccounts = genTestAccounts(NUM_CYCLES, mnemonic)
 const admin = accounts[0]
+const relayerAddress = accounts[0].address
 
 const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('burnFeeEth')) * 2).toString()
+    (parseFloat(config.get('feeAmtEth'))).toString()
 )
 
 const users = accounts.map((user) => user.address)
@@ -82,11 +83,6 @@ for (let i=0; i < testAccounts.length; i++) {
         privKey,
         pubKey,
     }
-}
-
-const mix = async (mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt) => {
-
-    return await mixerContract.mix(genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt))
 }
 
 let mimcContract
@@ -277,7 +273,15 @@ describe('Mixer', () => {
 
                 recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
 
-                const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
+                const mixTx = await mix(
+                    mixerContract,
+                    signal,
+                    proof,
+                    publicSignals,
+                    recipientAddress,
+                    feeAmt,
+                    relayerAddress,
+                )
 
                 // Wait till the transaction is mined
                 const receipt = await mixerContract.verboseWaitForTransaction(mixTx)

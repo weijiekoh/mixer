@@ -1,7 +1,7 @@
 ---
 env: 'local-dev'
 mixAmtEth: "0.1"
-burnFeeEth: "0.0005"
+feeAmtEth: "0.001"
 
 chain:
   url: "http://localhost:8545"
