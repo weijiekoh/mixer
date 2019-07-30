@@ -18,15 +18,16 @@
   "author": "Koh Wei Jie",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
+    "@types/jest": "^24.0.16",
     "argparse": "^1.0.10",
     "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "etherlime": "^2.1.4",
     "etherlime-lib": "^1.1.0",
-    "ganache-cli": "^6.4.4",
     "ethers": "^4.0.32",
+    "ganache-cli": "^6.4.4",
+    "mixer-utils": "1.0.0",
     "solc": "^0.4.25",
-    "truffle-artifactor": "^4.0.10",
-    "mixer-utils": "1.0.0"
+    "truffle-artifactor": "^4.0.10"
   },
   "dependencies": {
     "config": "^3.1.0",
