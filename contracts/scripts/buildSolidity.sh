@@ -4,14 +4,25 @@ set -e
 echo 'Building contracts'
 
 # Delete old files
-rm -rf ../compiled/*
+rm -rf ./compiled/*
+
+mkdir -p ./compiled/abis
 
 # Copy the Semaphore contracts from the submodule into solidity/
 cp ../semaphore/semaphorejs/contracts/*.sol solidity/
 cp ../semaphore/semaphorejs/build/verifier.sol solidity/
 
 # Compile the contracts
+
 npx etherlime compile --solcVersion=0.5.10 --buildDirectory=compiled --workingDirectory=solidity --exportAbi 
+
+#if [[ -z "${SOLC}" ]]; then
+    #solcBinary="solc"
+#else
+    #solcBinary="${SOLC}"
+#fi
+
+#$solcBinary -o ./compiled ./solidity/*.sol --overwrite --optimize --bin --abi --bin-runtime
 
 # Build the MiMC contract from bytecode
 node build/buildMiMC.js
