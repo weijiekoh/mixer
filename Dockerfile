@@ -22,6 +22,28 @@ RUN cd /mixer/ && \
     #cd ../semaphorejs && \
     #npm install --quiet && \
     #npx truffle compile
+RUN mkdir /mixer/contracts && \
+    mkdir /mixer/config && \
+    mkdir /mixer/utils && \
+    mkdir /mixer/crypto && \
+    mkdir /mixer/backend && \
+    mkdir /mixer/frontend
+
+COPY config/package*.json /mixer/config/
+COPY contracts/package*.json /mixer/contracts/
+COPY utils/package*.json /mixer/utils/
+COPY crypto/package*.json /mixer/crypto/
+COPY backend/package*.json /mixer/backend/
+COPY frontend/package*.json /mixer/frontend/
+
+COPY config/tsconfig.json /mixer/config/
+COPY contracts/tsconfig.json /mixer/contracts/
+COPY utils/tsconfig.json /mixer/utils/
+COPY crypto/tsconfig.json /mixer/crypto/
+COPY backend/tsconfig.json /mixer/backend/
+COPY frontend/tsconfig.json /mixer/frontend/
+
+RUN npx lerna bootstrap --no-progress
 
 COPY contracts /mixer/contracts
 COPY config /mixer/config
@@ -31,7 +53,6 @@ COPY backend /mixer/backend
 COPY frontend /mixer/frontend
 
 RUN rm -rf /mixer/frontend/build /mixer/frontend/dist
-RUN npx lerna bootstrap --no-progress
 RUN npx lerna run build
 
 #ENV NODE_ENV_BAK=$NODE_ENV
