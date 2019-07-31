@@ -1,0 +1,40 @@
+---
+env: 'docker-dev'
+mixAmtEth: "0.1"
+feeAmtEth: "0.001"
+
+chain:
+  url: "https://kovan.infura.io/v3/5d37c494621a43558d77c90e368d4022"
+  chainId: 42
+  mix:
+    gasLimit: 8000000
+  #privateKeysPath: "/run/secrets/privateKeysPath"
+  privateKeysPath: "../ganachePrivateKeys.json"
+  deployedAddresses:
+    MiMC: "0x8CE75De562867Faa1faB72D2ea6Daf9467C9E77d"
+    MultipleMerkleTree: "0x7BB03F242A00a054Fa6838eecfbf3a872597742E"
+    Semaphore: "0x1eAEdD65Ec25CcEA119E1C753828c13e29a411eD"
+    Mixer: "0x2673FcC48F4f6Cd8D6978cD3d0Cf9D5A80C3e6a1"
+
+backend:
+  port: 3000
+  host: "http://localhost"
+  hotWalletPrivKeyPath: "/run/secrets/hotWalletPrivKeyPath"
+  broadcasterAddress: "0x53BE836678eA3Dbf7257ef32954184Ac06C2D4b1"
+  etcd:
+    host: "mixer-etcd"
+    port: 2379
+    lockTime: 7000
+
+frontend:
+  snarks:
+    paths:
+      verificationKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/verification_key.json'
+      provingKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/proving_key.bin'
+      circuit: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/circuit.json'
+  countdown:
+    endsAtUtcMidnight: true
+    endsAfterSecs: 5
+  supportedNetworkName: "Kovan"
+  supportedNetwork: 42
+  blockExplorerTxPrefix: "https://kovan.etherscan.io/tx/"
