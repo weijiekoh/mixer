@@ -25,6 +25,7 @@ backend:
   port: 3000
   host: "http://localhost"
   hotWalletPrivKeyPath: "/home/di/MIXER_SECRETS/hotWalletPrivKey.json"
+  broadcasterAddress: "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
   etcd:
     host: "localhost"
     port: 2379
