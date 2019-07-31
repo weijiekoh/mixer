@@ -124,7 +124,6 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     if (signalHashInvalid && signalInvalid) {
-        debugger
         const errorMsg = 'both the signal param and signal hash are invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_SIGNAL_AND_SIGNAL_HASH_INVALID,
@@ -234,7 +233,6 @@ const mix = async (depositProof: DepositProof) => {
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const funcInterface = iface.functions.mix
     const callData = funcInterface.encode([depositProof])
-    debugger
 
     const unsignedTx = {
         to: mixerContract.address,
