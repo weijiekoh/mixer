@@ -24,7 +24,6 @@ import {
     genIdentityCommitment,
     genIdentityNullifier,
     genEddsaKeyPair,
-    genMsg,
     genCircuit,
     genSignedMsg,
     signMsg,
