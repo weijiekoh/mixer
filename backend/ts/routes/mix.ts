@@ -79,23 +79,20 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
-    // verify the broadcaster's address
-    if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[4])) {
-        const errorMsg = 'the broadcaster\'s address in the input is invalid'
-        throw {
-            code: errors.errorCodes.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
-            message: errorMsg,
-            data: errors.genError(
-                errors.MixerErrorNames.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
-                errorMsg,
-            )
-        }
-    }
+    const provider = new ethers.providers.JsonRpcProvider(
+        config.get('chain.url'),
+        config.get('chain.chainId'),
+    )
+
+    const signer = new ethers.Wallet(
+        hotWalletPrivKey,
+        provider,
+    )
 
     // verify the signal off-chain
     const { signalHash, signal } = genSignalAndSignalHash(
         depositProof.recipientAddress,
-        deployedAddresses.Mixer,
+        signer.address,
         depositProof.fee,
     )
 
@@ -127,6 +124,7 @@ const mix = async (depositProof: DepositProof) => {
     }
 
     if (signalHashInvalid && signalInvalid) {
+        debugger
         const errorMsg = 'both the signal param and signal hash are invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_SIGNAL_AND_SIGNAL_HASH_INVALID,
@@ -179,16 +177,6 @@ const mix = async (depositProof: DepositProof) => {
     // TODO: check whether the contract has been deployed
     // Best to do this on server startup
     
-    const provider = new ethers.providers.JsonRpcProvider(
-        config.get('chain.url'),
-        config.get('chain.chainId'),
-    )
-
-    const signer = new ethers.Wallet(
-        hotWalletPrivKey,
-        provider,
-    )
-
     const mixerContract = getContract(
         'Mixer',
         signer,
@@ -245,7 +233,8 @@ const mix = async (depositProof: DepositProof) => {
 
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const funcInterface = iface.functions.mix
-    const callData = funcInterface.encode([depositProof, signer.address])
+    const callData = funcInterface.encode([depositProof])
+    debugger
 
     const unsignedTx = {
         to: mixerContract.address,
