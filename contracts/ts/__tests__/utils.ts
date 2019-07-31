@@ -6,7 +6,6 @@ const mix = async (
     publicSignals,
     recipientAddress,
     feeAmt,
-    relayerAddress,
 ) => {
 
     return await mixerContract.mix(
@@ -17,7 +16,6 @@ const mix = async (
             recipientAddress,
             feeAmt,
         ),
-        relayerAddress,
     )
 }
 

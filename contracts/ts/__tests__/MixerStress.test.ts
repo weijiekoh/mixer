@@ -280,7 +280,6 @@ describe('Mixer', () => {
                     publicSignals,
                     recipientAddress,
                     feeAmt,
-                    relayerAddress,
                 )
 
                 // Wait till the transaction is mined
