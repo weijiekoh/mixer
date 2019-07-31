@@ -21,7 +21,7 @@ import {
     genPathElementsAndIndex,
     genIdentityNullifier,
     genEddsaKeyPair,
-    genMsg,
+    genSignedMsg,
     genCircuit,
     signMsg,
     verifySignature,
@@ -41,7 +41,7 @@ const Mixer = require('../../compiled/Mixer.json')
 
 import { deploy } from '../deploy/deploy'
 
-const NUM_CYCLES = 10 
+const NUM_CYCLES = 1 
 
 const mnemonic = 'candy maple cake sugar pudding cream honey rich smooth crumble sweet treat'
 const accounts = genAccounts()
@@ -90,7 +90,6 @@ let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
 let externalNullifier : string
-let broadcasterAddress: string
 
 describe('Mixer', () => {
 
@@ -154,7 +153,6 @@ describe('Mixer', () => {
 
             // the external nullifier is the hash of the contract's address
             externalNullifier = mixerContract.contractAddress
-            broadcasterAddress = mixerContract.contractAddress
         })
 
         it('the Mixer contract should be the owner of the Semaphore contract', async () => {
@@ -233,16 +231,15 @@ describe('Mixer', () => {
                 )
 
                 const { signalHash, signal } = genSignalAndSignalHash(
-                    recipientAddress, broadcasterAddress, feeAmt,
+                    recipientAddress, relayerAddress, feeAmt,
                 )
 
-                const msg = genMsg(
+                const { signature, msg } = genSignedMsg(
+                    identity.privKey,
                     externalNullifier,
                     signalHash, 
-                    mixerContract.contractAddress,
+                    relayerAddress,
                 )
-
-                const signature = signMsg(identity.privKey, msg)
 
                 assert.isTrue(verifySignature(msg, signature, identity.pubKey))
 
@@ -255,7 +252,7 @@ describe('Mixer', () => {
                     identity.identityNullifier,
                     identityPath.path_elements,
                     identityPath.path_index,
-                    broadcasterAddress
+                    relayerAddress
                 )
 
                 const witnessRoot = extractWitnessRoot(circuit, w)
@@ -280,7 +277,6 @@ describe('Mixer', () => {
                     publicSignals,
                     recipientAddress,
                     feeAmt,
-                    relayerAddress,
                 )
 
                 // Wait till the transaction is mined

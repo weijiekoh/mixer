@@ -24,7 +24,6 @@ import {
     genIdentityCommitment,
     genIdentityNullifier,
     genEddsaKeyPair,
-    genMsg,
     genCircuit,
     genSignedMsg,
     signMsg,
@@ -46,9 +45,8 @@ const Mixer = require('../../compiled/Mixer.json')
 
 import { deploy } from '../deploy/deploy'
 
-let broadcasterAddress
 const accounts = genAccounts()
-const relayerAddress = accounts[0].address
+let broadcasterAddress = accounts[0].address
 const recipientAddress = accounts[1].address
 const admin = accounts[0]
 
@@ -159,7 +157,6 @@ describe('Mixer', () => {
 
             // the external nullifier is the hash of the contract's address
             externalNullifier = mixerContract.contractAddress
-            broadcasterAddress = mixerContract.contractAddress
         })
 
         it('the Mixer contract should be the owner of the Semaphore contract', async () => {
@@ -205,9 +202,9 @@ describe('Mixer', () => {
         let recipientBalanceAfter
         let recipientBalanceDiff
 
-        let relayerBalanceBefore
-        let relayerBalanceAfter
-        let relayerBalanceDiff
+        let broadcasterBalanceBefore
+        let broadcasterBalanceAfter
+        let broadcasterBalanceDiff
 
         let mixReceipt
         let mixTxFee
@@ -257,7 +254,7 @@ describe('Mixer', () => {
             )
 
             const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, mixerContract.contractAddress, feeAmt,
+                recipientAddress, broadcasterAddress, feeAmt,
             )
 
             // signature = signEddsa(
@@ -321,7 +318,7 @@ describe('Mixer', () => {
             assert.isTrue(preBroadcastChecked)
 
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-            relayerBalanceBefore = await deployer.provider.getBalance(relayerAddress)
+            broadcasterBalanceBefore = await deployer.provider.getBalance(broadcasterAddress)
 
             const mixTx = await mix(
                 mixerContract,
@@ -330,11 +327,10 @@ describe('Mixer', () => {
                 publicSignals,
                 recipientAddress,
                 feeAmt,
-                relayerAddress,
             )
 
             recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
-            relayerBalanceAfter = await deployer.provider.getBalance(relayerAddress) 
+            broadcasterBalanceAfter = await deployer.provider.getBalance(broadcasterAddress) 
 
             // Wait till the transaction is mined
             mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
@@ -345,9 +341,9 @@ describe('Mixer', () => {
             mixTxFee = mixTx.gasPrice.mul(mixReceipt.gasUsed)
         })
 
-        it('should increase the relayer\'s balance', () => {
-            relayerBalanceDiff = relayerBalanceAfter.sub(relayerBalanceBefore)
-            assert.equal(mixTxFee.add(relayerBalanceDiff).toString(), feeAmt.toString())
+        it('should increase the broadcaster\'s balance', () => {
+            broadcasterBalanceDiff = broadcasterBalanceAfter.sub(broadcasterBalanceBefore)
+            assert.equal(mixTxFee.add(broadcasterBalanceDiff).toString(), feeAmt.toString())
         })
 
         it('should increase the recipient\'s balance', () => {
@@ -378,13 +374,12 @@ describe('Mixer', () => {
                 recipientAddress, broadcasterAddress, feeAmt,
             )
 
-            const msg = genMsg(
+           const { signature, msg } = genSignedMsg(
+                identity.keypair.privKey,
                 externalNullifier,
                 signalHash, 
-                mixerContract.contractAddress,
+                broadcasterAddress,
             )
-
-            const signature = signMsg(identity.keypair.privKey, msg)
 
             assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
 
@@ -415,7 +410,7 @@ describe('Mixer', () => {
 
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
 
-            const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt, relayerAddress)
+            const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
 
             // Wait till the transaction is mined
             const mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
