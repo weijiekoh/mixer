@@ -39,6 +39,7 @@ import {
 } from '../utils/ethAmts'
 
 const config = require('../exported_config')
+const broadcasterAddress = config.backend.broadcasterAddress
 const deployedAddresses = config.chain.deployedAddresses
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
@@ -86,7 +87,6 @@ export default () => {
         try {
             const mixerContract = await getMixerContract(context)
 
-            const broadcasterAddress = mixerContract.address
             const externalNullifier = mixerContract.address
 
             progress('Downloading leaves...')

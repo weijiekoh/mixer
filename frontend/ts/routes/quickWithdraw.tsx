@@ -107,7 +107,7 @@ export default () => {
         try {
             const mixerContract = await getMixerContract(context)
 
-            const broadcasterAddress = mixerContract.address
+            const broadcasterAddress = context.account
             const externalNullifier = mixerContract.address
             progress('Downloading leaves...')
             const leaves = await mixerContract.getLeaves()
