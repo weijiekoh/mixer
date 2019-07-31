@@ -13,8 +13,6 @@ import { getMixerContract, getSemaphoreContract } from '../web3/mixer'
 const deployedAddresses = config.chain.deployedAddresses
 
 import { 
-    genMsg,
-    signMsg,
     genSignedMsg,
     genPubKey,
     genTree,
@@ -37,6 +35,7 @@ import {
     getItems,
     updateWithdrawTxHash,
     getFirstUnwithdrawn,
+    getNumUnwithdrawn,
 } from '../storage'
 
 import {
@@ -65,8 +64,7 @@ const noItems = (
 )
 
 export default () => {
-    const items = getItems()
-    if (items.length == 0) {
+    if (getNumUnwithdrawn() === 0) {
         return noItems
     }
 
