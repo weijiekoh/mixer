@@ -20,7 +20,7 @@
     "module-alias": "^2.2.0",
     "semaphore-merkle-tree": "^1.0.4",
     "snarkjs": "^0.1.13",
-    "websnark": "git+https://github.com/iden3/websnark.git"
+    "websnark": "git+https://github.com/iden3/websnark.git#3b6cf0c77e48ab0867a2d710c0b35794b16bde7d"
   },
   "devDependencies": {}
 }
