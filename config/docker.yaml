@@ -1,5 +1,5 @@
 ---
-env: 'docker-dev'
+env: 'docker'
 mixAmtEth: "0.1"
 feeAmtEth: "0.001"
 
