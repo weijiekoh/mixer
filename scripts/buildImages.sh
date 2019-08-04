@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo "Building mixer-build"
 docker build -f Dockerfile -t mixer-build --target mixer-build --build-arg NODE_ENV=$NODE_ENV .
