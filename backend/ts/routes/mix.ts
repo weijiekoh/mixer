@@ -69,6 +69,10 @@ const mix = async (depositProof: DepositProof) => {
 
     // verify the external nullifier
     if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[3])) {
+        console.log({
+            mixerAddress: deployedAddresses.Mixer,
+            externalNullifier: depositProof.input[3],
+        })
         const errorMsg = 'the external nullifier in the input is invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID,
