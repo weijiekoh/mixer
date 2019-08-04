@@ -13,6 +13,7 @@ import {
 import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
 const deployedAddresses = config.get('chain.deployedAddresses')
+const broadcasterAddress = config.get('backend.broadcasterAddress')
 
 const hotWalletPrivKey = JSON.parse(
     fs.readFileSync(config.get('backend.hotWalletPrivKeyPath'), 'utf-8')
@@ -25,7 +26,7 @@ const verificationKey = require('@mixer-backend/verification_key.json')
     //uint[2] a;
     //uint[2][2] b;
     //uint[2] c;
-    //uint[5] input;
+    //uint[4] input;
     //address recipientAddress;
     //uint256 fee;
 //}
@@ -79,20 +80,10 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
-    const provider = new ethers.providers.JsonRpcProvider(
-        config.get('chain.url'),
-        config.get('chain.chainId'),
-    )
-
-    const signer = new ethers.Wallet(
-        hotWalletPrivKey,
-        provider,
-    )
-
     // verify the signal off-chain
     const { signalHash, signal } = genSignalAndSignalHash(
         depositProof.recipientAddress,
-        signer.address,
+        broadcasterAddress,
         depositProof.fee,
     )
 
@@ -173,6 +164,16 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
+    const provider = new ethers.providers.JsonRpcProvider(
+        config.get('chain.url'),
+        config.get('chain.chainId'),
+    )
+
+    const signer = new ethers.Wallet(
+        hotWalletPrivKey,
+        provider,
+    )
+
     // TODO: check whether the contract has been deployed
     // Best to do this on server startup
     
@@ -184,6 +185,12 @@ const mix = async (depositProof: DepositProof) => {
 
     const semaphoreContract = getContract(
         'Semaphore',
+        signer,
+        deployedAddresses,
+    )
+
+    const relayerRegistryContract = getContract(
+        'RelayerRegistry',
         signer,
         deployedAddresses,
     )
@@ -230,14 +237,21 @@ const mix = async (depositProof: DepositProof) => {
     // Get the latest nonce
     const nonce = await provider.getTransactionCount(signer.address, 'pending')
 
-    const iface = new ethers.utils.Interface(mixerContract.interface.abi)
-    const funcInterface = iface.functions.mix
-    const callData = funcInterface.encode([depositProof])
+    const mixerIface = new ethers.utils.Interface(mixerContract.interface.abi)
+    const mixCallData = mixerIface.functions.mix.encode([depositProof, broadcasterAddress])
+
+    const relayerRegistryIface = new ethers.utils.Interface(relayerRegistryContract.interface.abi)
+    const relayCallData = relayerRegistryIface.functions.relayCall.encode(
+        [
+            mixerContract.address,
+            mixCallData
+        ],
+    )
 
     const unsignedTx = {
-        to: mixerContract.address,
+        to: relayerRegistryContract.address,
         value: 0,
-        data: callData,
+        data: relayCallData,
         nonce,
         gasPrice: ethers.utils.parseUnits('20', 'gwei'),
         gasLimit: config.get('chain.mix.gasLimit'),

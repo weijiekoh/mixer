@@ -1,25 +1,48 @@
+import * as ethers from 'ethers'
 
 const mix = async (
+    relayerRegistryContract,
     mixerContract,
     signal,
     proof,
     publicSignals,
     recipientAddress,
     feeAmt,
+    relayerAddress,
 ) => {
-
-    return await mixerContract.mix(
-        genMixInputs(
-            signal,
-            proof,
-            publicSignals,
-            recipientAddress,
-            feeAmt,
-        ),
+    const depositProof = genDepositProof(
+        signal,
+        proof,
+        publicSignals,
+        recipientAddress,
+        feeAmt,
     )
+    const iface = new ethers.utils.Interface(mixerContract.interface.abi)
+    const callData = iface.functions.mix.encode([depositProof, relayerAddress])
+
+    return relayerRegistryContract.relayCall(
+        mixerContract.contractAddress,
+        callData,
+    )
+
+    //return await mixerContract.mix(
+        //genDepositProof(
+            //signal,
+            //proof,
+            //publicSignals,
+            //recipientAddress,
+            //feeAmt,
+        //),
+    //)
 }
 
-const genMixInputs = (signal, proof, publicSignals, recipientAddress, feeAmt) => {
+const genDepositProof = (
+    signal,
+    proof,
+    publicSignals,
+    recipientAddress,
+    feeAmt,
+) => {
     return {
         signal,
         a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
@@ -33,7 +56,6 @@ const genMixInputs = (signal, proof, publicSignals, recipientAddress, feeAmt) =>
             publicSignals[1].toString(),
             publicSignals[2].toString(),
             publicSignals[3].toString(),
-            publicSignals[4].toString()
         ],
         recipientAddress,
         fee: feeAmt,
@@ -45,7 +67,7 @@ const areEqualAddresses = (a: string, b: string) => {
 }
 
 export {
-    genMixInputs,
+    genDepositProof,
     areEqualAddresses,
     mix,
 }

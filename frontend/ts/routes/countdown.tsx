@@ -39,8 +39,8 @@ import {
 } from '../utils/ethAmts'
 
 const config = require('../exported_config')
-const broadcasterAddress = config.backend.broadcasterAddress
 const deployedAddresses = config.chain.deployedAddresses
+const broadcasterAddress = config.backend.broadcasterAddress
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
@@ -118,7 +118,6 @@ export default () => {
                 identityStored.privKey,
                 externalNullifier,
                 signalHash, 
-                broadcasterAddress,
             )
 
             const validSig = verifySignature(msg, signature, pubKey)
@@ -143,7 +142,6 @@ export default () => {
                     identityStored.identityNullifier,
                     identityPathElements,
                     identityPathIndex,
-                    broadcasterAddress,
                 )
             } catch (err) {
                 console.error(err)
@@ -320,7 +318,7 @@ export default () => {
                                 {recipientAddress} 
                             </pre>
                             <br />
-                            can receive {mixAmtEth - operatorFeeEth * 2} ETH 
+                            can receive {mixAmtEth - operatorFeeEth} ETH 
                             { countdownDone || midnightOver || withdrawBtnClicked ?
                                 <span>
                                     { (txHash.length === 0 && midnightOver) ?

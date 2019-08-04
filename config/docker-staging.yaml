@@ -11,10 +11,11 @@ chain:
   #privateKeysPath: "/run/secrets/privateKeysPath"
   privateKeysPath: "../ganachePrivateKeys.json"
   deployedAddresses:
-    MiMC: "0x8CE75De562867Faa1faB72D2ea6Daf9467C9E77d"
-    MultipleMerkleTree: "0x7BB03F242A00a054Fa6838eecfbf3a872597742E"
-    Semaphore: "0x1eAEdD65Ec25CcEA119E1C753828c13e29a411eD"
-    Mixer: "0x2673FcC48F4f6Cd8D6978cD3d0Cf9D5A80C3e6a1"
+    MiMC: "0x5F47CFf2602d90a6D48eFb1fD7891CA5e662e89e"
+    MultipleMerkleTree: "0xc1174A3197CC690521B472A49BDbA21A2fC9C896"
+    Semaphore: "0xe1Bcdb364D35BA4185A0dC531C1A053093dCCE2a"
+    Mixer: "0xbC4d1fDa972a54Ed8A7A7FfFD8cC953E71B54E1f"
+    RelayerRegistry: "0x34D7Fb0Ae641C3931A4A7C09402E68f43e084c54"
 
 backend:
   port: 3000

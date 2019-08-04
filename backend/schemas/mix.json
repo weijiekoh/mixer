@@ -28,7 +28,7 @@
             "$ref": "#/definitions/twoHexStrs"
         },
         "input": {
-            "$ref": "#/definitions/fiveHexStrs"
+            "$ref": "#/definitions/publicInputHexStrs"
         },
         "recipientAddress": {
             "$ref": "#/definitions/address"
@@ -56,10 +56,10 @@
             "minItems": 2,
             "maxItems": 2
         },
-        "fiveHexStrs": {
+        "publicInputHexStrs": {
             "type": "array",
             "items": { "$ref": "#/definitions/hex" },
-            "minItems": 5,
+            "minItems": 4,
             "maxItems": 5
         }
     }

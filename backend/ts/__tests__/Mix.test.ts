@@ -137,7 +137,6 @@ describe('the mixer_mix API call', () => {
             identity.keypair.privKey,
             externalNullifier,
             signalHash, 
-            broadcasterAddress,
         )
 
         const w = genWitness(
@@ -149,7 +148,6 @@ describe('the mixer_mix API call', () => {
             identity.identityNullifier,
             identityPath.path_elements,
             identityPath.path_index,
-            broadcasterAddress
         )
 
         const publicSignals = genPublicSignals(w, circuit)

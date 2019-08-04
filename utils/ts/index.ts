@@ -28,7 +28,7 @@ const genMixParams = (
         ],
         c: proof.pi_c.slice(0, 2).map(hexify),
         input: publicSignals.map(hexify),
-        recipientAddress: recipientAddress,
+        recipientAddress,
         fee: hexify(fee),
     }
 }

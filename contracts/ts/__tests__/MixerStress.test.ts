@@ -57,6 +57,7 @@ const feeAmt = ethers.utils.parseEther(
 const users = accounts.map((user) => user.address)
 const identities = {}
 const treeIndices = {}
+let broadcasterAddress = accounts[1].address
 
 const contractsPath = path.join(
     __dirname,
@@ -89,6 +90,7 @@ let mimcContract
 let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
+let relayerRegistryContract
 let externalNullifier : string
 
 describe('Mixer', () => {
@@ -126,6 +128,7 @@ describe('Mixer', () => {
         multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
+        relayerRegistryContract = contracts.relayerRegistryContract
     })
 
     describe('Giving away ETH', () => {
@@ -271,12 +274,14 @@ describe('Mixer', () => {
                 recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
 
                 const mixTx = await mix(
+                    relayerRegistryContract,
                     mixerContract,
                     signal,
                     proof,
                     publicSignals,
                     recipientAddress,
                     feeAmt,
+                    broadcasterAddress,
                 )
 
                 // Wait till the transaction is mined

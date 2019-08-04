@@ -19,7 +19,7 @@ contract Mixer {
         uint[2] a;
         uint[2][2] b;
         uint[2] c;
-        uint[5] input;
+        uint[4] input;
         address payable recipientAddress;
         uint256 fee;
     }
@@ -77,20 +77,18 @@ contract Mixer {
      * @param _proof A deposit proof. This function will send `mixAmt`, minus
      *               fees, to the recipient if the proof is valid.
      */
-    function mix(DepositProof memory _proof) public {
+    function mix(DepositProof memory _proof, address payable _relayerAddress) public {
         // The fee must be high enough, but not larger than the mix
         // denomination; note that a self-interested relayer would exercise
         // their discretion as to whether to relay transactions depending on
         // the fee specified
         require(_proof.fee < mixAmt, "Mixer: quoted fee gte mixAmt");
 
-        address payable relayerAddress = address(uint160(_proof.input[4]));
-
         // Hash the recipient's address, the mixer contract's address, and fee
         bytes32 computedSignal = keccak256(
             abi.encodePacked(
                 _proof.recipientAddress,
-                relayerAddress,
+                _relayerAddress,
                 _proof.fee
             )
         );
@@ -108,7 +106,7 @@ contract Mixer {
         );
 
         // Transfer the fee to the relayer
-        relayerAddress.transfer(_proof.fee);
+        _relayerAddress.transfer(_proof.fee);
 
         // Transfer the ETH owed to the recipient, minus the fee 
         uint256 recipientMixAmt = mixAmt.sub(_proof.fee);

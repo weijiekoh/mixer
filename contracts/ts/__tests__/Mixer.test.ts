@@ -11,7 +11,7 @@ import * as ethers from 'ethers'
 import { config } from 'mixer-config'
 import {
     mix,
-    genMixInputs,
+    genDepositProof,
     areEqualAddresses,
 } from './utils'
 
@@ -46,9 +46,8 @@ const Mixer = require('../../compiled/Mixer.json')
 import { deploy } from '../deploy/deploy'
 
 const accounts = genAccounts()
-let broadcasterAddress = accounts[0].address
 const recipientAddress = accounts[1].address
-const admin = accounts[0]
+let relayerAddress = accounts[2].address
 
 const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 const feeAmt = ethers.utils.parseEther(
@@ -93,12 +92,13 @@ let mimcContract
 let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
+let relayerRegistryContract
 let externalNullifier : string
 
 describe('Mixer', () => {
 
     const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
-        admin.privateKey,
+        accounts[0].privateKey,
         config.get('chain.url'),
         {
             chainId: config.get('chain.chainId'),
@@ -115,6 +115,7 @@ describe('Mixer', () => {
         multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
+        relayerRegistryContract = contracts.relayerRegistryContract
     })
 
     describe('Contract deployments', () => {
@@ -202,9 +203,9 @@ describe('Mixer', () => {
         let recipientBalanceAfter
         let recipientBalanceDiff
 
-        let broadcasterBalanceBefore
-        let broadcasterBalanceAfter
-        let broadcasterBalanceDiff
+        let relayerBalanceBefore
+        let relayerBalanceAfter
+        let relayerBalanceDiff
 
         let mixReceipt
         let mixTxFee
@@ -254,7 +255,7 @@ describe('Mixer', () => {
             )
 
             const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmt,
+                recipientAddress, relayerAddress, feeAmt,
             )
 
             // signature = signEddsa(
@@ -263,10 +264,9 @@ describe('Mixer', () => {
             //         externalNullifier,
             //         sha256Hash(
             //             keccak256Hash(
-            //                 recipientAddress, broadcasterAddress, feeAmt
+            //                 recipientAddress, relayerAddress, feeAmt
             //             )
             //         )
-            //         broadcasterAddress,
             //     )
             // )
 
@@ -274,7 +274,6 @@ describe('Mixer', () => {
                 identity.privKey,
                 externalNullifier,
                 signalHash, 
-                broadcasterAddress,
             )
 
             assert.isTrue(verifySignature(msg, signature, identity.pubKey))
@@ -288,7 +287,6 @@ describe('Mixer', () => {
                 identity.identityNullifier,
                 identityPathElements,
                 identityPathIndex,
-                broadcasterAddress
             )
 
             const witnessRoot = extractWitnessRoot(circuit, w)
@@ -304,7 +302,7 @@ describe('Mixer', () => {
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
 
-            const mixInputs = await genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt)
+            const mixInputs = await genDepositProof(signal, proof, publicSignals, recipientAddress, feeAmt)
 
             // check inputs to mix() using preBroadcastCheck()
             const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
@@ -318,22 +316,24 @@ describe('Mixer', () => {
             assert.isTrue(preBroadcastChecked)
 
             recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-            broadcasterBalanceBefore = await deployer.provider.getBalance(broadcasterAddress)
+            relayerBalanceBefore = await deployer.provider.getBalance(relayerAddress)
 
             const mixTx = await mix(
+                relayerRegistryContract,
                 mixerContract,
                 signal,
                 proof,
                 publicSignals,
                 recipientAddress,
                 feeAmt,
+                relayerAddress,
             )
-
-            recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
-            broadcasterBalanceAfter = await deployer.provider.getBalance(broadcasterAddress) 
 
             // Wait till the transaction is mined
             mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
+
+            recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
+            relayerBalanceAfter = await deployer.provider.getBalance(relayerAddress) 
 
             const gasUsed = mixReceipt.gasUsed.toString()
             console.log('Gas used for this withdrawal:', gasUsed)
@@ -341,85 +341,12 @@ describe('Mixer', () => {
             mixTxFee = mixTx.gasPrice.mul(mixReceipt.gasUsed)
         })
 
-        it('should increase the broadcaster\'s balance', () => {
-            broadcasterBalanceDiff = broadcasterBalanceAfter.sub(broadcasterBalanceBefore)
-            assert.equal(mixTxFee.add(broadcasterBalanceDiff).toString(), feeAmt.toString())
+        it('should increase the relayer\'s balance', () => {
+            relayerBalanceDiff = relayerBalanceAfter.sub(relayerBalanceBefore)
+            assert.equal(relayerBalanceDiff.toString(), feeAmt.toString())
         })
 
         it('should increase the recipient\'s balance', () => {
-            recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
-            assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
-        })
-
-        it('should make another deposit and withdrawal', async () => {
-            const identity = genIdentity()
-            const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
-
-            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
-            const receipt = await mixerContract.verboseWaitForTransaction(tx)
-            const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
-            nextIndex = leafAddedEvent.leaf_index
-            await tree.update(nextIndex, identityCommitment.toString())
-            const leaves = await mixerContract.getLeaves()
-
-            const leafIndex = await tree.element_index(identityCommitment)
-            assert.equal(nextIndex, 1)
-            assert.equal(nextIndex.toString(10), leafIndex)
-
-            await tree.update(nextIndex, identityCommitment.toString())
-
-            const identityPath = await tree.path(nextIndex)
-
-            const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmt,
-            )
-
-           const { signature, msg } = genSignedMsg(
-                identity.keypair.privKey,
-                externalNullifier,
-                signalHash, 
-                broadcasterAddress,
-            )
-
-            assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
-
-            const w = genWitness(
-                circuit,
-                identity.keypair.pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
-                identity.identityNullifier,
-                identityPath.path_elements,
-                identityPath.path_index,
-                broadcasterAddress
-            )
-
-            const witnessRoot = extractWitnessRoot(circuit, w)
-            assert.equal(witnessRoot, identityPath.root)
-
-            assert.isTrue(circuit.checkWitness(w))
-
-            const publicSignals = genPublicSignals(w, circuit)
-
-            const proof = await genProof(w, provingKey.buffer)
-
-            // verify the proof off-chain
-            const isVerified = verifyProof(verifyingKey, proof, publicSignals)
-            assert.isTrue(isVerified)
-
-            recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-
-            const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
-
-            // Wait till the transaction is mined
-            const mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
-
-            const gasUsed = mixReceipt.gasUsed.toString()
-            console.log('Gas used for this withdrawal:', gasUsed)
-
-            recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
-
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
             assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
         })

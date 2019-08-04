@@ -104,13 +104,11 @@ const genIdentity = (
 const genMsg = (
     externalNullifier: string,
     signalHash: BigInt,
-    broadcasterAddress: string,
 ): BigInt => {
 
     return circomlib.mimcsponge.multiHash([
         bigInt(externalNullifier),
         bigInt(signalHash), 
-        bigInt(broadcasterAddress),
     ])
 }
 
@@ -126,9 +124,8 @@ const genSignedMsg = (
     privKey: EddsaPrivateKey,
     externalNullifier: string,
     signalHash: BigInt,
-    broadcasterAddress: string,
 ) => {
-    const msg = genMsg(externalNullifier, signalHash, broadcasterAddress)
+    const msg = genMsg(externalNullifier, signalHash)
 
     return {
         msg,
@@ -154,19 +151,22 @@ const verifySignature = (
     return eddsa.verifyMiMCSponge(msg, signature, pubKey)
 }
 
-// calculate the signal, which is the keccak256 hash of
-// recipientAddress, broadcasterAddress, and fee.
 const genSignalAndSignalHash = (
     recipientAddress, broadcasterAddress, feeAmt,
 ) => {
+    // This is the computed signal
     const signal = ethers.utils.solidityKeccak256(
         ['address', 'address', 'uint256'],
         [recipientAddress, broadcasterAddress, feeAmt],
     )
 
     const signalAsBuffer = Buffer.from(signal.slice(2), 'hex')
-    const signalHashRaw = crypto.createHash('sha256').update(signalAsBuffer).digest()
-    const signalHash = beBuff2int(signalHashRaw.slice(0, 31))
+    const signalHashRaw = ethers.utils.solidityKeccak256(
+        ['bytes'],
+        [signalAsBuffer],
+    )
+    const signalHashRawAsBytes = Buffer.from(signalHashRaw.slice(2), 'hex');
+    const signalHash = beBuff2int(signalHashRawAsBytes.slice(0, 31))
 
     return { signal, signalHash }
 }
@@ -180,7 +180,6 @@ const genWitness = (
     identityNullifier,
     identityPathElements,
     identityPathIndex: number,
-    broadcasterAddress: string,
 ) => {
 
     return circuit.calculateWitness({
@@ -194,7 +193,6 @@ const genWitness = (
         identity_nullifier: identityNullifier,
         identity_path_elements: identityPathElements,
         identity_path_index: identityPathIndex,
-        broadcaster_address: bigInt(broadcasterAddress),
     })
 }
 
