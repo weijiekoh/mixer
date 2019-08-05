@@ -52,12 +52,12 @@ contract Mixer {
         return 0x0000000000000000000000000000000000000000 == address(token);
     }
 
-    modifier onlyMixEth() {
+    modifier onlyEth() {
         require(supportsEthOnly() == true, "Mixer: only supports ETH");
         _;
     }
 
-    modifier onlyMixERC20() {
+    modifier onlyERC20() {
         require(supportsEthOnly() == false, "Mixer: only supports tokens");
         _;
     }
@@ -98,7 +98,7 @@ contract Mixer {
      *        identity nullifier)
      */
 
-    function depositERC20(uint256 _identityCommitment) public onlyMixERC20 {
+    function depositERC20(uint256 _identityCommitment) public onlyERC20 {
         require(_identityCommitment != 0, "Mixer: invalid identity commitment");
 
         // Transfer tokens from msg.sender to this contract
@@ -118,7 +118,7 @@ contract Mixer {
      * @param The identity commitment (the hash of the public key and the
      *        identity nullifier)
      */
-    function deposit(uint256 _identityCommitment) public payable onlyMixEth {
+    function deposit(uint256 _identityCommitment) public payable onlyEth {
         require(msg.value == mixAmt, "Mixer: wrong mixAmt deposited");
 
         insertIdentityCommitment(_identityCommitment);
@@ -160,7 +160,7 @@ contract Mixer {
      * @param _proof A deposit proof. This function will send `mixAmt` tokens,
      *               minus fees, to the recipient if the proof is valid.
      */
-    function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyMixERC20 {
+    function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyERC20 {
         broadcastToSemaphore(_proof, _relayerAddress);
 
         // Transfer the fee to the relayer
@@ -180,7 +180,7 @@ contract Mixer {
      * @param _proof A deposit proof. This function will send `mixAmt`, minus
      *               fees, to the recipient if the proof is valid.
      */
-    function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyMixEth {
+    function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyEth {
         broadcastToSemaphore(_proof, _relayerAddress);
 
         // Transfer the fee to the relayer

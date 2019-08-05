@@ -205,6 +205,18 @@ describe('Mixer', () => {
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: depositAmt.add(1) }))
         })
 
+        it('should fail to call depositERC20', async () => {
+            let reason: string = ''
+            let tx
+            try {
+                tx = await mixerContract.depositERC20('0x' + identityCommitment.toString(16))
+                const receipt = await mixerContract.verboseWaitForTransaction(tx)
+            } catch (err) {
+                reason = err.data[err.transactionHash].reason
+            }
+            assert.equal(reason, 'Mixer: only supports tokens')
+        })
+
         it('should perform an ETH deposit', async () => {
             // make a deposit (by the first user)
             const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })

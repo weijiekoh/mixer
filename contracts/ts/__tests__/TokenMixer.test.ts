@@ -180,6 +180,18 @@ describe('Token Mixer', () => {
             }
         })
 
+        it('should fail to call deposit', async () => {
+            let reason: string = ''
+            let tx
+            try {
+                tx = await mixerContract.deposit('0x' + identityCommitment.toString(16))
+                const receipt = await mixerContract.verboseWaitForTransaction(tx)
+            } catch (err) {
+                reason = err.data[err.transactionHash].reason
+            }
+            assert.equal(reason, 'Mixer: only supports ETH')
+        })
+
         it('should perform a token deposit', async () => {
             await tokenContract.approve(mixerContract.contractAddress, depositAmt)
 
