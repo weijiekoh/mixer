@@ -143,10 +143,10 @@ export default () => {
                         {`You can mix ${mixAmtEth} ETH at a time.`}
                     </p>
                 <p>
-                    {`The fee is ${operatorFeeEth * 2} ETH.`}
+                    {`The fee is ${operatorFeeEth} ETH.`}
                 </p>
                 <p>
-                    {`You can get back ${mixAmtEth - operatorFeeEth * 2} ETH at midnight, UTC.`}
+                    {`You can get back ${mixAmtEth - operatorFeeEth} ETH at midnight, UTC.`}
                 </p>
             </div>
 

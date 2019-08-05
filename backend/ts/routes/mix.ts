@@ -13,6 +13,7 @@ import {
 import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
 const deployedAddresses = config.get('chain.deployedAddresses')
+const broadcasterAddress = config.get('backend.broadcasterAddress')
 
 const hotWalletPrivKey = JSON.parse(
     fs.readFileSync(config.get('backend.hotWalletPrivKeyPath'), 'utf-8')
@@ -25,7 +26,7 @@ const verificationKey = require('@mixer-backend/verification_key.json')
     //uint[2] a;
     //uint[2][2] b;
     //uint[2] c;
-    //uint[5] input;
+    //uint[4] input;
     //address recipientAddress;
     //uint256 fee;
 //}
@@ -44,17 +45,15 @@ const areEqualAddresses = (a: string, b: string) => {
     return BigInt(a) === BigInt(b)
 }
 
-const burnFeeWei = ethers.utils.parseUnits(config.get('burnFeeEth'), 'ether')
-
-// This operator accepts a fee that is greater than or equal to the burn fee
-const operatorFeeWei = burnFeeWei
+// This operator accepts a fee that is large enough
+const operatorFeeWei = ethers.utils.parseUnits(config.get('feeAmtEth'), 'ether')
 
 const mix = async (depositProof: DepositProof) => {
     const publicInputs = depositProof.input.map(bigInt)
 
     // verify the fee
     const fee = ethers.utils.parseUnits(BigInt(depositProof.fee).toString(), 'wei')
-    const enoughFees = fee.gte(operatorFeeWei.add(burnFeeWei))
+    const enoughFees = fee.gte(operatorFeeWei)
 
     if (!enoughFees) {
         const errorMsg = 'the fee is to low'
@@ -81,23 +80,10 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
-    // verify the broadcaster's address
-    if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[4])) {
-        const errorMsg = 'the broadcaster\'s address in the input is invalid'
-        throw {
-            code: errors.errorCodes.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
-            message: errorMsg,
-            data: errors.genError(
-                errors.MixerErrorNames.BACKEND_MIX_BROADCASTER_ADDRESS_INVALID,
-                errorMsg,
-            )
-        }
-    }
-
     // verify the signal off-chain
     const { signalHash, signal } = genSignalAndSignalHash(
         depositProof.recipientAddress,
-        deployedAddresses.Mixer,
+        broadcasterAddress,
         depositProof.fee,
     )
 
@@ -178,9 +164,6 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
-    // TODO: check whether the contract has been deployed
-    // Best to do this on server startup
-    
     const provider = new ethers.providers.JsonRpcProvider(
         config.get('chain.url'),
         config.get('chain.chainId'),
@@ -191,6 +174,9 @@ const mix = async (depositProof: DepositProof) => {
         provider,
     )
 
+    // TODO: check whether the contract has been deployed
+    // Best to do this on server startup
+    
     const mixerContract = getContract(
         'Mixer',
         signer,
@@ -199,6 +185,12 @@ const mix = async (depositProof: DepositProof) => {
 
     const semaphoreContract = getContract(
         'Semaphore',
+        signer,
+        deployedAddresses,
+    )
+
+    const relayerRegistryContract = getContract(
+        'RelayerRegistry',
         signer,
         deployedAddresses,
     )
@@ -245,14 +237,21 @@ const mix = async (depositProof: DepositProof) => {
     // Get the latest nonce
     const nonce = await provider.getTransactionCount(signer.address, 'pending')
 
-    const iface = new ethers.utils.Interface(mixerContract.interface.abi)
-    const funcInterface = iface.functions.mix
-    const callData = funcInterface.encode([depositProof])
+    const mixerIface = new ethers.utils.Interface(mixerContract.interface.abi)
+    const mixCallData = mixerIface.functions.mix.encode([depositProof, broadcasterAddress])
+
+    const relayerRegistryIface = new ethers.utils.Interface(relayerRegistryContract.interface.abi)
+    const relayCallData = relayerRegistryIface.functions.relayCall.encode(
+        [
+            mixerContract.address,
+            mixCallData
+        ],
+    )
 
     const unsignedTx = {
-        to: mixerContract.address,
+        to: relayerRegistryContract.address,
         value: 0,
-        data: callData,
+        data: relayCallData,
         nonce,
         gasPrice: ethers.utils.parseUnits('20', 'gwei'),
         gasLimit: config.get('chain.mix.gasLimit'),

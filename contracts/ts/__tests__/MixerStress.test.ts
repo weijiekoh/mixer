@@ -9,7 +9,7 @@ import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
 import { config } from 'mixer-config'
-import { genMixInputs } from './utils'
+import { mix } from './utils'
 
 import { sleep } from 'mixer-utils'
 import {
@@ -21,7 +21,7 @@ import {
     genPathElementsAndIndex,
     genIdentityNullifier,
     genEddsaKeyPair,
-    genMsg,
+    genSignedMsg,
     genCircuit,
     signMsg,
     verifySignature,
@@ -41,21 +41,23 @@ const Mixer = require('../../compiled/Mixer.json')
 
 import { deploy } from '../deploy/deploy'
 
-const NUM_CYCLES = 10
+const NUM_CYCLES = 1 
 
 const mnemonic = 'candy maple cake sugar pudding cream honey rich smooth crumble sweet treat'
 const accounts = genAccounts()
 const testAccounts = genTestAccounts(NUM_CYCLES, mnemonic)
 const admin = accounts[0]
+const relayerAddress = accounts[0].address
 
 const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('burnFeeEth')) * 2).toString()
+    (parseFloat(config.get('feeAmtEth'))).toString()
 )
 
 const users = accounts.map((user) => user.address)
 const identities = {}
 const treeIndices = {}
+let broadcasterAddress = accounts[1].address
 
 const contractsPath = path.join(
     __dirname,
@@ -84,17 +86,12 @@ for (let i=0; i < testAccounts.length; i++) {
     }
 }
 
-const mix = async (mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt) => {
-
-    return await mixerContract.mix(genMixInputs(signal, proof, publicSignals, recipientAddress, feeAmt))
-}
-
 let mimcContract
 let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
+let relayerRegistryContract
 let externalNullifier : string
-let broadcasterAddress: string
 
 describe('Mixer', () => {
 
@@ -131,6 +128,7 @@ describe('Mixer', () => {
         multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
+        relayerRegistryContract = contracts.relayerRegistryContract
     })
 
     describe('Giving away ETH', () => {
@@ -158,7 +156,6 @@ describe('Mixer', () => {
 
             // the external nullifier is the hash of the contract's address
             externalNullifier = mixerContract.contractAddress
-            broadcasterAddress = mixerContract.contractAddress
         })
 
         it('the Mixer contract should be the owner of the Semaphore contract', async () => {
@@ -196,7 +193,6 @@ describe('Mixer', () => {
 
         const circuit = genCircuit(cirDef)
 
-        const operatorAddress = accounts[0].address
         const recipientAddress = accounts[1].address
         let nextIndex
 
@@ -238,16 +234,15 @@ describe('Mixer', () => {
                 )
 
                 const { signalHash, signal } = genSignalAndSignalHash(
-                    recipientAddress, broadcasterAddress, feeAmt,
+                    recipientAddress, relayerAddress, feeAmt,
                 )
 
-                const msg = genMsg(
+                const { signature, msg } = genSignedMsg(
+                    identity.privKey,
                     externalNullifier,
                     signalHash, 
-                    mixerContract.contractAddress,
+                    relayerAddress,
                 )
-
-                const signature = signMsg(identity.privKey, msg)
 
                 assert.isTrue(verifySignature(msg, signature, identity.pubKey))
 
@@ -260,7 +255,7 @@ describe('Mixer', () => {
                     identity.identityNullifier,
                     identityPath.path_elements,
                     identityPath.path_index,
-                    broadcasterAddress
+                    relayerAddress
                 )
 
                 const witnessRoot = extractWitnessRoot(circuit, w)
@@ -278,7 +273,16 @@ describe('Mixer', () => {
 
                 recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
 
-                const mixTx = await mix(mixerContract, signal, proof, publicSignals, recipientAddress, feeAmt)
+                const mixTx = await mix(
+                    relayerRegistryContract,
+                    mixerContract,
+                    signal,
+                    proof,
+                    publicSignals,
+                    recipientAddress,
+                    feeAmt,
+                    broadcasterAddress,
+                )
 
                 // Wait till the transaction is mined
                 const receipt = await mixerContract.verboseWaitForTransaction(mixTx)

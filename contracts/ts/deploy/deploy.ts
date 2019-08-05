@@ -11,6 +11,7 @@ const deploy = async (deployer: any, compiledContracts: string) => {
     const MultipleMerkleTree = require(path.join(compiledContracts, 'MultipleMerkleTree.json'))
     const Semaphore = require(path.join(compiledContracts, 'Semaphore.json'))
     const Mixer = require(path.join(compiledContracts, 'Mixer.json'))
+    const RelayerRegistry = require(path.join(compiledContracts, 'RelayerRegistry.json'))
 
     console.log('Deploying MiMC')
     const mimcContract = await deployer.deploy(MiMC, {})
@@ -40,7 +41,6 @@ const deploy = async (deployer: any, compiledContracts: string) => {
         {},
         semaphoreContract.contractAddress,
         ethers.utils.parseEther(config.mixAmtEth),
-        ethers.utils.parseEther(config.burnFeeEth),
     )
 
     console.log('Transferring ownership of Semaphore to Mixer')
@@ -53,11 +53,15 @@ const deploy = async (deployer: any, compiledContracts: string) => {
     await mixerContract.setSemaphoreExternalNulllifier()
     await tx.wait()
 
+    console.log('Deploying Relayer Registry')
+    const relayerRegistryContract = await deployer.deploy(RelayerRegistry, {})
+
     return {
         mimcContract,
         multipleMerkleTreeContract,
         semaphoreContract,
         mixerContract,
+        relayerRegistryContract
     }
 }
 
@@ -108,7 +112,9 @@ const main = async () => {
         mimcContract,
         multipleMerkleTreeContract,
         semaphoreContract,
-        mixerContract, } 
+        mixerContract,
+        relayerRegistryContract,
+    } 
     = await deploy(deployer, contractsPath)
 
     const addresses = {
@@ -116,6 +122,7 @@ const main = async () => {
         MultipleMerkleTree: multipleMerkleTreeContract.contractAddress,
         Semaphore: semaphoreContract.contractAddress,
         Mixer: mixerContract.contractAddress,
+        RelayerRegistry: relayerRegistryContract.contractAddress,
     }
 
     const addressJsonPath = path.join(__dirname, '../..', outputAddressFile)

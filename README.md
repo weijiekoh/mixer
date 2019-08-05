@@ -148,6 +148,9 @@ use this in production.
 }
 ```
 
+`0x62730609...` is also the address to which the Mixer contract will transfer
+fees.
+
 Copy `config/local-dev.yaml.example` to `config/config.example.yaml` and modify
 it as such:
 

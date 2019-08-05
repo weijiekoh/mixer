@@ -1,24 +1,27 @@
 ---
-env: 'docker-dev'
+env: 'docker'
 mixAmtEth: "0.1"
-burnFeeEth: "0.0005"
+feeAmtEth: "0.001"
 
 chain:
   url: "https://kovan.infura.io/v3/5d37c494621a43558d77c90e368d4022"
   chainId: 42
   mix:
     gasLimit: 8000000
-  privateKeysPath: "/run/secrets/privateKeysPath"
+  #privateKeysPath: "/run/secrets/privateKeysPath"
+  privateKeysPath: "../ganachePrivateKeys.json"
   deployedAddresses:
-    MiMC: "0xb6a9878fd1Fd141b2e912C9115a8C96bde43308d"
-    MultipleMerkleTree: "0x8ec5fEf2A7522Dc746356Ac02412825aC63F25C9"
-    Semaphore: "0xCCdEB0d6073ac7Fe9c0C2A186221ac8163B3057b"
-    Mixer: "0xA54d5013e5aEa383Ff18B4B6bd0a11876D02F384"
+    MiMC: "0x5F47CFf2602d90a6D48eFb1fD7891CA5e662e89e"
+    MultipleMerkleTree: "0xc1174A3197CC690521B472A49BDbA21A2fC9C896"
+    Semaphore: "0xe1Bcdb364D35BA4185A0dC531C1A053093dCCE2a"
+    Mixer: "0xbC4d1fDa972a54Ed8A7A7FfFD8cC953E71B54E1f"
+    RelayerRegistry: "0x34D7Fb0Ae641C3931A4A7C09402E68f43e084c54"
 
 backend:
   port: 3000
   host: "http://localhost"
   hotWalletPrivKeyPath: "/run/secrets/hotWalletPrivKeyPath"
+  broadcasterAddress: "0x53BE836678eA3Dbf7257ef32954184Ac06C2D4b1"
   etcd:
     host: "mixer-etcd"
     port: 2379

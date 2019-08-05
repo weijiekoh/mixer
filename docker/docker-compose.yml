@@ -13,7 +13,7 @@ services:
       - "mixer-net"
 
     environment:
-      - NODE_ENV=docker-dev
+      - NODE_ENV=docker
 
     secrets:
       - hotWalletPrivKeyPath
@@ -31,7 +31,7 @@ services:
       #- "mixer-net"
 
     #environment:
-      #- NODE_ENV=docker-dev
+      #- NODE_ENV=docker
 
     #secrets:
       #- privateKeysPath
@@ -49,7 +49,7 @@ services:
       - "mixer-net"
 
     environment:
-      - NODE_ENV=docker-dev
+      - NODE_ENV=docker
 
   mixer-etcd:
     container_name: mixer-etcd
@@ -63,7 +63,7 @@ services:
       - "mixer-net"
 
     environment:
-      - NODE_ENV=docker-dev
+      - NODE_ENV=docker
 
 networks:
   mixer-net:

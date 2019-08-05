@@ -9,12 +9,11 @@ const config = require('../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
 import { quickWithdraw } from '../web3/quickWithdraw'
-import { getMixerContract, getSemaphoreContract } from '../web3/mixer'
+import { getMixerContract } from '../web3/mixer'
 const deployedAddresses = config.chain.deployedAddresses
+const broadcasterAddress = config.backend.broadcasterAddress
 
 import { 
-    genMsg,
-    signMsg,
     genSignedMsg,
     genPubKey,
     genTree,
@@ -38,6 +37,7 @@ import {
     getNumUnwithdrawn,
     updateWithdrawTxHash,
     getFirstUnwithdrawn,
+    getNumUnwithdrawn,
 } from '../storage'
 
 import {
@@ -107,7 +107,7 @@ export default () => {
         try {
             const mixerContract = await getMixerContract(context)
 
-            const broadcasterAddress = mixerContract.address
+            const broadcasterAddress = context.account
             const externalNullifier = mixerContract.address
             progress('Downloading leaves...')
             const leaves = await mixerContract.getLeaves()
@@ -134,11 +134,9 @@ export default () => {
                 identityStored.privKey,
                 externalNullifier,
                 signalHash, 
-                broadcasterAddress,
             )
 
             const validSig = verifySignature(msg, signature, pubKey)
-
             if (!validSig) {
                 throw {
                     code: ErrorCodes.INVALID_SIG,
@@ -146,12 +144,10 @@ export default () => {
             }
 
             progress('Downloading circuit...')
-
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             let w
-
             try {
                 w = genWitness(
                     circuit,
@@ -162,9 +158,9 @@ export default () => {
                     identityStored.identityNullifier,
                     identityPathElements,
                     identityPathIndex,
-                    broadcasterAddress,
                 )
             } catch (err) {
+                console.error(err)
                 throw {
                     code: ErrorCodes.WITNESS_GEN_ERROR,
                 }
@@ -212,6 +208,7 @@ export default () => {
                 publicSignals,
                 recipientAddress,
                 feeAmtWei,
+                broadcasterAddress,
             )
 
             setPendingTxHash(tx.hash)
@@ -291,7 +288,7 @@ export default () => {
                               onClick={handleWithdrawBtnClick}
                               txStatus={txStatus}
                               isDisabled={withdrawBtnDisabled}
-                              label={`Withdraw ${mixAmtEth - operatorFeeEth * 2} ETH`}
+                              label={`Withdraw ${mixAmtEth - operatorFeeEth} ETH`}
                           />
 
                           { pendingTxHash.length > 0 &&

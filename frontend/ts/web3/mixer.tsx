@@ -1,8 +1,25 @@
 import * as ethers from 'ethers'
 const mixerAbi = require('../abis/Mixer-abi.json')
 const semaphoreAbi = require('../abis/Semaphore-abi.json')
+const relayerRegistryAbi = require('../abis/RelayerRegistry-abi.json')
 const config = require('../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
+
+// It's not trivial to generalise these functions as Parcel won't let you
+// dynamically require JSON files
+
+const getRelayerRegistryContract = async (context) => {
+    const provider = new ethers.providers.Web3Provider(
+        await context.connector.getProvider(config.chain.chainId),
+    )
+    const signer = provider.getSigner()
+
+    return new ethers.Contract(
+        deployedAddresses.RelayerRegistry,
+        relayerRegistryAbi,
+        signer,
+    )
+}
 
 const getMixerContract = async (context) => {
     const provider = new ethers.providers.Web3Provider(
@@ -30,4 +47,4 @@ const getSemaphoreContract = async (context) => {
     )
 }
 
-export { getMixerContract, getSemaphoreContract }
+export { getRelayerRegistryContract, getMixerContract, getSemaphoreContract }
