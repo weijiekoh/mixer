@@ -1,4 +1,12 @@
 import * as ethers from 'ethers'
+import {
+    SnarkProvingKey,
+    SnarkVerifyingKey,
+    genCircuit,
+    unstringifyBigInts,
+} from 'mixer-crypto'
+const fs = require('fs');
+const path = require('path');
 
 const mix = async (
     relayerRegistryContract,
@@ -36,6 +44,32 @@ const mix = async (
     //)
 }
 
+const mixERC20 = async (
+    relayerRegistryContract,
+    mixerContract,
+    signal,
+    proof,
+    publicSignals,
+    recipientAddress,
+    feeAmt,
+    relayerAddress,
+) => {
+    const depositProof = genDepositProof(
+        signal,
+        proof,
+        publicSignals,
+        recipientAddress,
+        feeAmt,
+    )
+    const iface = new ethers.utils.Interface(mixerContract.interface.abi)
+    const callData = iface.functions.mixERC20.encode([depositProof, relayerAddress])
+
+    return relayerRegistryContract.relayCall(
+        mixerContract.contractAddress,
+        callData,
+    )
+}
+
 const genDepositProof = (
     signal,
     proof,
@@ -66,8 +100,37 @@ const areEqualAddresses = (a: string, b: string) => {
     return BigInt(a) === BigInt(b)
 }
 
+const getSnarks = () => {
+    const verifyingKey: SnarkVerifyingKey = unstringifyBigInts(
+        JSON.parse(fs.readFileSync(
+            path.join(
+                __dirname,
+                '../../../semaphore/semaphorejs/build/verification_key.json',
+            )
+        ))
+    )
+
+    const provingKey: SnarkProvingKey = fs.readFileSync(
+        path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'),
+    )
+    const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
+    const cirDef = JSON.parse(
+        fs.readFileSync(path.join(__dirname, circuitPath)).toString()
+    )
+
+    const circuit = genCircuit(cirDef)
+
+    return {
+        verifyingKey,
+        provingKey,
+        circuit,
+    }
+}
+
 export {
     genDepositProof,
     areEqualAddresses,
     mix,
+    mixERC20,
+    getSnarks,
 }

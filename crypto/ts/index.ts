@@ -112,6 +112,18 @@ const genMsg = (
     ])
 }
 
+// signature = signEddsa(
+//     privKey,
+//     mimcHash(
+//         externalNullifier,
+//         sha256Hash(
+//             keccak256Hash(
+//                 recipientAddress, relayerAddress, feeAmt
+//             )
+//         )
+//     )
+// )
+
 const signMsg = (
     privKey: EddsaPrivateKey,
     msg: BigInt,
@@ -169,6 +181,46 @@ const genSignalAndSignalHash = (
     const signalHash = beBuff2int(signalHashRawAsBytes.slice(0, 31))
 
     return { signal, signalHash }
+}
+
+const genWitnessInputs = async (
+    tree,
+    nextIndex,
+    identityCommitment,
+    recipientAddress,
+    relayerAddress,
+    feeAmt,
+    privKey,
+    externalNullifier,
+) => {
+    await tree.update(nextIndex, identityCommitment.toString())
+
+    const identityPath = await tree.path(nextIndex)
+
+    const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
+        tree,
+        identityCommitment,
+    )
+
+    const { signalHash, signal } = genSignalAndSignalHash(
+        recipientAddress, relayerAddress, feeAmt,
+    )
+
+    const { signature, msg } = genSignedMsg(
+        privKey,
+        externalNullifier,
+        signalHash, 
+    )
+
+    return {
+        signature,
+        msg,
+        signalHash,
+        signal,
+        identityPath,
+        identityPathElements,
+        identityPathIndex,
+    }
 }
 
 const genWitness = (
@@ -269,6 +321,7 @@ export {
     genPathElementsAndIndex,
     genSignalAndSignalHash,
     genWitness,
+    genWitnessInputs,
     extractWitnessRoot,
     genProof,
     genPublicSignals,

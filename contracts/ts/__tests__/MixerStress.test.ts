@@ -9,12 +9,10 @@ import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
 import { config } from 'mixer-config'
-import { mix } from './utils'
+import { mix, getSnarks } from './utils'
 
 import { sleep } from 'mixer-utils'
 import {
-    SnarkProvingKey,
-    SnarkVerifyingKey,
     genRandomBuffer,
     genIdentity,
     genIdentityCommitment,
@@ -31,7 +29,6 @@ import {
     genProof,
     genPublicSignals,
     verifyProof,
-    unstringifyBigInts,
     setupTree,
 } from 'mixer-crypto'
 
@@ -39,7 +36,11 @@ import { genAccounts, genTestAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
 const Mixer = require('../../compiled/Mixer.json')
 
-import { deploy } from '../deploy/deploy'
+import {
+    deployAllContractsForEthMixer,
+    deployAllContractsForTokenMixer,
+    deployToken,
+} from '../deploy/deploy'
 
 const NUM_CYCLES = 1 
 
@@ -57,7 +58,6 @@ const feeAmt = ethers.utils.parseEther(
 const users = accounts.map((user) => user.address)
 const identities = {}
 const treeIndices = {}
-let broadcasterAddress = accounts[1].address
 
 const contractsPath = path.join(
     __dirname,
@@ -123,7 +123,7 @@ describe('Mixer', () => {
 
         await buildMiMC()
 
-        const contracts = await deploy(deployer, contractsPath)
+        const contracts = await deployAllContractsForEthMixer(deployer, contractsPath)
         mimcContract = contracts.mimcContract
         multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
@@ -174,24 +174,7 @@ describe('Mixer', () => {
         const tree = setupTree()
 
         // get the circuit, verifying key, and proving key
-        const verifyingKey: SnarkVerifyingKey = unstringifyBigInts(
-            JSON.parse(fs.readFileSync(
-                path.join(
-                    __dirname,
-                    '../../../semaphore/semaphorejs/build/verification_key.json',
-                )
-            ))
-        )
-
-        const provingKey: SnarkProvingKey = fs.readFileSync(
-            path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'),
-        )
-        const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
-        const cirDef = JSON.parse(
-            fs.readFileSync(path.join(__dirname, circuitPath)).toString()
-        )
-
-        const circuit = genCircuit(cirDef)
+        const { verifyingKey, provingKey, circuit } = getSnarks()
 
         const recipientAddress = accounts[1].address
         let nextIndex
@@ -281,7 +264,7 @@ describe('Mixer', () => {
                     publicSignals,
                     recipientAddress,
                     feeAmt,
-                    broadcasterAddress,
+                    relayerAddress,
                 )
 
                 // Wait till the transaction is mined

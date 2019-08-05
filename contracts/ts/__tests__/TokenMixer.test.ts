@@ -3,14 +3,13 @@ declare var assert: any
 declare var before: any
 require('events').EventEmitter.defaultMaxListeners = 0
 
-const fs = require('fs');
 const path = require('path');
 import * as etherlime from 'etherlime-lib'
 import * as ethers from 'ethers'
 
 import { config } from 'mixer-config'
 import {
-    mix,
+    mixERC20,
     genDepositProof,
     areEqualAddresses,
     getSnarks,
@@ -18,6 +17,8 @@ import {
 
 import { sleep } from 'mixer-utils'
 import {
+    SnarkProvingKey,
+    SnarkVerifyingKey,
     genRandomBuffer,
     genIdentity,
     genIdentityCommitment,
@@ -35,6 +36,7 @@ import {
     genProof,
     genPublicSignals,
     verifyProof,
+    unstringifyBigInts,
     setupTree,
 } from 'mixer-crypto'
 
@@ -49,13 +51,12 @@ import {
 } from '../deploy/deploy'
 
 const accounts = genAccounts()
+const depositorAddress = accounts[0].address
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
-const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('feeAmtEth'))).toString()
-)
+const depositAmt = config.get('testing.mixAmtTokens')
+const feeAmt = config.get('testing.feeAmtTokens')
 
 const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
@@ -87,13 +88,13 @@ for (let i=0; i < users.length; i++) {
 }
 
 let mimcContract
-let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
 let relayerRegistryContract
+let tokenContract
 let externalNullifier : string
 
-describe('Mixer', () => {
+describe('Token Mixer', () => {
 
     const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
         accounts[0].privateKey,
@@ -108,41 +109,23 @@ describe('Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        const contracts = await deployAllContractsForEthMixer(deployer, contractsPath)
+        tokenContract = await deployToken(deployer, contractsPath)
+        const contracts = await deployAllContractsForTokenMixer(
+            deployer,
+            contractsPath,
+            depositAmt,
+            tokenContract.contractAddress,
+        )
         mimcContract = contracts.mimcContract
-        multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
+
+        // mint tokens
+        await tokenContract.mint(depositorAddress, 1000)
     })
 
     describe('Contract deployments', () => {
-
-        it('should not deploy Mixer if the Semaphore contract address is invalid', async () => {
-            assert.revert(
-                deployer.deploy(
-                    Mixer,
-                    {},
-                    '0x0000000000000000000000000000000000000000',
-                    ethers.utils.parseEther(config.mixAmtEth),
-                    '0x0000000000000000000000000000000000000000',
-                )
-            )
-            await sleep(1000)
-        })
-
-        it('should not deploy Mixer if the mixAmt is invalid', async () => {
-            assert.revert(
-                deployer.deploy(
-                    Mixer,
-                    {},
-                    semaphoreContract.contractAddress,
-                    ethers.utils.parseEther('0'),
-                    '0x0000000000000000000000000000000000000000',
-                )
-            )
-            await sleep(1000)
-        })
 
         it('should deploy contracts', () => {
             assert.notEqual(
@@ -152,7 +135,6 @@ describe('Mixer', () => {
             )
 
             assert.isAddress(mimcContract.contractAddress)
-            assert.isAddress(multipleMerkleTreeContract.contractAddress)
             assert.isAddress(semaphoreContract.contractAddress)
             assert.isAddress(mixerContract.contractAddress)
 
@@ -191,7 +173,6 @@ describe('Mixer', () => {
         let relayerBalanceDiff
 
         let mixReceipt
-        let mixTxFee
 
         it('should generate identity commitments', async () => {
             for (const user of users) {
@@ -199,35 +180,31 @@ describe('Mixer', () => {
             }
         })
 
-        it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
-            const identityCommitment = identities[users[0]].identityCommitment
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: depositAmt.add(1) }))
-        })
+        it('should perform a token deposit', async () => {
+            await tokenContract.approve(mixerContract.contractAddress, depositAmt)
 
-        it('should perform an ETH deposit', async () => {
-            // make a deposit (by the first user)
-            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+            const balanceBefore = await tokenContract.balanceOf(depositorAddress)
+
+            // make a deposit
+            const tx = await mixerContract.depositERC20(identityCommitment.toString())
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             const gasUsed = receipt.gasUsed.toString()
             console.log('Gas used for this deposit:', gasUsed)
 
-            // check that the leaf was added using the receipt
-            assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
-            const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
-
-            nextIndex = leafAddedEvent.leaf_index
-            assert.equal(nextIndex, 0)
+            nextIndex = 0
 
             // check that the leaf was added to the leaf history array in the contract
             const leaves = (await mixerContract.getLeaves()).map((x) => {
                 return x.toString(10)
             })
             assert.include(leaves, identityCommitment.toString())
+            const balanceAfter = await tokenContract.balanceOf(depositorAddress)
+
+            assert.equal(balanceBefore - balanceAfter, depositAmt)
         })
 
-        it('should make an ETH withdrawal', async () => {
+        it('should make a token withdrawal', async () => {
             await tree.update(nextIndex, identityCommitment.toString())
 
             const {
@@ -277,7 +254,7 @@ describe('Mixer', () => {
 
             const mixInputs = await genDepositProof(signal, proof, publicSignals, recipientAddress, feeAmt)
 
-            // check inputs to mix() using preBroadcastCheck()
+            // check inputs to mixERC20() using preBroadcastCheck()
             const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(
                 mixInputs.a,
                 mixInputs.b,
@@ -288,10 +265,10 @@ describe('Mixer', () => {
 
             assert.isTrue(preBroadcastChecked)
 
-            recipientBalanceBefore = await deployer.provider.getBalance(recipientAddress)
-            relayerBalanceBefore = await deployer.provider.getBalance(relayerAddress)
+            recipientBalanceBefore = await tokenContract.balanceOf(recipientAddress)
+            relayerBalanceBefore = await tokenContract.balanceOf(relayerAddress)
 
-            const mixTx = await mix(
+            const mixTx = await mixERC20(
                 relayerRegistryContract,
                 mixerContract,
                 signal,
@@ -305,23 +282,21 @@ describe('Mixer', () => {
             // Wait till the transaction is mined
             mixReceipt = await mixerContract.verboseWaitForTransaction(mixTx)
 
-            recipientBalanceAfter = await deployer.provider.getBalance(recipientAddress)
-            relayerBalanceAfter = await deployer.provider.getBalance(relayerAddress) 
+            recipientBalanceAfter = await tokenContract.balanceOf(recipientAddress)
+            relayerBalanceAfter = await tokenContract.balanceOf(relayerAddress)
 
             const gasUsed = mixReceipt.gasUsed.toString()
             console.log('Gas used for this withdrawal:', gasUsed)
-
-            mixTxFee = mixTx.gasPrice.mul(mixReceipt.gasUsed)
         })
 
-        it('should increase the relayer\'s balance', () => {
+        it('should increase the relayer\'s token balance', () => {
             relayerBalanceDiff = relayerBalanceAfter.sub(relayerBalanceBefore)
-            assert.equal(relayerBalanceDiff.toString(), feeAmt.toString())
+            assert.equal(relayerBalanceDiff, feeAmt)
         })
 
-        it('should increase the recipient\'s balance', () => {
-            recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
-            assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
+        it('should increase the recipient\'s token balance', () => {
+            recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore)
+            assert.equal(recipientBalanceDiff, depositAmt - feeAmt)
         })
     })
 })

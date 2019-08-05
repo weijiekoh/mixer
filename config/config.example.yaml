@@ -3,6 +3,10 @@ env: 'local-dev'
 mixAmtEth: "0.1"
 feeAmtEth: "0.001"
 
+testing:
+  mixAmtTokens: 100
+  feeAmtTokens: 1
+
 chain:
   url: "http://localhost:8545"
   chainId: 1234
