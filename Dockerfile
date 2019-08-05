@@ -17,11 +17,6 @@ COPY semaphore /mixer/semaphore
 RUN cd /mixer/ && \
     ./scripts/downloadSnarks.sh --only-verifier
 
-#RUN cd /mixer/semaphore/sbmtjs && \
-    #npm install --quiet && \
-    #cd ../semaphorejs && \
-    #npm install --quiet && \
-    #npx truffle compile
 RUN mkdir /mixer/contracts && \
     mkdir /mixer/config && \
     mkdir /mixer/utils && \
