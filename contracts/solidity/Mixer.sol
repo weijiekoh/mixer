@@ -33,6 +33,8 @@ contract Mixer {
      * @param _semaphore The address of the Semaphore contract which should
      * have been deployed earlier
      * @param _mixAmt The amount of Ether a user can mix at a time, in wei
+     * @param _token The token address if the mixer is for ERC20 tokens, or
+     *        0x0000... if it is for mixing ETH only.
      */
     constructor (address _semaphore, uint256 _mixAmt, address _token) public {
         require(_semaphore != address(0), "Mixer: invalid Semaphore address");
@@ -48,15 +50,26 @@ contract Mixer {
         token = IERC20(_token);
     }
 
+    /*
+     * Returns true if the contract only supports mixing ETH, and false if it
+     * only supports mixing ERC20 tokens.
+     */
     function supportsEthOnly() public view returns (bool) {
         return 0x0000000000000000000000000000000000000000 == address(token);
     }
 
+    /*
+     * Modifier to ensure that a function only runs if this contract mixes ETH.
+     */
     modifier onlyEth() {
         require(supportsEthOnly() == true, "Mixer: only supports ETH");
         _;
     }
 
+    /*
+     * Modifier to ensure that a function only runs if this contract mixes
+     * ERC20 tokens.
+     */
     modifier onlyERC20() {
         require(supportsEthOnly() == false, "Mixer: only supports tokens");
         _;
@@ -159,6 +172,7 @@ contract Mixer {
      * Withdraw tokens to a specified recipient using a zk-SNARK deposit proof
      * @param _proof A deposit proof. This function will send `mixAmt` tokens,
      *               minus fees, to the recipient if the proof is valid.
+     * @param _relayerAddress The address to send the fee to.
      */
     function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyERC20 {
         broadcastToSemaphore(_proof, _relayerAddress);
@@ -177,8 +191,9 @@ contract Mixer {
 
     /*
      * Withdraw funds to a specified recipient using a zk-SNARK deposit proof
-     * @param _proof A deposit proof. This function will send `mixAmt`, minus
-     *               fees, to the recipient if the proof is valid.
+     * @param _proof A deposit proof. This function will send `mixAmt` tokens,
+     *               minus the fee, to the recipient if the proof is valid.
+     * @param _relayerAddress The address to send the fee to.
      */
     function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyEth {
         broadcastToSemaphore(_proof, _relayerAddress);
