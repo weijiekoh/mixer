@@ -57,7 +57,6 @@ const feeAmt = ethers.utils.parseEther(
 const users = accounts.map((user) => user.address)
 const identities = {}
 const treeIndices = {}
-let broadcasterAddress = accounts[1].address
 
 const contractsPath = path.join(
     __dirname,
@@ -281,7 +280,7 @@ describe('Mixer', () => {
                     publicSignals,
                     recipientAddress,
                     feeAmt,
-                    broadcasterAddress,
+                    relayerAddress,
                 )
 
                 // Wait till the transaction is mined
