@@ -19,9 +19,6 @@ contract Mixer {
     // Semaphore contracts.
     Semaphore public semaphore;
 
-    // All the identity commitments.
-    uint256[] public identityCommitments;
-
     // The address of the ERC20 token to mix. If this contract is for raw ETH
     // (not wrapped ETH), its value should be `0x0000000000000000000000000000000000000000`.
     IERC20 public token;
@@ -104,7 +101,7 @@ contract Mixer {
      * the Merkle tree.
      */
     function getLeaves() public view returns (uint256[] memory) {
-        return identityCommitments;
+        return semaphore.leaves(semaphore.id_tree_index());
     }
 
 
@@ -116,7 +113,6 @@ contract Mixer {
     function insertIdentityCommitment(uint256 _identityCommitment) private {
         require(_identityCommitment != 0, "Mixer: invalid identity commitment");
         semaphore.insertIdentity(_identityCommitment);
-        identityCommitments.push(_identityCommitment);
     }
 
     /*
