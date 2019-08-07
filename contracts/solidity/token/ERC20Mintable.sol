@@ -4,6 +4,7 @@ import "./ERC20.sol";
 import "../access/MinterRole.sol";
 
 /**
+ * Copied from openzeppelin-contracts 2.3.0
  * @dev Extension of `ERC20` that adds a set of accounts with the `MinterRole`,
  * which have permission to mint (create) new tokens as they see fit.
  *

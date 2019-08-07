@@ -4,12 +4,26 @@ import { Semaphore } from "./Semaphore.sol";
 import { SafeMath } from "./SafeMath.sol";
 import { IERC20 } from "./token/IERC20.sol";
 
+/*
+ * A mixer for either ETH or ERC20 tokens.
+ * See https://hackmd.io/qlKORn5MSOes1WtsEznu_g for the full specification.
+ */
 contract Mixer {
     using SafeMath for uint256;
 
+    // The amount of ETH or ERC20 tokens to mix at a time.
     uint256 public mixAmt;
+
+    // The address of the Semaphore contract. By default, there is one
+    // Semaphore contract for each Mixer contract. Mixer contracts do not share
+    // Semaphore contracts.
     Semaphore public semaphore;
+
+    // All the identity commitments.
     uint256[] public identityCommitments;
+
+    // The address of the ERC20 token to mix. If this contract is for raw ETH
+    // (not wrapped ETH), its value should be `0x0000000000000000000000000000000000000000`.
     IERC20 public token;
 
     event Deposited(address indexed depositor, uint256 indexed mixAmt, uint256 identityCommitment);
@@ -17,6 +31,7 @@ contract Mixer {
     event Mixed(address indexed recipient, uint256 indexed mixAmt, uint256 indexed operatorFeeEarned);
     event MixedERC20(address indexed recipient, uint256 indexed mixAmt, uint256 indexed operatorFeeEarned);
 
+    // The data structure of a proof that one had previously made a deposit.
     // input = [root, nullifiers_hash, signal_hash, external_nullifier, broadcaster_address]
     struct DepositProof {
         bytes32 signal;
@@ -86,7 +101,7 @@ contract Mixer {
 
     /*
      * Returns the list of all identity commitments, which are the leaves of
-     * the Merkle tree
+     * the Merkle tree.
      */
     function getLeaves() public view returns (uint256[] memory) {
         return identityCommitments;
@@ -112,8 +127,6 @@ contract Mixer {
      */
 
     function depositERC20(uint256 _identityCommitment) public onlyERC20 {
-        require(_identityCommitment != 0, "Mixer: invalid identity commitment");
-
         // Transfer tokens from msg.sender to this contract
         bool transferSucceeded  = token.transferFrom(msg.sender, address(this), mixAmt);
 
@@ -139,13 +152,20 @@ contract Mixer {
         emit Deposited(msg.sender, msg.value, _identityCommitment);
     }
 
-    function broadcastToSemaphore(DepositProof memory _proof, address payable _relayerAddress) private {
+    modifier validFee(uint256 fee) {
         // The fee must be high enough, but not larger than the mix
         // denomination; note that a self-interested relayer would exercise
         // their discretion as to whether to relay transactions depending on
         // the fee specified
-        require(_proof.fee < mixAmt, "Mixer: quoted fee gte mixAmt");
+        require(fee < mixAmt, "Mixer: quoted fee gte mixAmt");
+        _;
+    }
 
+    /*
+     * Broadcasts the computed signal (the hash of the recipient's address, the
+     * relayer's address, and the fee via Semaphore.
+     */
+    function broadcastToSemaphore(DepositProof memory _proof, address payable _relayerAddress) private {
         // Hash the recipient's address, the mixer contract's address, and fee
         bytes32 computedSignal = keccak256(
             abi.encodePacked(
@@ -174,7 +194,7 @@ contract Mixer {
      *               minus fees, to the recipient if the proof is valid.
      * @param _relayerAddress The address to send the fee to.
      */
-    function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyERC20 {
+    function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyERC20 validFee(_proof.fee) {
         broadcastToSemaphore(_proof, _relayerAddress);
 
         // Transfer the fee to the relayer
@@ -195,7 +215,7 @@ contract Mixer {
      *               minus the fee, to the recipient if the proof is valid.
      * @param _relayerAddress The address to send the fee to.
      */
-    function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyEth {
+    function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyEth validFee(_proof.fee) {
         broadcastToSemaphore(_proof, _relayerAddress);
 
         // Transfer the fee to the relayer

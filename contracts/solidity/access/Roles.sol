@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 /**
+ * Copied from openzeppelin-contracts 2.3.0
  * @title Roles
  * @dev Library for managing addresses assigned to a Role.
  */

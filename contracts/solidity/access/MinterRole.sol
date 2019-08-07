@@ -2,6 +2,9 @@ pragma solidity ^0.5.0;
 
 import "./Roles.sol";
 
+/*
+ * Copied from openzeppelin-contracts 2.3.0
+ */
 contract MinterRole {
     using Roles for Roles.Role;
 

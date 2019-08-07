@@ -4,6 +4,7 @@ import "./IERC20.sol";
 import "../SafeMath.sol";
 
 /**
+ * Copied from openzeppelin-contracts 2.3.0
  * @dev Implementation of the `IERC20` interface.
  *
  * This implementation is agnostic to the way tokens are created. This means
