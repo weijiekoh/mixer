@@ -37,12 +37,11 @@ import buildMiMC from '../buildMiMC'
 const Mixer = require('../../compiled/Mixer.json')
 
 import {
-    deployAllContractsForEthMixer,
-    deployAllContractsForTokenMixer,
+    deployAllContracts,
     deployToken,
 } from '../deploy/deploy'
 
-const NUM_CYCLES = 1 
+const NUM_CYCLES = 2
 
 const mnemonic = 'candy maple cake sugar pudding cream honey rich smooth crumble sweet treat'
 const accounts = genAccounts()
@@ -50,7 +49,8 @@ const testAccounts = genTestAccounts(NUM_CYCLES, mnemonic)
 const admin = accounts[0]
 const relayerAddress = accounts[0].address
 
-const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
+const mixAmtTokens = ethers.utils.parseEther(config.get('mixAmtTokens'))
 const feeAmt = ethers.utils.parseEther(
     (parseFloat(config.get('feeAmtEth'))).toString()
 )
@@ -87,7 +87,6 @@ for (let i=0; i < testAccounts.length; i++) {
 }
 
 let mimcContract
-let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
 let relayerRegistryContract
@@ -123,9 +122,13 @@ describe('Mixer', () => {
 
         await buildMiMC()
 
-        const contracts = await deployAllContractsForEthMixer(deployer, contractsPath)
+        const contracts = await deployAllContracts(
+            deployer,
+            contractsPath,
+            mixAmtEth,
+            mixAmtTokens,
+        )
         mimcContract = contracts.mimcContract
-        multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
@@ -150,7 +153,6 @@ describe('Mixer', () => {
             )
 
             assert.isAddress(mimcContract.contractAddress)
-            assert.isAddress(multipleMerkleTreeContract.contractAddress)
             assert.isAddress(semaphoreContract.contractAddress)
             assert.isAddress(mixerContract.contractAddress)
 
@@ -187,9 +189,9 @@ describe('Mixer', () => {
                 const identityCommitment = identity.identityCommitment
 
                 // make a deposit
-                const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+                const tx = await mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth })
                 const receipt = await mixerContract.verboseWaitForTransaction(tx)
-                const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
+                const leafAddedEvent = utils.parseLogs(receipt, semaphoreContract.contract, 'LeafAdded')[0]
                 nextIndex = leafAddedEvent.leaf_index
                 treeIndices[identityCommitment] = nextIndex
 

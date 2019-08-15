@@ -4,6 +4,7 @@ config/*-prod.yml
 config/local-dev.yaml
 config/local-dev.yml
 
+kovanPrivateKeys.json
 frontend/ts/exported_config.json
 
 verification_key.json

@@ -21,13 +21,13 @@ const _deployMixer = (
     deployer,
     Mixer,
     semaphoreContractAddress,
-    mixAmt,
+    mixAmtEth,
     tokenAddress,
 ) => {
     return deployer.deploy(Mixer,
         {},
         semaphoreContractAddress,
-        mixAmt,
+        mixAmtEth,
         tokenAddress,
     )
 }
@@ -36,12 +36,13 @@ const deployEthMixer = (
     deployer,
     Mixer,
     semaphoreContractAddress,
+    mixAmtEth,
 ) => {
     return _deployMixer(
         deployer,
         Mixer,
         semaphoreContractAddress, 
-        ethers.utils.parseEther(config.mixAmtEth),
+        mixAmtEth,
         '0x0000000000000000000000000000000000000000',
     )
 }
@@ -58,63 +59,32 @@ const deployToken = async (
     return tokenContract
 }
 
-const deployAllContractsForTokenMixer = async (
-    deployer: any,
-    compiledContracts: string,
-    mixAmt: number,
-    tokenAddress: string,
+const deployAllContracts = async (
+    deployer,
+    compiledContracts,
+    mixAmtEth,
+    mixAmtTokens,
 ) => {
-    const MiMC = require(path.join(compiledContracts, 'MiMC.json'))
-    const Semaphore = require(path.join(compiledContracts, 'Semaphore.json'))
-    const Mixer = require(path.join(compiledContracts, 'Mixer.json'))
-    const RelayerRegistry = require(path.join(compiledContracts, 'RelayerRegistry.json'))
-
-    const mimcContract = await deployer.deploy(MiMC, {})
-    const libraries = {
-        MiMC: mimcContract.contractAddress,
-    }
-
-    console.log('Deploying Semaphore')
-    const semaphoreContract = await deploySemaphore(
-        deployer,
-        Semaphore,
-        libraries,
+    const contractsPath = path.join(
+        __dirname,
+        '../..',
+        compiledContracts,
     )
 
-    console.log('Deploying the Token Mixer')
-    const mixerContract = await deployTokenMixer(
-        deployer,
-        Mixer,
-        semaphoreContract.contractAddress,
-        mixAmt,
-        tokenAddress,
-    )
+    // Deploy token if it's not specified in config. This should be the case for local-dev.yaml
+    // In Kovan, the DAI address is 0xc4375b7de8af5a38a93548eb8453a498222c4ff2
+    let tokenAddress = config.chain.deployedAddresses.Token
 
-    console.log('Transferring ownership of Semaphore to the Token Mixer')
-    const tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
-    await tx.wait()
-
-    console.log('Setting the external nullifier of the Semaphore contract')
-    await mixerContract.setSemaphoreExternalNulllifier()
-    await tx.wait()
-
-    console.log('Deploying Relayer Registry')
-    const relayerRegistryContract = await deployer.deploy(RelayerRegistry, {})
-
-    return {
-        mimcContract,
-        semaphoreContract,
-        mixerContract,
-        relayerRegistryContract,
+    if (!tokenAddress) {
+        console.log('Deploying token')
+        const tokenContract = await deployToken(deployer, contractsPath)
+        tokenAddress = tokenContract.contractAddress
     }
-}
 
-const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: string) => {
-    const MiMC = require(path.join(compiledContracts, 'MiMC.json'))
-    const MultipleMerkleTree = require(path.join(compiledContracts, 'MultipleMerkleTree.json'))
-    const Semaphore = require(path.join(compiledContracts, 'Semaphore.json'))
-    const Mixer = require(path.join(compiledContracts, 'Mixer.json'))
-    const RelayerRegistry = require(path.join(compiledContracts, 'RelayerRegistry.json'))
+    const MiMC = require(path.join(contractsPath, 'MiMC.json'))
+    const Semaphore = require(path.join(contractsPath, 'Semaphore.json'))
+    const Mixer = require(path.join(contractsPath, 'Mixer.json'))
+    const RelayerRegistry = require(path.join(contractsPath, 'RelayerRegistry.json'))
 
     console.log('Deploying MiMC')
     const mimcContract = await deployer.deploy(MiMC, {})
@@ -122,12 +92,6 @@ const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: s
     const libraries = {
         MiMC: mimcContract.contractAddress,
     }
-
-    console.log('Deploying MultipleMerkleTree')
-    const multipleMerkleTreeContract = await deployer.deploy(
-        MultipleMerkleTree,
-        libraries,
-    )
 
     console.log('Deploying Semaphore')
     const semaphoreContract = await deploySemaphore(
@@ -141,14 +105,39 @@ const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: s
         deployer,
         Mixer,
         semaphoreContract.contractAddress,
+        mixAmtEth,
     )
 
     console.log('Transferring ownership of Semaphore to the ETH Mixer')
-    const tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
+    let tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
     await tx.wait()
 
     console.log('Setting the external nullifier of the Semaphore contract')
     await mixerContract.setSemaphoreExternalNulllifier()
+    await tx.wait()
+
+    console.log('Deploying Semaphore for the Token Mixer')
+    const tokenSemaphoreContract = await deploySemaphore(
+        deployer,
+        Semaphore,
+        libraries,
+    )
+
+    console.log('Deploying the Token Mixer')
+    const tokenMixerContract = await deployTokenMixer(
+        deployer,
+        Mixer,
+        tokenSemaphoreContract.contractAddress,
+        mixAmtTokens,
+        tokenAddress,
+    )
+
+    console.log('Transferring ownership of Token Semaphore to the Token Mixer')
+    tx = await tokenSemaphoreContract.transferOwnership(tokenMixerContract.contractAddress)
+    await tx.wait()
+
+    console.log('Setting the external nullifier of the Token Semaphore contract')
+    tx = await tokenMixerContract.setSemaphoreExternalNulllifier()
     await tx.wait()
 
     console.log('Deploying Relayer Registry')
@@ -156,16 +145,21 @@ const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: s
 
     return {
         mimcContract,
-        multipleMerkleTreeContract,
         semaphoreContract,
         mixerContract,
-        relayerRegistryContract
+        relayerRegistryContract,
+        tokenSemaphoreContract,
+        tokenMixerContract,
+        tokenAddress,
     }
+
 }
 
 const main = async () => {
     const accounts = genAccounts()
     const admin = accounts[0]
+
+    console.log('Using account', admin.address)
 
     const parser = new argparse.ArgumentParser({ 
         description: 'Deploy all contracts to an Ethereum network of your choice'
@@ -199,28 +193,29 @@ const main = async () => {
         },
     )
 
-    const contractsPath = path.join(
-        __dirname,
-        '../..',
-        compiledContracts,
-    )
-    console.log(contractsPath)
-
     const {
         mimcContract,
-        multipleMerkleTreeContract,
         semaphoreContract,
         mixerContract,
         relayerRegistryContract,
-    } 
-    = await deployAllContractsForEthMixer(deployer, contractsPath)
+        tokenAddress,
+        tokenSemaphoreContract,
+        tokenMixerContract,
+    } = await deployAllContracts(
+        deployer,
+        compiledContracts,
+        ethers.utils.parseEther(config.mixAmtEth),
+        ethers.utils.parseEther(config.mixAmtTokens),
+    )
 
     const addresses = {
         MiMC: mimcContract.contractAddress,
-        MultipleMerkleTree: multipleMerkleTreeContract.contractAddress,
         Semaphore: semaphoreContract.contractAddress,
         Mixer: mixerContract.contractAddress,
+        TokenMixer: tokenMixerContract.contractAddress,
+        TokenSemaphore: tokenSemaphoreContract.contractAddress,
         RelayerRegistry: relayerRegistryContract.contractAddress,
+        Token: tokenAddress,
     }
 
     const addressJsonPath = path.join(__dirname, '../..', outputAddressFile)
@@ -242,6 +237,5 @@ if (require.main === module) {
 
 export {
     deployToken,
-    deployAllContractsForTokenMixer,
-    deployAllContractsForEthMixer,
+    deployAllContracts,
 }

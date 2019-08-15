@@ -43,8 +43,7 @@ import buildMiMC from '../buildMiMC'
 const Mixer = require('../../compiled/Mixer.json')
 
 import {
-    deployAllContractsForEthMixer,
-    deployAllContractsForTokenMixer,
+    deployAllContracts,
     deployToken,
 } from '../deploy/deploy'
 
@@ -52,7 +51,8 @@ const accounts = genAccounts()
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
+const mixAmtTokens = ethers.utils.parseEther(config.get('mixAmtTokens'))
 const feeAmt = ethers.utils.parseEther(
     (parseFloat(config.get('feeAmtEth'))).toString()
 )
@@ -87,7 +87,6 @@ for (let i=0; i < users.length; i++) {
 }
 
 let mimcContract
-let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
 let relayerRegistryContract
@@ -108,9 +107,13 @@ describe('Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        const contracts = await deployAllContractsForEthMixer(deployer, contractsPath)
+        const contracts = await deployAllContracts(
+            deployer,
+            contractsPath,
+            mixAmtEth,
+            mixAmtTokens,
+        )
         mimcContract = contracts.mimcContract
-        multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
@@ -152,7 +155,6 @@ describe('Mixer', () => {
             )
 
             assert.isAddress(mimcContract.contractAddress)
-            assert.isAddress(multipleMerkleTreeContract.contractAddress)
             assert.isAddress(semaphoreContract.contractAddress)
             assert.isAddress(mixerContract.contractAddress)
 
@@ -202,7 +204,7 @@ describe('Mixer', () => {
         it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
             const identityCommitment = identities[users[0]].identityCommitment
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: depositAmt.add(1) }))
+            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth.add(1) }))
         })
 
         it('should fail to call depositERC20', async () => {
@@ -219,15 +221,15 @@ describe('Mixer', () => {
 
         it('should perform an ETH deposit', async () => {
             // make a deposit (by the first user)
-            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             const gasUsed = receipt.gasUsed.toString()
             console.log('Gas used for this deposit:', gasUsed)
 
             // check that the leaf was added using the receipt
-            assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
-            const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
+            assert.isTrue(utils.hasEvent(receipt, semaphoreContract.contract, 'LeafAdded'))
+            const leafAddedEvent = utils.parseLogs(receipt, semaphoreContract.contract, 'LeafAdded')[0]
 
             nextIndex = leafAddedEvent.leaf_index
             assert.equal(nextIndex, 0)

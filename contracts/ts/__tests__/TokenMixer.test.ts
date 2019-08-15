@@ -43,10 +43,10 @@ import {
 import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
 const Mixer = require('../../compiled/Mixer.json')
+const ERC20Mintable = require('../../compiled/ERC20Mintable.json')
 
 import {
-    deployAllContractsForEthMixer,
-    deployAllContractsForTokenMixer,
+    deployAllContracts,
     deployToken,
 } from '../deploy/deploy'
 
@@ -55,7 +55,8 @@ const depositorAddress = accounts[0].address
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const depositAmt = config.get('testing.mixAmtTokens')
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
+const mixAmtTokens = ethers.utils.parseEther(config.get('mixAmtTokens'))
 const feeAmt = config.get('testing.feeAmtTokens')
 
 const users = accounts.slice(1, 6).map((user) => user.address)
@@ -109,18 +110,22 @@ describe('Token Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        tokenContract = await deployToken(deployer, contractsPath)
-        const contracts = await deployAllContractsForTokenMixer(
+        const contracts = await deployAllContracts(
             deployer,
             contractsPath,
-            depositAmt,
-            tokenContract.contractAddress,
+            mixAmtEth,
+            mixAmtTokens,
         )
         mimcContract = contracts.mimcContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
 
+        tokenContract = new ethers.Contract(
+            ERC20Mintable,
+            contracts.tokenAddress,
+            accounts[0],
+        )
         // mint tokens
         await tokenContract.mint(depositorAddress, 1000)
     })
@@ -193,7 +198,7 @@ describe('Token Mixer', () => {
         })
 
         it('should perform a token deposit', async () => {
-            await tokenContract.approve(mixerContract.contractAddress, depositAmt)
+            await tokenContract.approve(mixerContract.contractAddress, mixAmtEth)
 
             const balanceBefore = await tokenContract.balanceOf(depositorAddress)
 
@@ -213,7 +218,7 @@ describe('Token Mixer', () => {
             assert.include(leaves, identityCommitment.toString())
             const balanceAfter = await tokenContract.balanceOf(depositorAddress)
 
-            assert.equal(balanceBefore - balanceAfter, depositAmt)
+            assert.equal(balanceBefore - balanceAfter, mixAmtEth)
         })
 
         it('should make a token withdrawal', async () => {
@@ -308,7 +313,7 @@ describe('Token Mixer', () => {
 
         it('should increase the recipient\'s token balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore)
-            assert.equal(recipientBalanceDiff, depositAmt - feeAmt)
+            assert.equal(recipientBalanceDiff, mixAmtEth.sub(feeAmt))
         })
     })
 })

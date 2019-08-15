@@ -1,6 +1,7 @@
 ---
 env: 'docker'
 mixAmtEth: "0.1"
+mixAmtTokens: "10"
 feeAmtEth: "0.001"
 
 chain:
@@ -8,14 +9,14 @@ chain:
   chainId: 42
   mix:
     gasLimit: 8000000
-  #privateKeysPath: "/run/secrets/privateKeysPath"
-  privateKeysPath: "../ganachePrivateKeys.json"
+  privateKeysPath: "../kovanPrivateKeys.json"
   deployedAddresses:
     MiMC: "0x5F47CFf2602d90a6D48eFb1fD7891CA5e662e89e"
     MultipleMerkleTree: "0xc1174A3197CC690521B472A49BDbA21A2fC9C896"
     Semaphore: "0xe1Bcdb364D35BA4185A0dC531C1A053093dCCE2a"
     Mixer: "0xbC4d1fDa972a54Ed8A7A7FfFD8cC953E71B54E1f"
     RelayerRegistry: "0x34D7Fb0Ae641C3931A4A7C09402E68f43e084c54"
+    Token: "0xc4375b7de8af5a38a93548eb8453a498222c4ff2"
 
 backend:
   port: 3000
