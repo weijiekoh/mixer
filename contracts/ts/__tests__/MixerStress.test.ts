@@ -1,3 +1,4 @@
+require('module-alias/register')
 // Make Typescript happy
 declare var assert: any
 declare var before: any
@@ -34,7 +35,7 @@ import {
 
 import { genAccounts, genTestAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
-const Mixer = require('../../compiled/Mixer.json')
+const Mixer = require('@mixer-contracts/compiled/Mixer.json')
 
 import {
     deployAllContracts,
@@ -124,7 +125,6 @@ describe('Mixer', () => {
 
         const contracts = await deployAllContracts(
             deployer,
-            contractsPath,
             mixAmtEth,
             mixAmtTokens,
         )

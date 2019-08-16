@@ -19,12 +19,16 @@
   },
   "author": "Koh Wei Jie",
   "license": "GPL-3.0-or-later",
+  "_moduleAliases": {
+    "@mixer-contracts": "."
+  },
   "devDependencies": {
     "@types/jest": "^24.0.16",
     "argparse": "^1.0.10",
     "circomlib": "git+https://github.com/kobigurk/circomlib.git",
     "etherlime": "^2.1.4",
     "etherlime-lib": "^1.1.0",
+    "module-alias": "^2.2.0",
     "ethers": "^4.0.32",
     "ganache-cli": "^6.4.4",
     "ganache-core": "^2.6.1",

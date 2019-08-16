@@ -1,3 +1,4 @@
+require('module-alias/register')
 // Make Typescript happy
 declare var assert: any
 declare var before: any
@@ -42,12 +43,11 @@ import {
 
 import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
-const Mixer = require('../../compiled/Mixer.json')
-const ERC20Mintable = require('../../compiled/ERC20Mintable.json')
+const Mixer = require('@mixer-contracts/compiled/Mixer.json')
+const ERC20Mintable = require('@mixer-contracts/compiled/ERC20Mintable.json')
 
 import {
     deployAllContracts,
-    deployToken,
 } from '../deploy/deploy'
 
 const accounts = genAccounts()
@@ -56,7 +56,7 @@ const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
 const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
-const mixAmtTokens = ethers.utils.parseEther(config.get('mixAmtTokens'))
+const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens'))
 const feeAmt = config.get('testing.feeAmtTokens')
 
 const users = accounts.slice(1, 6).map((user) => user.address)
@@ -112,20 +112,15 @@ describe('Token Mixer', () => {
 
         const contracts = await deployAllContracts(
             deployer,
-            contractsPath,
             mixAmtEth,
             mixAmtTokens,
         )
         mimcContract = contracts.mimcContract
-        semaphoreContract = contracts.semaphoreContract
-        mixerContract = contracts.mixerContract
+        semaphoreContract = contracts.tokenSemaphoreContract
+        mixerContract = contracts.tokenMixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
+        tokenContract = contracts.tokenContract
 
-        tokenContract = new ethers.Contract(
-            ERC20Mintable,
-            contracts.tokenAddress,
-            accounts[0],
-        )
         // mint tokens
         await tokenContract.mint(depositorAddress, 1000)
     })
@@ -185,7 +180,7 @@ describe('Token Mixer', () => {
             }
         })
 
-        it('should fail to call deposit', async () => {
+        it('should fail to call deposit() (which is for ETH only)', async () => {
             let reason: string = ''
             let tx
             try {
@@ -198,9 +193,10 @@ describe('Token Mixer', () => {
         })
 
         it('should perform a token deposit', async () => {
-            await tokenContract.approve(mixerContract.contractAddress, mixAmtEth)
+            await tokenContract.approve(mixerContract.contractAddress, mixAmtTokens)
 
             const balanceBefore = await tokenContract.balanceOf(depositorAddress)
+            assert.isTrue(balanceBefore > 0)
 
             // make a deposit
             const tx = await mixerContract.depositERC20(identityCommitment.toString())
@@ -218,7 +214,7 @@ describe('Token Mixer', () => {
             assert.include(leaves, identityCommitment.toString())
             const balanceAfter = await tokenContract.balanceOf(depositorAddress)
 
-            assert.equal(balanceBefore - balanceAfter, mixAmtEth)
+            assert.equal(balanceBefore - balanceAfter, mixAmtTokens)
         })
 
         it('should make a token withdrawal', async () => {
@@ -313,7 +309,7 @@ describe('Token Mixer', () => {
 
         it('should increase the recipient\'s token balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore)
-            assert.equal(recipientBalanceDiff, mixAmtEth.sub(feeAmt))
+            assert.isTrue(recipientBalanceDiff.eq(mixAmtTokens.sub(feeAmt)))
         })
     })
 })

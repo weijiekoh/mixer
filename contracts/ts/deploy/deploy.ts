@@ -1,3 +1,4 @@
+require('module-alias/register')
 import * as ethers from 'ethers'
 import * as argparse from 'argparse' 
 import * as fs from 'fs' 
@@ -5,6 +6,8 @@ import * as path from 'path'
 import * as etherlime from 'etherlime-lib'
 import { config } from 'mixer-config'
 import { genAccounts } from '../accounts'
+
+const ERC20Mintable = require('@mixer-contracts/compiled/ERC20Mintable.json')
 
 const deploySemaphore = (deployer, Semaphore, libraries) => {
     return deployer.deploy(
@@ -21,16 +24,19 @@ const _deployMixer = (
     deployer,
     Mixer,
     semaphoreContractAddress,
-    mixAmtEth,
+    mixAmtTokens,
     tokenAddress,
 ) => {
+
     return deployer.deploy(Mixer,
         {},
         semaphoreContractAddress,
-        mixAmtEth,
+        mixAmtTokens,
         tokenAddress,
     )
 }
+
+const deployTokenMixer = _deployMixer
 
 const deployEthMixer = (
     deployer,
@@ -38,6 +44,7 @@ const deployEthMixer = (
     semaphoreContractAddress,
     mixAmtEth,
 ) => {
+
     return _deployMixer(
         deployer,
         Mixer,
@@ -47,13 +54,9 @@ const deployEthMixer = (
     )
 }
 
-const deployTokenMixer = _deployMixer
-
 const deployToken = async (
     deployer: any,
-    compiledContracts: string,
 ) => {
-    const ERC20Mintable = require(path.join(compiledContracts, 'ERC20Mintable.json'))
     const tokenContract = await deployer.deploy(ERC20Mintable, {})
 
     return tokenContract
@@ -61,30 +64,31 @@ const deployToken = async (
 
 const deployAllContracts = async (
     deployer,
-    compiledContracts,
     mixAmtEth,
     mixAmtTokens,
 ) => {
-    const contractsPath = path.join(
-        __dirname,
-        '../..',
-        compiledContracts,
-    )
-
     // Deploy token if it's not specified in config. This should be the case for local-dev.yaml
     // In Kovan, the DAI address is 0xc4375b7de8af5a38a93548eb8453a498222c4ff2
     let tokenAddress = config.chain.deployedAddresses.Token
+    let tokenContract
 
-    if (!tokenAddress) {
+    if (config.env !== 'local-dev') {
+        console.log('Using existing token contract at', tokenAddress)
+        tokenContract = new ethers.Contract(
+            tokenAddress,
+            ERC20Mintable.abi,
+            deployer.signer,
+        )
+    } else {
         console.log('Deploying token')
-        const tokenContract = await deployToken(deployer, contractsPath)
-        tokenAddress = tokenContract.contractAddress
+        tokenContract = await deployToken(deployer)
+        tokenAddress = tokenContract.address
     }
 
-    const MiMC = require(path.join(contractsPath, 'MiMC.json'))
-    const Semaphore = require(path.join(contractsPath, 'Semaphore.json'))
-    const Mixer = require(path.join(contractsPath, 'Mixer.json'))
-    const RelayerRegistry = require(path.join(contractsPath, 'RelayerRegistry.json'))
+    const MiMC = require('@mixer-contracts/compiled/MiMC.json')
+    const Semaphore = require('@mixer-contracts/compiled/Semaphore.json')
+    const Mixer = require('@mixer-contracts/compiled/Mixer.json')
+    const RelayerRegistry = require('@mixer-contracts/compiled/RelayerRegistry.json')
 
     console.log('Deploying MiMC')
     const mimcContract = await deployer.deploy(MiMC, {})
@@ -113,7 +117,7 @@ const deployAllContracts = async (
     await tx.wait()
 
     console.log('Setting the external nullifier of the Semaphore contract')
-    await mixerContract.setSemaphoreExternalNulllifier()
+    tx = await mixerContract.setSemaphoreExternalNulllifier()
     await tx.wait()
 
     console.log('Deploying Semaphore for the Token Mixer')
@@ -150,7 +154,7 @@ const deployAllContracts = async (
         relayerRegistryContract,
         tokenSemaphoreContract,
         tokenMixerContract,
-        tokenAddress,
+        tokenContract,
     }
 
 }
@@ -166,14 +170,6 @@ const main = async () => {
     })
 
     parser.addArgument(
-        ['-c', '--compiled'],
-        {
-            help: 'The directory containing the compiled Solidity files',
-            required: true
-        }
-    )
-
-    parser.addArgument(
         ['-o', '--output'],
         {
             help: 'The filepath to save the addresses of the deployed contracts',
@@ -182,7 +178,6 @@ const main = async () => {
     )
 
     const args = parser.parseArgs()
-    const compiledContracts = args.compiled
     const outputAddressFile = args.output
 
     const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
@@ -198,12 +193,11 @@ const main = async () => {
         semaphoreContract,
         mixerContract,
         relayerRegistryContract,
-        tokenAddress,
+        tokenContract,
         tokenSemaphoreContract,
         tokenMixerContract,
     } = await deployAllContracts(
         deployer,
-        compiledContracts,
         ethers.utils.parseEther(config.mixAmtEth),
         ethers.utils.parseEther(config.mixAmtTokens),
     )
@@ -215,7 +209,7 @@ const main = async () => {
         TokenMixer: tokenMixerContract.contractAddress,
         TokenSemaphore: tokenSemaphoreContract.contractAddress,
         RelayerRegistry: relayerRegistryContract.contractAddress,
-        Token: tokenAddress,
+        Token: tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address,
     }
 
     const addressJsonPath = path.join(__dirname, '../..', outputAddressFile)
