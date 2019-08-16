@@ -4,8 +4,13 @@ const getContract = (
     name: string,
     signer: ethers.Signer,
     deployedAddresses: object,
+    abiName?: string
 ) => {
-    const abi = require(`../compiled/abis/${name}-abi.json`)
+    if (!abiName) {
+        abiName = name
+    }
+
+    const abi = require(`../compiled/abis/${abiName}-abi.json`)
 
     const contract = new ethers.Contract(
         deployedAddresses[name],

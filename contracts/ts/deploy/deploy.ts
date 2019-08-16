@@ -85,6 +85,8 @@ const deployAllContracts = async (
         tokenAddress = tokenContract.address
     }
 
+    tokenAddress = tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address
+
     const MiMC = require('@mixer-contracts/compiled/MiMC.json')
     const Semaphore = require('@mixer-contracts/compiled/Semaphore.json')
     const Mixer = require('@mixer-contracts/compiled/Mixer.json')
@@ -199,7 +201,7 @@ const main = async () => {
     } = await deployAllContracts(
         deployer,
         ethers.utils.parseEther(config.mixAmtEth),
-        ethers.utils.parseEther(config.mixAmtTokens),
+        config.mixAmtTokens,
     )
 
     const addresses = {
