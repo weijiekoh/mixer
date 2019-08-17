@@ -190,7 +190,7 @@ export default () => {
             const request = {
                 jsonrpc: '2.0',
                 id: (new Date()).getTime(),
-                method: 'mixer_mix',
+                method: 'mixer_mix_eth',
                 params,
             }
 

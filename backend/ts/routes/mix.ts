@@ -47,13 +47,25 @@ const areEqualAddresses = (a: string, b: string) => {
 
 // This operator accepts a fee that is large enough
 const operatorFeeWei = ethers.utils.parseUnits(config.get('feeAmtEth'), 'ether')
+const operatorFeeTokens = config.get('feeAmtTokens')
 
-const mix = async (depositProof: DepositProof) => {
+const _mixRoute = (
+    // @ts-ignore
+    forTokens: boolean,
+) => async (
+    depositProof: DepositProof,
+) => {
     const publicInputs = depositProof.input.map(bigInt)
 
     // verify the fee
-    const fee = ethers.utils.parseUnits(BigInt(depositProof.fee).toString(), 'wei')
-    const enoughFees = fee.gte(operatorFeeWei)
+    let enoughFees
+    if (forTokens) {
+        const fee = ethers.utils.bigNumberify(depositProof.fee)
+        enoughFees = fee.gte(operatorFeeTokens)
+    } else {
+        const fee = ethers.utils.parseUnits(BigInt(depositProof.fee).toString(), 'wei')
+        enoughFees = fee.gte(operatorFeeWei)
+    }
 
     if (!enoughFees) {
         const errorMsg = 'the fee is to low'
@@ -67,8 +79,11 @@ const mix = async (depositProof: DepositProof) => {
         }
     }
 
+    const nullifierAddress = forTokens ? deployedAddresses.TokenMixer : deployedAddresses.Mixer
+    const mixerContractAddress = nullifierAddress
+
     // verify the external nullifier
-    if (!areEqualAddresses(deployedAddresses.Mixer, depositProof.input[3])) {
+    if (!areEqualAddresses(nullifierAddress, depositProof.input[3])) {
         const errorMsg = 'the external nullifier in the input is invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID,
@@ -183,10 +198,12 @@ const mix = async (depositProof: DepositProof) => {
         deployedAddresses,
     )
 
+    let semaphoreContractName = forTokens ? 'TokenSemaphore' : 'Semaphore'
     const semaphoreContract = getContract(
-        'Semaphore',
+        semaphoreContractName,
         signer,
         deployedAddresses,
+        'Semaphore',
     )
 
     const relayerRegistryContract = getContract(
@@ -238,12 +255,18 @@ const mix = async (depositProof: DepositProof) => {
     const nonce = await provider.getTransactionCount(signer.address, 'pending')
 
     const mixerIface = new ethers.utils.Interface(mixerContract.interface.abi)
-    const mixCallData = mixerIface.functions.mix.encode([depositProof, broadcasterAddress])
+    let mixCallData
+
+    if (forTokens) {
+        mixCallData = mixerIface.functions.mixERC20.encode([depositProof, broadcasterAddress])
+    } else {
+        mixCallData = mixerIface.functions.mix.encode([depositProof, broadcasterAddress])
+    }
 
     const relayerRegistryIface = new ethers.utils.Interface(relayerRegistryContract.interface.abi)
     const relayCallData = relayerRegistryIface.functions.relayCall.encode(
         [
-            mixerContract.address,
+            mixerContractAddress,
             mixCallData
         ],
     )
@@ -282,9 +305,18 @@ const mix = async (depositProof: DepositProof) => {
     }
 }
 
-const mixRoute = {
-    route: mix,
+
+const mixEthRoute = {
+    route: _mixRoute(false),
     reqValidator: genValidator('mix'),
 }
 
-export default mixRoute
+const mixTokensRoute = {
+    route: _mixRoute(true),
+    reqValidator: genValidator('mix'),
+}
+
+export { 
+    mixEthRoute,
+    mixTokensRoute,
+}

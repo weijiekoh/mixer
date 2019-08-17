@@ -34,13 +34,12 @@ const deployedAddresses = require('@mixer-backend/deployedAddresses.json')
 
 const PORT = config.get('backend.port')
 const HOST = config.get('backend.host') + ':' + PORT.toString()
-const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
 
-const OPTS = {
-    headers: {
-        'Content-Type': 'application/json',
-    }
-}
+const depositAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
+const depositAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens'))
+
+const feeAmtEth = ethers.utils.parseEther(config.get('feeAmtEth'))
+const feeAmtTokens = ethers.utils.bigNumberify(config.get('feeAmtTokens'))
 
 const provider = new ethers.providers.JsonRpcProvider(
     config.get('chain.url'),
@@ -56,6 +55,20 @@ const mixerContract = getContract(
     'Mixer',
     signer,
     deployedAddresses,
+)
+
+const tokenMixerContract = getContract(
+    'TokenMixer',
+    signer,
+    deployedAddresses,
+    'Mixer',
+)
+
+const tokenContract = getContract(
+    'Token',
+    signer,
+    deployedAddresses,
+    'ERC20Mintable',
 )
 
 const provingKey = fs.readFileSync(
@@ -77,13 +90,10 @@ const cirDef = JSON.parse(
 )
 const circuit = genCircuit(cirDef)
 
-const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('feeAmtEth'))).toString()
-)
+let validParamsForEth
+let validParamsForTokens
 
-let validProof
-
-const schemaInvalidProof = {
+const schemaInvalidParamsForEth = {
     signal: 'INVALID<<<<<<<<<<<<<<<<<<<<<<<<<<<<<',
     a: ['0x0', '0x0'],
     b: [
@@ -101,10 +111,10 @@ const toHex = (num: string) => {
 }
 
 let server
-const broadcasterAddress = '0x627306090abab3a6e1400e9345bc60c78a8bef57'
+const broadcasterAddress = config.get('backend.broadcasterAddress')
 const recipientAddress = '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef'
 
-describe('the mixer_mix API call', () => {
+describe('the mixer_mix_eth API call', () => {
     let recipientBalanceBefore
     let recipientBalanceAfter
 
@@ -113,13 +123,99 @@ describe('the mixer_mix API call', () => {
         server = app.listen(PORT)
     })
 
-    test('accepts a valid proof and credits the recipient', async () => {
+    test('accepts a valid proof to mix tokens and credits the recipient', async () => {
+        const expectedTokenAmtToReceive = depositAmtTokens.sub(feeAmtTokens)
+        // mint tokens for the sender
+        await tokenContract.mint(signer.address, depositAmtTokens)
+        await tokenContract.approve(tokenMixerContract.address, depositAmtTokens)
+
         // generate an identityCommitment
         const identity = genIdentity()
         const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
 
-        const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+        const tx = await tokenMixerContract.depositERC20(identityCommitment.toString())
         const receipt = await tx.wait()
+
+        expect(receipt.status).toEqual(1)
+
+        const leaves = await tokenMixerContract.getLeaves()
+        const tree = await genTree(leaves)
+        const leafIndex = await tree.element_index(identityCommitment)
+        const identityPath = await tree.path(leafIndex)
+        const externalNullifier = tokenMixerContract.address
+
+        const { signalHash, signal } = genSignalAndSignalHash(
+            recipientAddress, broadcasterAddress, feeAmtTokens,
+        )
+
+        const { signature, msg } = genSignedMsg(
+            identity.keypair.privKey,
+            externalNullifier,
+            signalHash, 
+        )
+
+        const w = genWitness(
+            circuit,
+            identity.keypair.pubKey,
+            signature,
+            signalHash,
+            externalNullifier,
+            identity.identityNullifier,
+            identityPath.path_elements,
+            identityPath.path_index,
+        )
+
+        const publicSignals = genPublicSignals(w, circuit)
+
+        const proof = await genProof(w, provingKey.buffer)
+
+        const isVerified = verifyProof(verifyingKey, proof, publicSignals)
+        expect(isVerified).toBeTruthy()
+        const params = genMixParams(
+            signal,
+            proof,
+            recipientAddress,
+            BigInt(feeAmtTokens.toString()),
+            publicSignals,
+        )
+
+        validParamsForTokens = params
+
+        recipientBalanceBefore = await tokenContract.balanceOf(recipientAddress)
+
+        // make the API call to submit the proof
+        const resp = await post(1, 'mixer_mix_tokens', params)
+        
+        if (resp.data.error) {
+            console.log(params)
+            console.error(resp.data.error)
+        }
+
+        expect(resp.data.result.txHash).toMatch(/^0x[a-fA-F0-9]{40}/)
+
+        // wait for the tx to be mined
+        while (true) {
+            const receipt = await provider.getTransactionReceipt(resp.data.result.txHash)
+            if (receipt == null) {
+                await sleep(1000)
+            } else {
+                break
+            }
+        }
+
+        recipientBalanceAfter = await tokenContract.balanceOf(recipientAddress)
+        const diff = recipientBalanceAfter.sub(recipientBalanceBefore)
+        expect(diff).toEqual(expectedTokenAmtToReceive)
+    })
+
+    test('accepts a valid proof to mix ETH and credits the recipient', async () => {
+        // generate an identityCommitment
+        const identity = genIdentity()
+        const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
+
+        const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmtEth })
+        const receipt = await tx.wait()
+        expect(receipt.status).toEqual(1)
 
         // generate withdrawal proof
 
@@ -130,7 +226,7 @@ describe('the mixer_mix API call', () => {
         const externalNullifier = mixerContract.address
 
         const { signalHash, signal } = genSignalAndSignalHash(
-            recipientAddress, broadcasterAddress, feeAmt,
+            recipientAddress, broadcasterAddress, feeAmtEth,
         )
 
         const { signature, msg } = genSignedMsg(
@@ -161,16 +257,16 @@ describe('the mixer_mix API call', () => {
             signal,
             proof,
             recipientAddress,
-            BigInt(feeAmt.toString()),
+            BigInt(feeAmtEth.toString()),
             publicSignals,
         )
 
-        validProof = params
+        validParamsForEth = params
 
         recipientBalanceBefore = await provider.getBalance(recipientAddress)
 
         // make the API call to submit the proof
-        const resp = await post(1, 'mixer_mix', params)
+        const resp = await post(1, 'mixer_mix_eth', params)
         
         if (resp.data.error) {
             console.log(params)
@@ -195,58 +291,68 @@ describe('the mixer_mix API call', () => {
     })
 
     test('rejects a request where the JSON-RPC schema is invalid', async () => {
-        const resp = await post(1, 'mixer_mix', schemaInvalidProof)
+        const resp = await post(1, 'mixer_mix_eth', schemaInvalidParamsForEth)
 
         expect(resp.data.error.code).toEqual(JsonRpc.Errors.invalidParams.code)
     })
 
     test('rejects a proof where the signal is invalid', async () => {
         // deep copy and make the signal invalid
-        const signalInvalidProof = JSON.parse(JSON.stringify(validProof))
-        signalInvalidProof.signal = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        const signalInvalidParamsForEth = JSON.parse(JSON.stringify(validParamsForEth))
+        signalInvalidParamsForEth.signal = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 
-        const resp = await post(1, 'mixer_mix', signalInvalidProof)
+        const resp = await post(1, 'mixer_mix_eth', signalInvalidParamsForEth)
 
         expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_SIGNAL_INVALID)
     })
 
     test('rejects a proof where the signal hash is invalid', async () => {
         // deep copy and make the signal hash invalid
-        const signalHashInvalidProof = JSON.parse(JSON.stringify(validProof))
-        signalHashInvalidProof.input[2] = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        const signalHashInvalidParamsForEth = JSON.parse(JSON.stringify(validParamsForEth))
+        signalHashInvalidParamsForEth.input[2] = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
 
-        const resp = await post(1, 'mixer_mix', signalHashInvalidProof)
+        const resp = await post(1, 'mixer_mix_eth', signalHashInvalidParamsForEth)
 
         expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_SIGNAL_HASH_INVALID)
     })
 
     test('rejects a proof where both the signal and the signal hash are invalid', async () => {
         // deep copy and make both the signal and the signal hash invalid
-        const signalAndSignalHashInvalidProof = JSON.parse(JSON.stringify(validProof))
-        signalAndSignalHashInvalidProof.signal = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-        signalAndSignalHashInvalidProof.input[2] = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        const signalAndSignalHashInvalidParamsForEth = JSON.parse(JSON.stringify(validParamsForEth))
+        signalAndSignalHashInvalidParamsForEth.signal = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        signalAndSignalHashInvalidParamsForEth.input[2] = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
 
-        const resp = await post(1, 'mixer_mix', signalAndSignalHashInvalidProof)
+        const resp = await post(1, 'mixer_mix_eth', signalAndSignalHashInvalidParamsForEth)
 
         expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_SIGNAL_AND_SIGNAL_HASH_INVALID)
     })
 
     test('rejects a proof where the external nullifier is invalid', async () => {
         // deep copy and make the external nullifier invalid
-        const externalNullifierInvalidProof = JSON.parse(JSON.stringify(validProof))
-        externalNullifierInvalidProof.input[3] = '0x0000000000000000000000000000000000000000'
+        const externalNullifierInvalidParamsForEth = JSON.parse(JSON.stringify(validParamsForEth))
+        externalNullifierInvalidParamsForEth.input[3] = '0x0000000000000000000000000000000000000000'
 
-        const resp = await post(1, 'mixer_mix', externalNullifierInvalidProof)
+        const resp = await post(1, 'mixer_mix_eth', externalNullifierInvalidParamsForEth)
 
         expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID)
     })
 
-    test('rejects a proof where the fee is too low', async () => {
+    test('rejects a proof where the token fee is too low', async () => {
         // deep copy and make the fee too low
-        const lowFeeProof = JSON.parse(JSON.stringify(validProof))
+        const lowFeeProof = JSON.parse(JSON.stringify(validParamsForTokens))
+        lowFeeProof.fee = '0x0'
+
+        const resp = await post(1, 'mixer_mix_tokens', lowFeeProof)
+
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE)
+    })
+    
+    test('rejects a proof where the ETH fee is too low', async () => {
+        // deep copy and make the fee too low
+        const lowFeeProof = JSON.parse(JSON.stringify(validParamsForEth))
         lowFeeProof.fee = '0x0001'
 
-        const resp = await post(1, 'mixer_mix', lowFeeProof)
+        const resp = await post(1, 'mixer_mix_eth', lowFeeProof)
 
         expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE)
     })

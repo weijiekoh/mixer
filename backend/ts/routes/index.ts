@@ -2,7 +2,7 @@ import * as Koa from 'koa';
 import * as JsonRpc from '../jsonRpc'
 import * as Ajv from 'ajv'
 import echoRoute from './echo'
-import mixRoute from './mix'
+import { mixEthRoute, mixTokensRoute } from './mix'
 import backendStatusRoute from './status'
 import { config } from 'mixer-config'
 
@@ -13,8 +13,9 @@ interface Route {
 
 // Define routes here
 const routes = {
-    mixer_mix: mixRoute,
-    mixer_status: backendStatusRoute,
+    mixer_mix_eth: mixEthRoute,
+    mixer_mix_tokens: mixTokensRoute,
+    //mixer_status: backendStatusRoute,
 }
 
 // Dev-only routes for testing
