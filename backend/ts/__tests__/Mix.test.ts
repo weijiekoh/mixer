@@ -344,7 +344,7 @@ describe('the mixer_mix_eth API call', () => {
 
         const resp = await post(1, 'mixer_mix_tokens', lowFeeProof)
 
-        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_TOKEN_FEE)
     })
     
     test('rejects a proof where the ETH fee is too low', async () => {
@@ -354,7 +354,7 @@ describe('the mixer_mix_eth API call', () => {
 
         const resp = await post(1, 'mixer_mix_eth', lowFeeProof)
 
-        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE)
+        expect(resp.data.error.code).toEqual(errors.errorCodes.BACKEND_MIX_INSUFFICIENT_ETH_FEE)
     })
 
     afterAll(async () => {

@@ -67,13 +67,14 @@ const _mixRoute = (
         enoughFees = fee.gte(operatorFeeWei)
     }
 
+    const insufficientFeeError = forTokens ? 'BACKEND_MIX_INSUFFICIENT_TOKEN_FEE' : 'BACKEND_MIX_INSUFFICIENT_ETH_FEE'
     if (!enoughFees) {
         const errorMsg = 'the fee is to low'
         throw {
-            code: errors.errorCodes.BACKEND_MIX_INSUFFICIENT_FEE,
+            code: errors.errorCodes[insufficientFeeError],
             message: errorMsg,
             data: errors.genError(
-                errors.MixerErrorNames.BACKEND_MIX_INSUFFICIENT_FEE,
+                errors.MixerErrorNames[insufficientFeeError],
                 errorMsg,
             )
         }
