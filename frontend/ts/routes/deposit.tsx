@@ -191,7 +191,7 @@ export default () => {
                 {`The fee is ${operatorFeeEth} ETH.`}
             </p>
             <p>
-                {`You can get back ${mixAmtEth - operatorFeeEth} ETH after midnight, UTC.`}
+                {`The recipient will receive ${mixAmtEth - operatorFeeEth} ETH after midnight, UTC.`}
             </p>
         </div>
     )
@@ -202,7 +202,7 @@ export default () => {
                 {`The fee is ${operatorFeeTokens} ${tokenSym}.`}
             </p>
             <p>
-                {`You can get back ${mixAmtTokens - operatorFeeTokens} ${tokenSym} after midnight, UTC.`}
+                {`The recipient will receive ${mixAmtTokens - operatorFeeTokens} ${tokenSym} after midnight, UTC.`}
             </p>
         </div>
     )

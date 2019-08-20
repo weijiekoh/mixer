@@ -57,7 +57,13 @@ const deployEthMixer = (
 const deployToken = async (
     deployer: any,
 ) => {
-    const tokenContract = await deployer.deploy(ERC20Mintable, {})
+    const tokenContract = await deployer.deploy(
+        ERC20Mintable,
+        {},
+        'Token',
+        'TKN',
+        18,
+    )
 
     return tokenContract
 }
@@ -72,6 +78,7 @@ const deployAllContracts = async (
     // In Kovan, the DAI address is 0xc4375b7de8af5a38a93548eb8453a498222c4ff2
     let tokenAddress = config.chain.deployedAddresses.Token
     let tokenContract
+    let tokenDecimals = config.get('tokenDecimals')
 
     if (config.env !== 'local-dev') {
         console.log('Using existing token contract at', tokenAddress)
@@ -135,7 +142,7 @@ const deployAllContracts = async (
         deployer,
         Mixer,
         tokenSemaphoreContract.contractAddress,
-        mixAmtTokens * (10 ** config.get('tokenDecimals')),
+        mixAmtTokens * (10 ** tokenDecimals),
         tokenAddress,
     )
 
@@ -152,7 +159,8 @@ const deployAllContracts = async (
 
     if (config.env === 'local-dev') {
         console.log('Minting tokens')
-        await tokenContract.mint(adminAddress, 1000000)
+        await tokenContract.mint(adminAddress, '100000000000000000000000000')
+        console.log(adminAddress, 'has', await tokenContract.balanceOf(adminAddress), 'tokens')
     }
 
     return {

@@ -11,7 +11,7 @@ import { TxHashMessage } from '../components/txHashMessage'
 import { quickWithdrawEth, quickWithdrawTokens } from '../web3/quickWithdraw'
 import { getMixerContract, getTokenMixerContract } from '../web3/mixer'
 const deployedAddresses = config.chain.deployedAddresses
-const broadcasterAddress = config.backend.broadcasterAddress
+const tokenDecimals = config.tokenDecimals
 
 import { 
     genSignedMsg,
@@ -134,6 +134,12 @@ export default () => {
 
             const leafIndex = await tree.element_index(identityCommitment)
 
+            console.log(
+                recipientAddress,
+                broadcasterAddress,
+                feeAmt,
+                externalNullifier,
+            )
             const {
                 signature,
                 msg,
@@ -162,6 +168,8 @@ export default () => {
             progress('Downloading circuit...')
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
+
+            progress('Generating witness...')
 
             let w
             try {
