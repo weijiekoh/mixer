@@ -169,7 +169,7 @@ const genSignalAndSignalHash = (
     // This is the computed signal
     const signal = ethers.utils.solidityKeccak256(
         ['address', 'address', 'uint256'],
-        [recipientAddress, broadcasterAddress, feeAmt],
+        [recipientAddress, broadcasterAddress, feeAmt.toString()],
     )
 
     const signalAsBuffer = Buffer.from(signal.slice(2), 'hex')
