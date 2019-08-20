@@ -31,7 +31,7 @@ const _deployMixer = (
     return deployer.deploy(Mixer,
         {},
         semaphoreContractAddress,
-        mixAmtTokens,
+        mixAmtTokens.toString(),
         tokenAddress,
     )
 }
@@ -135,7 +135,7 @@ const deployAllContracts = async (
         deployer,
         Mixer,
         tokenSemaphoreContract.contractAddress,
-        mixAmtTokens,
+        mixAmtTokens * (10 ** config.get('tokenDecimals')),
         tokenAddress,
     )
 

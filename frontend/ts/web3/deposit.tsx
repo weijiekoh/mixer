@@ -49,6 +49,7 @@ const depositTokens = async(
         const mixerContract = await getTokenMixerContract(context)
 
         const tx = await mixerContract.depositERC20(identityCommitment, { gasLimit: 8000000 })
+
         return tx
     }
 }
