@@ -245,7 +245,7 @@ export default () => {
                     const recipientBalanceAfter = await provider.getBalance(recipientAddress)
                     console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
                 } else {
-                    const recipientBalanceAfter = (await tokenContract.balanceOf(recipientAddress)).div(10 ** tokenDecimals)
+                    const recipientBalanceAfter = (await tokenContract.balanceOf(recipientAddress)) / (10 ** tokenDecimals)
                     console.log('The recipient now has', recipientBalanceAfter.toString(), 'tokens')
                 }
 
@@ -314,7 +314,6 @@ export default () => {
         timer.days + timer.hours + timer.minutes + timer.seconds === 0
     ) {
         setWithdrawStarted(true)
-        //withdraw(context)
     }
 
     const withdrawBtn = (
