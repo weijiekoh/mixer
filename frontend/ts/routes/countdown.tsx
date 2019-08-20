@@ -79,7 +79,7 @@ export default () => {
 
     const mixAmt = isEth ? mixAmtEth : mixAmtTokens
     const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
-    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens
 
     const context = useWeb3Context()
 
@@ -153,6 +153,7 @@ export default () => {
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
+            progress('Generating witness...')
             let w
             try {
                 w = genWitness(
@@ -164,7 +165,7 @@ export default () => {
                         identityStored.identityNullifier,
                         identityPathElements,
                         identityPathIndex,
-                )
+                    )
             } catch (err) {
                 console.error(err)
                 throw {

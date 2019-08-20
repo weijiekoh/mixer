@@ -11,7 +11,6 @@ import { TxHashMessage } from '../components/txHashMessage'
 import { quickWithdrawEth, quickWithdrawTokens } from '../web3/quickWithdraw'
 import { getMixerContract, getTokenMixerContract } from '../web3/mixer'
 const deployedAddresses = config.chain.deployedAddresses
-const broadcasterAddress = config.backend.broadcasterAddress
 const tokenDecimals = config.tokenDecimals
 
 import { 
@@ -95,7 +94,7 @@ export default () => {
 
     const mixAmt = isEth ? mixAmtEth : mixAmtTokens
     const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
-    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens
 
     const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
