@@ -49,6 +49,7 @@ const depositTokens = async(
         const mixerContract = await getTokenMixerContract(context)
 
         const tx = await mixerContract.depositERC20(identityCommitment, { gasLimit: 8000000 })
+
         return tx
     }
 }
@@ -72,6 +73,12 @@ const getTokenAllowance = async (
     }
 }
 
+/*
+ * Perform a web3 transaction to the ERC20 contract's approve function
+ * @param context The web3-react context
+ * @param numTokens The amount of tokens. This should be multiplied by 10 ^
+ *                  token.decimals before passing it to this function.
+ */
 const approveTokens = async (
     context: any,
     numTokens: number,
@@ -87,7 +94,8 @@ const approveTokens = async (
         const tokenContract = await getTokenContract(context)
         const tokenMixerAddress = config.chain.deployedAddresses.TokenMixer
 
-        const tx = await tokenContract.approve(tokenMixerAddress, numTokens)
+        const tx = await tokenContract.approve(tokenMixerAddress, numTokens.toString())
+
         return tx
     }
 }

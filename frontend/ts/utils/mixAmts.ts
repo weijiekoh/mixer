@@ -7,8 +7,8 @@ const operatorFeeEth = config.feeAmtEth.toString()
 const feeAmtWei = ethers.utils.parseEther(operatorFeeEth)
 
 const tokenDecimals = config.tokenDecimals
-const mixAmtTokens = ethers.utils.bigNumberify(config.mixAmtTokens).mul(10 ** tokenDecimals)
-const operatorFeeTokens = ethers.utils.bigNumberify(config.feeAmtTokens).mul(10 ** tokenDecimals)
+const mixAmtTokens = config.mixAmtTokens
+const operatorFeeTokens = config.feeAmtTokens
 
 export {
     mixAmtEth,
