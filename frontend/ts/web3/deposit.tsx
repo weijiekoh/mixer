@@ -93,7 +93,7 @@ const approveTokens = async (
         const tokenContract = await getTokenContract(context)
         const tokenMixerAddress = config.chain.deployedAddresses.TokenMixer
 
-        const tx = await tokenContract.approve(tokenMixerAddress, numTokens)
+        const tx = await tokenContract.approve(tokenMixerAddress, numTokens.toString())
 
         return tx
     }

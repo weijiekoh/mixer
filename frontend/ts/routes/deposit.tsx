@@ -202,21 +202,21 @@ export default () => {
                 {`The fee is ${operatorFeeTokens} ${tokenSym}.`}
             </p>
             <p>
-                {`You can get back ${mixAmtTokens.sub(operatorFeeTokens)} ${tokenSym} after midnight, UTC.`}
+                {`You can get back ${mixAmtTokens - operatorFeeTokens} ${tokenSym} after midnight, UTC.`}
             </p>
         </div>
     )
 
     const checkTokenAllowance = async () => {
         if (mixAmtTokens && context.connector) {
-            const mixAmtTokensFull = mixAmtTokens.mul(10 ** config.tokenDecimals)
+            const mixAmtTokensFull = mixAmtTokens * 10 ** config.tokenDecimals
             const allowance = await getTokenAllowance(context)
 
-            let x = mixAmtTokensFull.sub(allowance).toNumber()
+            let x = mixAmtTokensFull - allowance
             if (x < 0) {
                 x = 0
             }
-            setTokenAllowanceNeeded(x)
+            setTokenAllowanceNeeded(x / (10 ** config.tokenDecimals))
         }
     }
     checkTokenAllowance()
