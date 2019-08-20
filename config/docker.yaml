@@ -1,9 +1,9 @@
 ---
 env: 'docker'
 mixAmtEth: 0.1
-mixAmtTokens: 20000000000000000000
+mixAmtTokens: 20
 feeAmtEth: 0.001
-feeAmtTokens: 200000000000000000
+feeAmtTokens: 2
 tokenSym: 'DAI'
 tokenDecimals: 18
 
@@ -20,8 +20,8 @@ chain:
     Mixer: "0xbC4d1fDa972a54Ed8A7A7FfFD8cC953E71B54E1f"
     RelayerRegistry: "0x34D7Fb0Ae641C3931A4A7C09402E68f43e084c54"
     Token: "0xc4375b7de8af5a38a93548eb8453a498222c4ff2"
-    #TokenMixer: ''
-    #TokenSemaphore: ''
+    TokenMixer: '0xBA76E1C9AC45a61FeeE912d4e431D073cE72551e'
+    TokenSemaphore: '0xacA01170CE669ee87f5d5f61492a6C82a6a602bb'
 
 backend:
   port: 3000
