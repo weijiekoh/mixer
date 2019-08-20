@@ -79,7 +79,7 @@ export default () => {
 
     const mixAmt = isEth ? mixAmtEth : mixAmtTokens
     const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
-    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
 
     const context = useWeb3Context()
 
