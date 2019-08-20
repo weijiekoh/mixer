@@ -1,8 +1,11 @@
 ---
 env: 'docker'
-mixAmtEth: "0.1"
-mixAmtTokens: "10"
-feeAmtEth: "0.001"
+mixAmtEth: 0.1
+mixAmtTokens: 20000000000000000000
+feeAmtEth: 0.001
+feeAmtTokens: 200000000000000000
+tokenSym: 'DAI'
+tokenDecimals: 18
 
 chain:
   url: "https://kovan.infura.io/v3/5d37c494621a43558d77c90e368d4022"
@@ -17,6 +20,8 @@ chain:
     Mixer: "0xbC4d1fDa972a54Ed8A7A7FfFD8cC953E71B54E1f"
     RelayerRegistry: "0x34D7Fb0Ae641C3931A4A7C09402E68f43e084c54"
     Token: "0xc4375b7de8af5a38a93548eb8453a498222c4ff2"
+    #TokenMixer: ''
+    #TokenSemaphore: ''
 
 backend:
   port: 3000

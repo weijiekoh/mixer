@@ -16,6 +16,7 @@ interface IdentityStored {
     depositTxHash: string,
     withdrawTxHash: string,
     timestamp: number,
+    tokenType: string,
 }
 
 const localStorage = window.localStorage
@@ -94,13 +95,19 @@ const saveItems = (items: any[]) => {
     localStorage.setItem(key, data)
 }
 
-const storeDeposit = (identity: Identity, recipientAddress: string, depositTxHash=null) =>  {
+const storeDeposit = (
+    identity: Identity,
+    recipientAddress: string,
+    tokenType: string,
+    depositTxHash=null,
+) =>  {
     const items = getRawItems()
     items.push({
         privKey: identity.keypair.privKey,
         identityNullifier: identity.identityNullifier,
         depositTxHash,
         recipientAddress,
+        tokenType,
         timestamp: (new Date()).getTime(),
         withdrawTxHash: '',
     })

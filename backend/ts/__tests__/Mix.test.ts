@@ -35,11 +35,11 @@ const deployedAddresses = require('@mixer-backend/deployedAddresses.json')
 const PORT = config.get('backend.port')
 const HOST = config.get('backend.host') + ':' + PORT.toString()
 
-const depositAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
-const depositAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens'))
+const depositAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const depositAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
 
-const feeAmtEth = ethers.utils.parseEther(config.get('feeAmtEth'))
-const feeAmtTokens = ethers.utils.bigNumberify(config.get('feeAmtTokens'))
+const feeAmtEth = ethers.utils.parseEther(config.get('feeAmtEth').toString())
+const feeAmtTokens = ethers.utils.bigNumberify(config.get('feeAmtTokens').toString())
 
 const provider = new ethers.providers.JsonRpcProvider(
     config.get('chain.url'),

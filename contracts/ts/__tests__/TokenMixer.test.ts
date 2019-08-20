@@ -55,9 +55,9 @@ const depositorAddress = accounts[0].address
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
-const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens'))
-const feeAmt = config.get('testing.feeAmtTokens')
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
+const feeAmt = config.get('feeAmtTokens')
 
 const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
@@ -114,6 +114,7 @@ describe('Token Mixer', () => {
             deployer,
             mixAmtEth,
             mixAmtTokens,
+            depositorAddress,
         )
         mimcContract = contracts.mimcContract
         semaphoreContract = contracts.tokenSemaphoreContract
@@ -229,15 +230,15 @@ describe('Token Mixer', () => {
                 identityPathElements,
                 identityPathIndex,
             } = await genWitnessInputs(
-                tree,
-                nextIndex,
-                identityCommitment,
-                recipientAddress,
-                relayerAddress,
-                feeAmt,
-                identity.privKey,
-                externalNullifier,
-            )
+                    tree,
+                    nextIndex,
+                    identityCommitment,
+                    recipientAddress,
+                    relayerAddress,
+                    feeAmt,
+                    identity.privKey,
+                    externalNullifier,
+                )
 
             assert.isTrue(verifySignature(msg, signature, identity.pubKey))
 

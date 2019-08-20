@@ -51,8 +51,8 @@ const accounts = genAccounts()
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
-const mixAmtTokens = ethers.utils.parseEther(config.get('mixAmtTokens'))
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
 const feeAmt = ethers.utils.parseEther(
     (parseFloat(config.get('feeAmtEth'))).toString()
 )
@@ -111,6 +111,7 @@ describe('Mixer', () => {
             deployer,
             mixAmtEth,
             mixAmtTokens,
+            accounts[0].address,
         )
         mimcContract = contracts.mimcContract
         semaphoreContract = contracts.semaphoreContract
@@ -126,7 +127,7 @@ describe('Mixer', () => {
                     Mixer,
                     {},
                     '0x0000000000000000000000000000000000000000',
-                    ethers.utils.parseEther(config.mixAmtEth),
+                    mixAmtEth,
                     '0x0000000000000000000000000000000000000000',
                 )
             )

@@ -50,11 +50,9 @@ const testAccounts = genTestAccounts(NUM_CYCLES, mnemonic)
 const admin = accounts[0]
 const relayerAddress = accounts[0].address
 
-const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth'))
-const mixAmtTokens = ethers.utils.parseEther(config.get('mixAmtTokens'))
-const feeAmt = ethers.utils.parseEther(
-    (parseFloat(config.get('feeAmtEth'))).toString()
-)
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
+const feeAmt = ethers.utils.parseEther(config.get('feeAmtEth').toString())
 
 const users = accounts.map((user) => user.address)
 const identities = {}
@@ -127,6 +125,7 @@ describe('Mixer', () => {
             deployer,
             mixAmtEth,
             mixAmtTokens,
+            admin.address,
         )
         mimcContract = contracts.mimcContract
         semaphoreContract = contracts.semaphoreContract

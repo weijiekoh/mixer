@@ -66,6 +66,7 @@ const deployAllContracts = async (
     deployer,
     mixAmtEth,
     mixAmtTokens,
+    adminAddress,
 ) => {
     // Deploy token if it's not specified in config. This should be the case for local-dev.yaml
     // In Kovan, the DAI address is 0xc4375b7de8af5a38a93548eb8453a498222c4ff2
@@ -149,6 +150,11 @@ const deployAllContracts = async (
     console.log('Deploying Relayer Registry')
     const relayerRegistryContract = await deployer.deploy(RelayerRegistry, {})
 
+    if (config.env === 'local-dev') {
+        console.log('Minting tokens')
+        await tokenContract.mint(adminAddress, 1000000)
+    }
+
     return {
         mimcContract,
         semaphoreContract,
@@ -158,7 +164,6 @@ const deployAllContracts = async (
         tokenMixerContract,
         tokenContract,
     }
-
 }
 
 const main = async () => {
@@ -200,8 +205,9 @@ const main = async () => {
         tokenMixerContract,
     } = await deployAllContracts(
         deployer,
-        ethers.utils.parseEther(config.mixAmtEth),
+        ethers.utils.parseEther(config.mixAmtEth.toString()),
         config.mixAmtTokens,
+        admin.address,
     )
 
     const addresses = {

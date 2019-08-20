@@ -8,8 +8,8 @@ import { sleep } from 'mixer-utils'
 const config = require('../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
-import { quickWithdraw } from '../web3/quickWithdraw'
-import { getMixerContract } from '../web3/mixer'
+import { quickWithdrawEth, quickWithdrawTokens } from '../web3/quickWithdraw'
+import { getMixerContract, getTokenMixerContract } from '../web3/mixer'
 const deployedAddresses = config.chain.deployedAddresses
 const broadcasterAddress = config.backend.broadcasterAddress
 
@@ -18,6 +18,7 @@ import {
     genPubKey,
     genTree,
     genCircuit,
+    genWitnessInputs,
     genWitness,
     genIdentityCommitment,
     genPathElementsAndIndex,
@@ -34,7 +35,6 @@ import { ErrorCodes } from '../errors'
 
 import {
     getItems,
-    getNumUnwithdrawn,
     updateWithdrawTxHash,
     getFirstUnwithdrawn,
     getNumUnwithdrawn,
@@ -43,8 +43,10 @@ import {
 import {
     mixAmtEth,
     operatorFeeEth,
+    mixAmtTokens,
+    operatorFeeTokens,
     feeAmtWei,
-} from '../utils/ethAmts'
+} from '../utils/mixAmts'
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 
@@ -84,9 +86,15 @@ export default () => {
         setProofGenProgress(line)
     }
 
-    //// Just use the last stored item
-    //const identityStored = items[items.length - 1]
+    // Just use the last stored item
     const identityStored = getFirstUnwithdrawn()
+
+    const tokenType = identityStored.tokenType
+    const isEth = tokenType === 'ETH'
+
+    const mixAmt = isEth ? mixAmtEth : mixAmtTokens
+    const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens
 
     const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
@@ -105,10 +113,13 @@ export default () => {
         }
 
         try {
-            const mixerContract = await getMixerContract(context)
+            const mixerContract = isEth ?
+                await getMixerContract(context) : await getTokenMixerContract(context)
 
             const broadcasterAddress = context.account
+
             const externalNullifier = mixerContract.address
+
             progress('Downloading leaves...')
             const leaves = await mixerContract.getLeaves()
 
@@ -121,20 +132,26 @@ export default () => {
                 pubKey,
             )
 
-            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
-                tree,
-                identityCommitment,
-            )
+            const leafIndex = await tree.element_index(identityCommitment)
 
-            const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmtWei,
-            )
-
-            const { signature, msg } = genSignedMsg(
-                identityStored.privKey,
-                externalNullifier,
-                signalHash, 
-            )
+            const {
+                signature,
+                msg,
+                signalHash,
+                signal,
+                identityPath,
+                identityPathElements,
+                identityPathIndex,
+            } = await genWitnessInputs(
+                    tree,
+                    leafIndex,
+                    identityCommitment,
+                    recipientAddress,
+                    broadcasterAddress,
+                    feeAmt,
+                    identityStored.privKey,
+                    externalNullifier,
+                )
 
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
@@ -142,7 +159,6 @@ export default () => {
                     code: ErrorCodes.INVALID_SIG,
                 }
             }
-
             progress('Downloading circuit...')
             const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
@@ -201,15 +217,27 @@ export default () => {
 
             progress('Performing transaction')
 
-            const tx = await quickWithdraw(
-                context,
-                signal,
-                proof,
-                publicSignals,
-                recipientAddress,
-                feeAmtWei,
-                broadcasterAddress,
-            )
+            let tx
+            if (isEth) {
+                tx = await quickWithdrawEth(
+                    context,
+                    signal,
+                    proof,
+                    publicSignals,
+                    recipientAddress,
+                    feeAmt,
+                    broadcasterAddress,
+                )
+            } else {
+                tx = await quickWithdrawTokens(
+                    context,
+                    signal,
+                    proof,
+                    publicSignals,
+                    recipientAddress,
+                    feeAmt,
+                    broadcasterAddress,
+            }
 
             setPendingTxHash(tx.hash)
             setProofGenProgress('')
@@ -260,7 +288,7 @@ export default () => {
                   <div className='column is-8 is-offset-2'>
                       <div className='section'>
                           <h2 className='subtitle'>
-                              You can immediately withdraw { mixAmtEth - operatorFeeEth * 2 } ETH to
+                              You can immediately withdraw { mixAmt - operatorFee} {tokenType} to
                               <br />
                               <br />
                               <pre>
@@ -288,7 +316,7 @@ export default () => {
                               onClick={handleWithdrawBtnClick}
                               txStatus={txStatus}
                               isDisabled={withdrawBtnDisabled}
-                              label={`Withdraw ${mixAmtEth - operatorFeeEth} ETH`}
+                              label={`Withdraw ${mixAmt - operatorFee} ${tokenType}`}
                           />
 
                           { pendingTxHash.length > 0 &&

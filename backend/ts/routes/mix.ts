@@ -46,7 +46,7 @@ const areEqualAddresses = (a: string, b: string) => {
 }
 
 // This operator accepts a fee that is large enough
-const operatorFeeWei = ethers.utils.parseUnits(config.get('feeAmtEth'), 'ether')
+const operatorFeeWei = ethers.utils.parseUnits(config.get('feeAmtEth').toString(), 'ether')
 const operatorFeeTokens = config.get('feeAmtTokens')
 
 const _mixRoute = (
