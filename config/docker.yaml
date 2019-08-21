@@ -14,13 +14,13 @@ chain:
     gasLimit: 8000000
   privateKeysPath: "../kovanPrivateKeys.json"
   deployedAddresses:
-    MiMC: "0x5F47CFf2602d90a6D48eFb1fD7891CA5e662e89e"
-    Semaphore: "0xe1Bcdb364D35BA4185A0dC531C1A053093dCCE2a"
-    Mixer: "0xbC4d1fDa972a54Ed8A7A7FfFD8cC953E71B54E1f"
-    RelayerRegistry: "0x34D7Fb0Ae641C3931A4A7C09402E68f43e084c54"
-    Token: "0xc4375b7de8af5a38a93548eb8453a498222c4ff2"
-    TokenMixer: '0x28d370Ae41a0dFb8e44711f3A886f467D4A78Dc1'
-    TokenSemaphore: '0xFD1d15F06dfbc395A2b1394041a06b999Dcc3e00'
+    MiMC: '0x074d23D4de74CB4e76093f4304fEc34757D3d391'
+    Semaphore: '0x27d8CdF55dAfd9bAC2C7c54448138185911bbc94'
+    Mixer: '0x11bDc9A865C3Fef60EA94AF240E78292B84D3c04'
+    TokenMixer: '0x26dB028f1482c680daFd3aC76C13c69711AEA80d'
+    TokenSemaphore: '0x051B2aE087cf6a34D1695525aF2250dDc2c39EC4'
+    RelayerRegistry: '0x5e857B3faDC69aAE3110C9eBe3DC40b6176F680d'
+    Token: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2'
 
 backend:
   port: 3000
