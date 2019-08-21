@@ -122,6 +122,7 @@ export default () => {
 
             progress('Downloading leaves...')
             const leaves = await mixerContract.getLeaves()
+            console.log(leaves)
 
             const tree = await genTree(leaves)
 
@@ -134,45 +135,15 @@ export default () => {
 
             const leafIndex = await tree.element_index(identityCommitment)
 
-            const {
-                signature,
-                msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            } = await genWitnessInputs(
-                    tree,
-                    leafIndex,
-                    identityCommitment,
-                    recipientAddress,
-                    broadcasterAddress,
-                    feeAmt,
-                    identityStored.privKey,
-                    externalNullifier,
-                )
+            const { signalHash, signal } = genSignalAndSignalHash(
+                recipientAddress, broadcasterAddress, feeAmt,
+            )
 
-            console.log({
-                tree,
-                leafIndex,
-                identityCommitment,
-                recipientAddress,
-                broadcasterAddress,
-                feeAmt: feeAmt.toString(),
-                privKey: identityStored.privKey,
+            const { signature, msg } = genSignedMsg(
+                identityStored.privKey,
                 externalNullifier,
-            })
-
-            console.log({
-                signature,
-                msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            })
+                signalHash, 
+            )
 
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
@@ -189,23 +160,21 @@ export default () => {
             let w
             try {
                 w = genWitness(
-                    circuit,
-                    pubKey,
-                    signature,
-                    signalHash,
-                    externalNullifier,
-                    identityStored.identityNullifier,
-                    identityPathElements,
-                    identityPathIndex,
-                )
+                        circuit,
+                        pubKey,
+                        signature,
+                        signalHash,
+                        externalNullifier,
+                        identityStored.identityNullifier,
+                        identityPathElements,
+                        identityPathIndex,
+                    )
             } catch (err) {
                 console.error(err)
                 throw {
                     code: ErrorCodes.WITNESS_GEN_ERROR,
                 }
             }
-
-            const witnessRoot = extractWitnessRoot(circuit, w)
 
             if (!circuit.checkWitness(w)) {
                 throw {
