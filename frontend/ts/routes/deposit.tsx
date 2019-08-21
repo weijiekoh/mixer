@@ -166,7 +166,7 @@ export default () => {
     }
 
     const checkBalances = async () => {
-        if (mixAmt && context.connector) {
+        if (mixAmt && context.connector && context.account) {
             const balance = await getBalance(context)
             const minAmt = isEth && mixAmt ? parseFloat(mixAmt) + 0.01 : 0.01
             let enoughEth
