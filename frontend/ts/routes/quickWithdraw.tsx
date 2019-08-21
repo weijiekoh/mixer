@@ -135,9 +135,13 @@ export default () => {
             const leafIndex = await tree.element_index(identityCommitment)
 
             console.log(
+                tree,
+                leafIndex,
+                identityCommitment,
                 recipientAddress,
                 broadcasterAddress,
-                feeAmt,
+                feeAmt.toString(),
+                identityStored.privKey,
                 externalNullifier,
             )
             const {
