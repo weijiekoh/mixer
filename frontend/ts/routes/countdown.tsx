@@ -79,7 +79,7 @@ export default () => {
 
     const mixAmt = isEth ? mixAmtEth : mixAmtTokens
     const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
-    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
 
     const context = useWeb3Context()
 
@@ -97,7 +97,7 @@ export default () => {
             const recipientBalanceBefore = await provider.getBalance(recipientAddress)
             console.log('The recipient has', ethers.utils.formatEther(recipientBalanceBefore), 'ETH')
         } else {
-            const recipientBalanceBefore = (await tokenContract.balanceOf(recipientAddress)) /(10 ** tokenDecimals)
+            const recipientBalanceBefore = (await tokenContract.balanceOf(recipientAddress)) / (10 ** tokenDecimals)
 
             console.log('The recipient has', recipientBalanceBefore.toString(), 'tokens')
         }

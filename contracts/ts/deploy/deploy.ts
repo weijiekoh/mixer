@@ -160,7 +160,6 @@ const deployAllContracts = async (
     if (config.env === 'local-dev') {
         console.log('Minting tokens')
         await tokenContract.mint(adminAddress, '100000000000000000000000000')
-        console.log(adminAddress, 'has', await tokenContract.balanceOf(adminAddress), 'tokens')
     }
 
     return {

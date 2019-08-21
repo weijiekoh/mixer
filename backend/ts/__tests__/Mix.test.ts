@@ -36,10 +36,11 @@ const PORT = config.get('backend.port')
 const HOST = config.get('backend.host') + ':' + PORT.toString()
 
 const depositAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
-const depositAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
+const depositAmtTokens = config.get('mixAmtTokens')
+const tokenDecimals = config.get('tokenDecimals')
 
 const feeAmtEth = ethers.utils.parseEther(config.get('feeAmtEth').toString())
-const feeAmtTokens = ethers.utils.bigNumberify(config.get('feeAmtTokens').toString())
+const feeAmtTokens = config.get('feeAmtTokens')
 
 const provider = new ethers.providers.JsonRpcProvider(
     config.get('chain.url'),
@@ -111,7 +112,7 @@ const toHex = (num: string) => {
 }
 
 let server
-const broadcasterAddress = config.get('backend.broadcasterAddress')
+const broadcasterAddress = config.backend.broadcasterAddress
 const recipientAddress = '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef'
 
 describe('the mixer_mix_eth API call', () => {
@@ -124,10 +125,10 @@ describe('the mixer_mix_eth API call', () => {
     })
 
     test('accepts a valid proof to mix tokens and credits the recipient', async () => {
-        const expectedTokenAmtToReceive = depositAmtTokens.sub(feeAmtTokens)
+        const expectedTokenAmtToReceive = depositAmtTokens - feeAmtTokens
         // mint tokens for the sender
-        await tokenContract.mint(signer.address, depositAmtTokens)
-        await tokenContract.approve(tokenMixerContract.address, depositAmtTokens)
+        await tokenContract.mint(signer.address, (depositAmtTokens * (10 ** tokenDecimals)).toString())
+        await tokenContract.approve(tokenMixerContract.address, (depositAmtTokens * (10 ** tokenDecimals)).toString())
 
         // generate an identityCommitment
         const identity = genIdentity()
@@ -145,7 +146,7 @@ describe('the mixer_mix_eth API call', () => {
         const externalNullifier = tokenMixerContract.address
 
         const { signalHash, signal } = genSignalAndSignalHash(
-            recipientAddress, broadcasterAddress, feeAmtTokens,
+            recipientAddress, broadcasterAddress, feeAmtTokens * 10 ** tokenDecimals,
         )
 
         const { signature, msg } = genSignedMsg(
@@ -175,7 +176,7 @@ describe('the mixer_mix_eth API call', () => {
             signal,
             proof,
             recipientAddress,
-            BigInt(feeAmtTokens.toString()),
+            BigInt((feeAmtTokens * 10 ** tokenDecimals).toString()),
             publicSignals,
         )
 
@@ -204,8 +205,8 @@ describe('the mixer_mix_eth API call', () => {
         }
 
         recipientBalanceAfter = await tokenContract.balanceOf(recipientAddress)
-        const diff = recipientBalanceAfter.sub(recipientBalanceBefore)
-        expect(diff).toEqual(expectedTokenAmtToReceive)
+        const diff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
+        expect(diff).toEqual((expectedTokenAmtToReceive * (10 ** tokenDecimals)).toString())
     })
 
     test('accepts a valid proof to mix ETH and credits the recipient', async () => {
