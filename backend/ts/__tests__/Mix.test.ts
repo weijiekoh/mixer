@@ -19,6 +19,7 @@ import {
     genProof,
     genTree,
     genWitness,
+    genWitnessInputs,
     genIdentity,
     genIdentityCommitment,
     genSignalAndSignalHash,
@@ -142,17 +143,25 @@ describe('the mixer_mix_eth API call', () => {
         const leaves = await tokenMixerContract.getLeaves()
         const tree = await genTree(leaves)
         const leafIndex = await tree.element_index(identityCommitment)
-        const identityPath = await tree.path(leafIndex)
         const externalNullifier = tokenMixerContract.address
 
-        const { signalHash, signal } = genSignalAndSignalHash(
-            recipientAddress, broadcasterAddress, feeAmtTokens * 10 ** tokenDecimals,
-        )
-
-        const { signature, msg } = genSignedMsg(
+        const {
+            signature,
+            msg,
+            signalHash,
+            signal,
+            identityPath,
+            identityPathElements,
+            identityPathIndex,
+        } = await genWitnessInputs(
+            tree,
+            leafIndex,
+            identityCommitment,
+            recipientAddress,
+            broadcasterAddress,
+            feeAmtTokens * 10 ** tokenDecimals,
             identity.keypair.privKey,
             externalNullifier,
-            signalHash, 
         )
 
         const w = genWitness(
@@ -223,17 +232,24 @@ describe('the mixer_mix_eth API call', () => {
         const leaves = await mixerContract.getLeaves()
         const tree = await genTree(leaves)
         const leafIndex = await tree.element_index(identityCommitment)
-        const identityPath = await tree.path(leafIndex)
         const externalNullifier = mixerContract.address
-
-        const { signalHash, signal } = genSignalAndSignalHash(
-            recipientAddress, broadcasterAddress, feeAmtEth,
-        )
-
-        const { signature, msg } = genSignedMsg(
+        const {
+            signature,
+            msg,
+            signalHash,
+            signal,
+            identityPath,
+            identityPathElements,
+            identityPathIndex,
+        } = await genWitnessInputs(
+            tree,
+            leafIndex,
+            identityCommitment,
+            recipientAddress,
+            broadcasterAddress,
+            feeAmtEth,
             identity.keypair.privKey,
             externalNullifier,
-            signalHash, 
         )
 
         const w = genWitness(
