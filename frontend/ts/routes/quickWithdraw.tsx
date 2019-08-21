@@ -134,16 +134,6 @@ export default () => {
 
             const leafIndex = await tree.element_index(identityCommitment)
 
-            console.log(
-                tree,
-                leafIndex,
-                identityCommitment,
-                recipientAddress,
-                broadcasterAddress,
-                feeAmt.toString(),
-                identityStored.privKey,
-                externalNullifier,
-            )
             const {
                 signature,
                 msg,
@@ -158,10 +148,31 @@ export default () => {
                     identityCommitment,
                     recipientAddress,
                     broadcasterAddress,
-                    feeAmt.toString(),
+                    feeAmt,
                     identityStored.privKey,
                     externalNullifier,
                 )
+
+            console.log({
+                tree,
+                leafIndex,
+                identityCommitment,
+                recipientAddress,
+                broadcasterAddress,
+                feeAmt: feeAmt.toString(),
+                privKey: identityStored.privKey,
+                externalNullifier,
+            })
+
+            console.log({
+                signature,
+                msg,
+                signalHash,
+                signal,
+                identityPath,
+                identityPathElements,
+                identityPathIndex,
+            })
 
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
