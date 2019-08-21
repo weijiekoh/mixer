@@ -94,7 +94,7 @@ export default () => {
 
     const mixAmt = isEth ? mixAmtEth : mixAmtTokens
     const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
-    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * 10 ** tokenDecimals
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
 
     const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
@@ -134,20 +134,24 @@ export default () => {
 
             const leafIndex = await tree.element_index(identityCommitment)
 
-            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
-                tree,
-                identityCommitment,
-            )
-
-            const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmt,
-            )
-
-            const { signature, msg } = genSignedMsg(
-                identityStored.privKey,
-                externalNullifier,
-                signalHash, 
-            )
+            const {
+                signature,
+                msg,
+                signalHash,
+                signal,
+                identityPath,
+                identityPathElements,
+                identityPathIndex,
+            } = await genWitnessInputs(
+                    tree,
+                    leafIndex,
+                    identityCommitment,
+                    recipientAddress,
+                    broadcasterAddress,
+                    feeAmt,
+                    identityStored.privKey,
+                    externalNullifier,
+                )
 
             const validSig = verifySignature(msg, signature, pubKey)
             if (!validSig) {
