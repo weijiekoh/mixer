@@ -67,7 +67,7 @@ export default () => {
     const [errorMsg, setErrorMsg] = useState('')
     const [enoughEth, setEnoughEth] = useState(true)
     const [enoughEthAndDai, setEnoughEthAndDai] = useState(false)
-    const [tokenType, setTokenType] = useState('DAI')
+    const [tokenType, setTokenType] = useState('ETH')
     const [tokenAllowanceNeeded, setTokenAllowanceNeeded] = useState(-1)
 
     const isEth = tokenType === 'ETH'
