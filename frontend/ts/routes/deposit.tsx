@@ -334,11 +334,14 @@ export default () => {
                         }
 
                         { txStatus === TxStatuses.Err &&
-                            <article className="message is-danger">
-                                <div className="message-body">
-                                    {errorMsg}
-                                </div>
-                            </article>
+                            <div>
+                                <br />
+                                <article className="message is-danger">
+                                    <div className="message-body">
+                                        {errorMsg}
+                                    </div>
+                                </article>
+                            </div>
                         }
                     </div>
                 }
