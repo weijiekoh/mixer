@@ -122,7 +122,6 @@ export default () => {
 
             progress('Downloading leaves...')
             const leaves = await mixerContract.getLeaves()
-            console.log(leaves)
 
             const tree = await genTree(leaves)
 
