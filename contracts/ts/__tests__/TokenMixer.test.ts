@@ -123,7 +123,7 @@ describe('Token Mixer', () => {
         tokenContract = contracts.tokenContract
 
         // mint tokens
-        await tokenContract.mint(depositorAddress, 1000)
+        await tokenContract.mint(depositorAddress, '100000000000000000000000')
     })
 
     describe('Contract deployments', () => {

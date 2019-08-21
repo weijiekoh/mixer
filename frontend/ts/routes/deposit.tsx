@@ -267,21 +267,23 @@ export default () => {
                         <span>to</span>
                     </div>
 
-                    <div className='column is-8 is-offset-2'>
-                        <input
-                            spellCheck={false}
-                            className="input eth_address"
-                            type="text"
-                            placeholder="0x........" 
-                            value={recipientAddress}
-                            onChange={(e) => {
-                                setRecipientAddress(e.target.value)
-                            }}
-                        />
+                    { showMixForm &&
+                        <div className='column is-8 is-offset-2'>
+                            <input
+                                spellCheck={false}
+                                className="input eth_address"
+                                type="text"
+                                placeholder="0x........" 
+                                value={recipientAddress}
+                                onChange={(e) => {
+                                    setRecipientAddress(e.target.value)
+                                }}
+                            />
 
-                        <br />
+                            <br />
 
-                    </div>
+                        </div>
+                    }
 
                     { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') ?
                         <p>
