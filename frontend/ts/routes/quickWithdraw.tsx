@@ -94,7 +94,7 @@ export default () => {
 
     const mixAmt = isEth ? mixAmtEth : mixAmtTokens
     const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
-    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * 10 ** tokenDecimals
 
     const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
@@ -135,9 +135,13 @@ export default () => {
             const leafIndex = await tree.element_index(identityCommitment)
 
             console.log(
+                tree,
+                leafIndex,
+                identityCommitment,
                 recipientAddress,
                 broadcasterAddress,
-                feeAmt,
+                feeAmt.toString(),
+                identityStored.privKey,
                 externalNullifier,
             )
             const {
@@ -154,7 +158,7 @@ export default () => {
                     identityCommitment,
                     recipientAddress,
                     broadcasterAddress,
-                    feeAmt,
+                    feeAmt.toString(),
                     identityStored.privKey,
                     externalNullifier,
                 )
@@ -233,7 +237,7 @@ export default () => {
                     proof,
                     publicSignals,
                     recipientAddress,
-                    feeAmt,
+                    feeAmt.toString(),
                     broadcasterAddress,
                 )
             } else {
@@ -243,8 +247,9 @@ export default () => {
                     proof,
                     publicSignals,
                     recipientAddress,
-                    feeAmt,
+                    feeAmt.toString(),
                     broadcasterAddress,
+                )
             }
 
             setPendingTxHash(tx.hash)

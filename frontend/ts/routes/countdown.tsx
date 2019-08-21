@@ -372,7 +372,7 @@ export default () => {
                             }
                         </h2>
 
-                        { context.error == null && txHash.length === 0 && withdrawStarted &&  !withdrawBtnClicked &&
+                        { context.error == null && txHash.length === 0 && (midnightOver || withdrawStarted) &&  !withdrawBtnClicked &&
                             withdrawBtn
                         }
 
