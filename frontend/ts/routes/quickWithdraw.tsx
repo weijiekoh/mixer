@@ -135,6 +135,11 @@ export default () => {
 
             const leafIndex = await tree.element_index(identityCommitment)
 
+            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
+                tree,
+                identityCommitment,
+            )
+
             const { signalHash, signal } = genSignalAndSignalHash(
                 recipientAddress, broadcasterAddress, feeAmt,
             )
