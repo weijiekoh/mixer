@@ -362,7 +362,7 @@ export default () => {
                     <div className='column is-8 is-offset-2'>
                         <TxHashMessage 
                             mixSuccessful={true}
-                            txHash={withdrawTxHash}
+                            txHash={pendingTxHash}
                             txStatus={TxStatuses.Mined} />
                         <a href='/'>Make another deposit</a>.
                    </div>
