@@ -10,6 +10,7 @@ import { TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
 import { quickWithdrawEth, quickWithdrawTokens } from '../web3/quickWithdraw'
 import { getMixerContract, getTokenMixerContract } from '../web3/mixer'
+import { fetchWithoutCache } from '../utils/fetcher'
 const deployedAddresses = config.chain.deployedAddresses
 const tokenDecimals = config.tokenDecimals
 
@@ -161,7 +162,7 @@ export default () => {
                 }
             }
             progress('Downloading circuit...')
-            const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
+            const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             progress('Generating witness...')

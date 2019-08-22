@@ -6,6 +6,7 @@ import { useWeb3Context } from 'web3-react'
 import { Redirect } from 'react-router-dom'
 import { getMixerContract, getTokenMixerContract, getTokenContract } from '../web3/mixer'
 import { genMixParams, sleep } from 'mixer-utils'
+import { fetchWithoutCache } from '../utils/fetcher'
 import { 
     genSignedMsg,
     genPubKey,
@@ -150,7 +151,7 @@ export default () => {
             }
 
             progress('Downloading circuit...')
-            const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
+            const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             progress('Generating witness...')
