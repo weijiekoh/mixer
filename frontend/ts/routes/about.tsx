@@ -30,13 +30,13 @@ const AboutRoute = () => {
 
                 <p>
                     It does this using zero-knowledge proofs. You can use this
-                    app to deposit some ETH into a noncustodial smart contract,
-                    and then easily generate a proof that you had perfomed said
-                    deposit <em>without revealing your original address</em>.
-                    The app will then send this proof to an operator, which
-                    will submit it to the smart contract, which will in turn
-                    send the ETH to the desired recipient and reimburse the
-                    operator a small fee.
+                    app to deposit some ETH or tokens into a noncustodial smart
+                    contract, and then easily generate a proof that you had
+                    perfomed said deposit <em>without revealing your original
+                    address</em>. The app will then send this proof to an
+                    operator, which will submit it to the smart contract, which
+                    will in turn send the ETH or ETH to the desired recipient
+                    and reimburse the operator a small fee.
                 </p>
 
                 <br />

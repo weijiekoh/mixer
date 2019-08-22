@@ -7,12 +7,12 @@
 This is the monorepo for all code and documentation for a noncustodial Ethereum
 mixer. Try it at [micromix.app](https://micromix.app).
 
-A mixer moves Ether from one address to another in a way that nobody
-except the sender can know for sure that these addresses are linked. This
-mixer lets a user deposit fixed amounts of Ether into a contract, and when the
-pool is large enough, anonymously submit zero-knowledge proofs which
-show that the submitter had previously made a deposit, thus authorising the
-contract to release funds to the recipient.
+A mixer moves ETH or ERC20 tokens from one address to another in a way that
+nobody except the sender can know for sure that these addresses are linked.
+This mixer lets a user deposit fixed amounts of ETH into a contract, and when
+the pool is large enough, anonymously submit zero-knowledge proofs which show
+that the submitter had previously made a deposit, thus authorising the contract
+to release funds to the recipient.
 
 As a transaction relayer pays the gas of this transaction, there is no certain
 on-chain connection between the sender and recipient. Although this relayer is
@@ -27,20 +27,13 @@ real funds yet. It only supports Kovan ETH for now. Get Kovan ETH from a faucet
 [here](https://faucet.kovan.network/) or
 [here](https://gitter.im/kovan-testnet/faucet).
 
-
-<!--## Screenshots-->
-
-<!--<img src="/docs/img/deposit.png" width=380 />-->
-<!--<img src="/docs/img/countdown.png" width=380 />-->
-<!--<br />-->
-<!--<br />-->
-<!--<img src="/docs/img/quick_withdraw.png" width=380 />-->
-
 ## Supported features
 
 The current version of this mixer is a simple MVP for desktop Chrome, Brave, or
 Firefox. You should also have [MetaMask](https://metamask.io/) installed, and
-at least 0.11 Kovan ETH.
+some Kovan ETH. You need at least 0.11 KETH to mix 0.1 ETH, and 20 Kovan DAI
+and 0.01 ETH to mix Kovan DAI. You can generate Kovan DAI using MakerDAO's CDP
+creation tool [here](https://cdp.makerdao.com).
 
 It has the following features:
 
@@ -48,14 +41,10 @@ It has the following features:
 
     - One deposit per day.
 
-    - Automatic ETH withdrawal if the user keeps the page open till midnight
-      UTC.
+ .   - One-click withdrawal once UTC midnight has passed.
 
-    - One-click ETH withdrawal if the user closes the page and comes back to
-      this site after midnight.
-
-    - Immediate self-withdrawals in case the user wants their ETH back at the cost
-      of privacy.
+    - Immediate self-withdrawals in case the user wants their funds back at the
+      cost of privacy.
     
     - Immediate withdraw requests if the user wishes the operator to mix the
       funds immediately, which also comes at the cost of some privacy.
@@ -63,7 +52,7 @@ It has the following features:
 2. A backend server with one JSON-RPC 2.0 endpoint, `mixer_mix()`, which:
     
     - Accepts, verifies, and submits a zk-SNARK proof (generated in the user's
-      browser) to the [Mixer contract](https://kovan.etherscan.io/address/0xA54d5013e5aEa383Ff18B4B6bd0a11876D02F384).
+      browser) to the mixer contract.
 
 3. Ethereum contracts:
 
@@ -73,7 +62,7 @@ It has the following features:
 
     - A Mixer contract with functions which
         
-        - Accepts 0.1 ETH deposits.
+        - Accepts ETH or ERC20 token deposits.
 
         - Accepts mix requests. Each request comprises of a zk-SNARK proof that
           a deposit had been made in the past and has not already been claimed.
