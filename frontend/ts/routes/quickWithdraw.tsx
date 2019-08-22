@@ -121,6 +121,7 @@ export default () => {
             const externalNullifier = mixerContract.address
 
             progress('Downloading leaves...')
+
             const leaves = await mixerContract.getLeaves()
 
             const tree = await genTree(leaves)
