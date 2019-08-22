@@ -1,7 +1,6 @@
 import React, { Component, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useWeb3Context } from 'web3-react'
-import * as snarkjs from 'snarkjs'
 import * as ethers from 'ethers'
 import { utils } from 'mixer-contracts'
 import { sleep } from 'mixer-utils'
