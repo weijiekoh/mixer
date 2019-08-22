@@ -3,6 +3,7 @@
 // deterministically derived using mixer-crypto's genIdentityCommitment
 // function, so we don't store it.
 
+const config = require('./exported_config')
 import {
     Identity,
     EddsaPrivateKey,
@@ -20,7 +21,11 @@ interface IdentityStored {
 }
 
 const localStorage = window.localStorage
-const key = 'MIXER'
+
+// The storage key depends on the mixer contracts to prevent conflicts
+const ethMixerPrefix = config.chain.deployedAddresses.Mixer.slice(2).toLowerCase()
+const tokenMixerPrefix = config.chain.deployedAddresses.TokenMixer.slice(2).toLowerCase()
+const key = `MIXER_${ethMixerPrefix}_${tokenMixerPrefix}`
 
 const initStorage = () => {
     if (!localStorage.getItem(key)) {
