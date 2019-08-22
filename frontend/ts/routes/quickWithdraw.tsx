@@ -245,15 +245,15 @@ export default () => {
             setPendingTxHash(tx.hash)
             setProofGenProgress('')
 
-            if (config.env === 'local-dev') {
-                await sleep(3000)
-            }
-
             const receipt = await tx.wait()
 
+            if (config.env === 'local-dev') {
+                await sleep(2000)
+            }
+
             if (receipt.status === 1) {
-                updateWithdrawTxHash(identityStored, tx.hash)
                 setCompletedWithdraw(true)
+                updateWithdrawTxHash(identityStored, tx.hash)
             } else {
                 throw {
                     code: ErrorCodes.TX_FAILED,
@@ -359,7 +359,7 @@ export default () => {
                    </div>
                }
 
-               { withdrawTxHash && completedWithdraw &&
+               { completedWithdraw &&
                     <div className='column is-8 is-offset-2'>
                         <TxHashMessage 
                             mixSuccessful={true}

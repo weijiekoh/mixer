@@ -1,3 +1,4 @@
+default.etcd
 # prod config
 config/*-prod.yaml
 config/*-prod.yml
