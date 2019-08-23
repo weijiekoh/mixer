@@ -245,12 +245,10 @@ export default () => {
     const handleTokenTypeSelect = (e) => {
         const t = e.target.value
         setTokenType(t)
-        console.log('handleTokenTypeSelect', t)
     }
 
     checkBalances()
     checkTokenAllowance()
-    console.log('tokenType', tokenType)
 
     return (
         <div className='columns has-text-centered'>
