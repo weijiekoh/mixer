@@ -9,6 +9,7 @@ const deployedAddresses = config.chain.deployedAddresses
 import { Erc20ApproveButton, TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
 import { sleep } from 'mixer-utils'
+// @ts-ignore
 import cat from '../../img/cat.png'
 
 import {
@@ -59,7 +60,7 @@ const topUpDaiMsg =
     </div>
 
 export default () => {
-    initStorage()
+    const [storageHasBeenInit, setStorageHasBeenInit] = useState(false)
     const [txStatus, setTxStatus] = useState(TxStatuses.None)
     const [erc20ApproveTxStatus, setErc20ApproveTxStatus] = useState(TxStatuses.None)
     const [txHash, setTxHash] = useState('')
@@ -69,6 +70,11 @@ export default () => {
     const [enoughEthAndDai, setEnoughEthAndDai] = useState(false)
     const [tokenType, setTokenType] = useState('ETH')
     const [tokenAllowanceNeeded, setTokenAllowanceNeeded] = useState(-1)
+
+    if (!storageHasBeenInit) {
+        initStorage()
+        setStorageHasBeenInit(true)
+    }
 
     const isEth = tokenType === 'ETH'
 
@@ -98,9 +104,8 @@ export default () => {
         setErc20ApproveTxStatus(TxStatuses.Pending)
 
         const tx = await approveTokens(context, tokenAllowanceNeeded * (10 ** config.tokenDecimals))
-        const receipt = await tx.wait()
-
-        setTxStatus(TxStatuses.Mined)
+        await tx.wait()
+        setErc20ApproveTxStatus(TxStatuses.Mined)
     }
 
     const handleDepositBtnClick = async () => {
@@ -183,8 +188,6 @@ export default () => {
         }
     }
 
-    checkBalances()
-
     const mixEthInfo = (
         <div>
             <p>
@@ -219,7 +222,6 @@ export default () => {
             setTokenAllowanceNeeded(x / (10 ** config.tokenDecimals))
         }
     }
-    checkTokenAllowance()
 
     const tokenAllowanceBtn = (
         <div>
@@ -240,6 +242,16 @@ export default () => {
             (isEth && enoughEth)
         )
 
+    const handleTokenTypeSelect = (e) => {
+        const t = e.target.value
+        setTokenType(t)
+        console.log('handleTokenTypeSelect', t)
+    }
+
+    checkBalances()
+    checkTokenAllowance()
+    console.log('tokenType', tokenType)
+
     return (
         <div className='columns has-text-centered'>
             <div className='column is-12'>
@@ -257,7 +269,7 @@ export default () => {
                                 <select 
                                     value={tokenType}
                                     id="token"
-                                    onChange={(e) => {setTokenType(e.target.value)}}
+                                    onChange={handleTokenTypeSelect}
                                 >
                                     <option value="ETH">{mixAmtEth.toString()} ETH</option>
                                     <option value="DAI">{mixAmtTokens.toString()} DAI</option>
