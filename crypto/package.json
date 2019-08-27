@@ -15,12 +15,12 @@
   "dependencies": {
     "@types/node": "^12.0.10",
     "await-lock": "^1.1.3",
-    "circomlib": "0.0.10",
+    "circomlib": "0.0.13",
     "ethers": "^4.0.32",
     "module-alias": "^2.2.0",
     "semaphore-merkle-tree": "^1.0.4",
-    "snarkjs": "git+https://github.com/iden3/snarkjs.git#c428706ef69930e378c31199ff8d66ee13fada85",
-    "websnark": "git+https://github.com/iden3/websnark.git#3b6cf0c77e48ab0867a2d710c0b35794b16bde7d"
+    "snarkjs": "0.1.17",
+    "websnark": "0.0.5"
   },
   "devDependencies": {}
 }

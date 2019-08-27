@@ -115,13 +115,9 @@ export default () => {
 
         initStorage()
 
-        // generate an Identity
+        // generate an Identity and identity commitment
         const identity = genIdentity()
-        const keypair = identity.keypair
-        const pubKey = keypair.pubKey
-        const identityNullifier = identity.identityNullifier
-
-        const identityCommitment = '0x' + genIdentityCommitment(identityNullifier, pubKey).toString(16)
+        const identityCommitment = '0x' + genIdentityCommitment(identity).toString(16)
 
         // Perform the deposit tx
         try {

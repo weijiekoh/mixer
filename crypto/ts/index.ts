@@ -25,14 +25,14 @@ interface EddsaKeyPair {
 interface Identity {
     keypair: EddsaKeyPair,
     identityNullifier: BigInt,
+    identityTrapdoor: BigInt,
 }
 
 const genRandomBuffer = (numBytes: number = 32) => {
     return crypto.randomBytes(numBytes)
 }
 
-// The identity nullifier is a random 31-byte value
-const genIdentityNullifier = (
+const genRandom31ByteBuffer = (
     randomBytes: Buffer = genRandomBuffer(31),
 ): BigInt => {
     return bigInt(snarkjs.bigInt.leBuff2int(randomBytes))
@@ -66,13 +66,13 @@ const pedersenHash = (ints: snarkjs.bigInt[]) => {
 
 // The identity commitment is the hash of the public key and the identity nullifier
 const genIdentityCommitment = (
-    identityNullifier: BigInt,
-    pubKey: EddsaPublicKey,
+    identity: Identity,
 ) => {
 
     return pedersenHash([
-        bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]),
-        bigInt(identityNullifier)
+        bigInt(circomlib.babyJub.mulPointEscalar(identity.keypair.pubKey, 8)[0]),
+        bigInt(identity.identityNullifier),
+        bigInt(identity.identityTrapdoor)
     ])
 }
 
@@ -92,12 +92,14 @@ const genEddsaKeyPair = (
 
 const genIdentity = (
     privKey: Buffer = genRandomBuffer(32),
-    randomBytes: Buffer = genRandomBuffer(31),
 ): Identity => {
 
+    // The identity nullifier and identity trapdoor are separate random 31-byte
+    // values
     return {
         keypair: genEddsaKeyPair(privKey),
-        identityNullifier: genIdentityNullifier(randomBytes),
+        identityNullifier: bigInt(snarkjs.bigInt.leBuff2int(genRandomBuffer(31))),
+        identityTrapdoor: bigInt(snarkjs.bigInt.leBuff2int(genRandomBuffer(31))),
     }
 }
 
@@ -164,7 +166,9 @@ const verifySignature = (
 }
 
 const genSignalAndSignalHash = (
-    recipientAddress, broadcasterAddress, feeAmt,
+    recipientAddress: string,
+    broadcasterAddress: string,
+    feeAmt: Number | BigInt,
 ) => {
     // This is the computed signal
     const signal = ethers.utils.solidityKeccak256(
@@ -230,6 +234,7 @@ const genWitness = (
     signalHash,
     externalNullifier,
     identityNullifier,
+    identityTrapdoor,
     identityPathElements,
     identityPathIndex: number,
 ) => {
@@ -243,6 +248,7 @@ const genWitness = (
         signal_hash: signalHash,
         external_nullifier: bigInt(externalNullifier),
         identity_nullifier: identityNullifier,
+        identity_trapdoor: identityTrapdoor,
         identity_path_elements: identityPathElements,
         identity_path_index: identityPathIndex,
     })
@@ -274,14 +280,7 @@ const genPublicSignals = (
     return witness.slice(1, circuit.nPubInputs + circuit.nOutputs+1)
 }
 
-const verifyProof = (
-    verifyingKey: any,
-    proof: any,
-    publicSignals: any,
-) => {
-
-    return snarkjs.groth.isValid(verifyingKey, proof, publicSignals)
-}
+const verifyProof = snarkjs.groth.isValid
 
 const unstringifyBigInts = snarkjs.unstringifyBigInts
 
@@ -307,7 +306,6 @@ export {
     genEddsaKeyPair,
     genRandomBuffer,
     genIdentityCommitment,
-    genIdentityNullifier,
     genCircuit,
     genTree,
     EddsaPrivateKey,

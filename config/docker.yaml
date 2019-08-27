@@ -35,9 +35,9 @@ backend:
 frontend:
   snarks:
     paths:
-      verificationKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/verification_key.json'
-      provingKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/proving_key.bin'
-      circuit: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/circuit.json'
+      verificationKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/verification_key.json'
+      provingKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/proving_key.bin'
+      circuit: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/circuit.json'
   countdown:
     endsAtUtcMidnight: true
     endsAfterSecs: 5

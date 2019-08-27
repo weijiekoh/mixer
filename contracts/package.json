@@ -25,7 +25,7 @@
   "devDependencies": {
     "@types/jest": "^24.0.16",
     "argparse": "^1.0.10",
-    "circomlib": "git+https://github.com/kobigurk/circomlib.git",
+    "circomlib": "0.0.13",
     "etherlime": "^2.1.4",
     "etherlime-lib": "^1.1.0",
     "module-alias": "^2.2.0",

@@ -26,7 +26,6 @@ import {
     genPublicSignals,
     verifySignature,
     unstringifyBigInts,
-    extractWitnessRoot,
     genProof,
     verifyProof,
 } from 'mixer-crypto'
@@ -160,12 +159,12 @@ export default () => {
                     code: ErrorCodes.INVALID_SIG,
                 }
             }
+
             progress('Downloading circuit...')
             const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             progress('Generating witness...')
-
             let w
             try {
                 w = genWitness(
