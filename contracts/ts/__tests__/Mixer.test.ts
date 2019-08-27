@@ -69,18 +69,16 @@ const contractsPath = path.join(
 for (let i=0; i < users.length; i++) {
     const user = users[i]
 
-    let keyBuf = genRandomBuffer(32)
-    let idNullifierBytes = genRandomBuffer(31)
-
-    // Generate an eddsa identity, identity nullifier, and identity commitment
-    // per user
-    const { privKey, pubKey } = genEddsaKeyPair(keyBuf)
-    const identityNullifier = genIdentityNullifier(idNullifierBytes)
-    const identityCommitment = genIdentityCommitment(identityNullifier, pubKey)
+    const identity = genIdentity()
+    const { privKey, pubKey } = identity.keypair
+    const identityNullifier = identity.identityNullifier
+    const identityTrapdoor = identity.identityTrapdoor
+    const identityCommitment = genIdentityCommitment(identity)
 
     identities[user] = {
         identityCommitment,
         identityNullifier,
+        identityTrapdoor,
         privKey,
         pubKey,
     }
@@ -272,6 +270,7 @@ describe('Mixer', () => {
                 signalHash,
                 externalNullifier,
                 identity.identityNullifier,
+                identity.identityTrapdoor,
                 identityPathElements,
                 identityPathIndex,
             )

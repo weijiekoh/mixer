@@ -57,6 +57,8 @@ let relayerAddress = accounts[2].address
 
 const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
 const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
+const tokenDecimals = config.get('tokenDecimals')
+const mixAmtTokensMultiplied = (mixAmtTokens.toNumber() * 10 ** tokenDecimals).toString()
 const feeAmt = config.get('feeAmtTokens')
 
 const users = accounts.slice(1, 6).map((user) => user.address)
@@ -71,18 +73,16 @@ const contractsPath = path.join(
 for (let i=0; i < users.length; i++) {
     const user = users[i]
 
-    let keyBuf = genRandomBuffer(32)
-    let idNullifierBytes = genRandomBuffer(31)
-
-    // Generate an eddsa identity, identity nullifier, and identity commitment
-    // per user
-    const { privKey, pubKey } = genEddsaKeyPair(keyBuf)
-    const identityNullifier = genIdentityNullifier(idNullifierBytes)
-    const identityCommitment = genIdentityCommitment(identityNullifier, pubKey)
+    const identity = genIdentity()
+    const { privKey, pubKey } = identity.keypair
+    const identityNullifier = identity.identityNullifier
+    const identityTrapdoor = identity.identityTrapdoor
+    const identityCommitment = genIdentityCommitment(identity)
 
     identities[user] = {
         identityCommitment,
         identityNullifier,
+        identityTrapdoor,
         privKey,
         pubKey,
     }
@@ -194,7 +194,10 @@ describe('Token Mixer', () => {
         })
 
         it('should perform a token deposit', async () => {
-            await tokenContract.approve(mixerContract.contractAddress, mixAmtTokens)
+            await tokenContract.approve(
+                mixerContract.contractAddress,
+                mixAmtTokensMultiplied,
+            )
 
             const balanceBefore = await tokenContract.balanceOf(depositorAddress)
             assert.isTrue(balanceBefore > 0)
@@ -215,7 +218,10 @@ describe('Token Mixer', () => {
             assert.include(leaves, identityCommitment.toString())
             const balanceAfter = await tokenContract.balanceOf(depositorAddress)
 
-            assert.equal(balanceBefore - balanceAfter, mixAmtTokens)
+            assert.equal(
+                balanceBefore.sub(balanceAfter).toString(),
+                mixAmtTokensMultiplied,
+            )
         })
 
         it('should make a token withdrawal', async () => {
@@ -249,6 +255,7 @@ describe('Token Mixer', () => {
                 signalHash,
                 externalNullifier,
                 identity.identityNullifier,
+                identity.identityTrapdoor,
                 identityPathElements,
                 identityPathIndex,
             )
@@ -310,7 +317,10 @@ describe('Token Mixer', () => {
 
         it('should increase the recipient\'s token balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore)
-            assert.isTrue(recipientBalanceDiff.eq(mixAmtTokens.sub(feeAmt)))
+            assert.equal(
+                recipientBalanceDiff.add(feeAmt).toString(),
+                mixAmtTokensMultiplied,
+            )
         })
     })
 })

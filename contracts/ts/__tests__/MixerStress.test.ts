@@ -68,18 +68,16 @@ for (let i=0; i < testAccounts.length; i++) {
     console.log(`Generating EdDSA keyair and identity for user ${i}`)
     const user = testAccounts[i].address
 
-    let keyBuf = genRandomBuffer(32)
-    let idNullifierBytes = genRandomBuffer(31)
-
-    // Generate an eddsa identity, identity nullifier, and identity commitment
-    // per test account
-    const { privKey, pubKey } = genEddsaKeyPair(keyBuf)
-    const identityNullifier = genIdentityNullifier(idNullifierBytes)
-    const identityCommitment = genIdentityCommitment(identityNullifier, pubKey)
+    const identity = genIdentity()
+    const { privKey, pubKey } = identity.keypair
+    const identityNullifier = identity.identityNullifier
+    const identityTrapdoor = identity.identityTrapdoor
+    const identityCommitment = genIdentityCommitment(identity)
 
     identities[user] = {
         identityCommitment,
         identityNullifier,
+        identityTrapdoor,
         privKey,
         pubKey,
     }
@@ -237,6 +235,7 @@ describe('Mixer', () => {
                     signalHash,
                     externalNullifier,
                     identity.identityNullifier,
+                    identity.identityTrapdoor,
                     identityPath.path_elements,
                     identityPath.path_index,
                     relayerAddress
