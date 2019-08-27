@@ -133,7 +133,7 @@ describe('the mixer_mix_eth API call', () => {
 
         // generate an identityCommitment
         const identity = genIdentity()
-        const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
+        const identityCommitment = genIdentityCommitment(identity)
 
         const tx = await tokenMixerContract.depositERC20(identityCommitment.toString())
         const receipt = await tx.wait()
@@ -171,6 +171,7 @@ describe('the mixer_mix_eth API call', () => {
             signalHash,
             externalNullifier,
             identity.identityNullifier,
+            identity.identityTrapdoor,
             identityPath.path_elements,
             identityPath.path_index,
         )
@@ -221,7 +222,7 @@ describe('the mixer_mix_eth API call', () => {
     test('accepts a valid proof to mix ETH and credits the recipient', async () => {
         // generate an identityCommitment
         const identity = genIdentity()
-        const identityCommitment = genIdentityCommitment(identity.identityNullifier, identity.keypair.pubKey)
+        const identityCommitment = genIdentityCommitment(identity)
 
         const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmtEth })
         const receipt = await tx.wait()
@@ -259,6 +260,7 @@ describe('the mixer_mix_eth API call', () => {
             signalHash,
             externalNullifier,
             identity.identityNullifier,
+            identity.identityTrapdoor,
             identityPath.path_elements,
             identityPath.path_index,
         )
