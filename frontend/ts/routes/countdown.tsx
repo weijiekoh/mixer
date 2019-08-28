@@ -22,6 +22,7 @@ import {
     unstringifyBigInts,
     genProof,
     verifyProof,
+    Identity,
 } from 'mixer-crypto'
 
 import {
@@ -117,10 +118,13 @@ export default () => {
 
             const pubKey = genPubKey(identityStored.privKey)
 
-            const identityCommitment = genIdentityCommitment(
-                identityStored.identityNullifier,
-                pubKey,
-            )
+            const identity: Identity = {
+                keypair: { pubKey, privKey: identityStored.privKey },
+                identityNullifier: identityStored.identityNullifier,
+                identityTrapdoor: identityStored.identityTrapdoor,
+            }
+
+            const identityCommitment = genIdentityCommitment(identity)
 
             const leafIndex = await tree.element_index(identityCommitment)
 
@@ -164,6 +168,7 @@ export default () => {
                         signalHash,
                         externalNullifier,
                         identityStored.identityNullifier,
+                        identityStored.identityTrapdoor,
                         identityPathElements,
                         identityPathIndex,
                     )

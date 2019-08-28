@@ -12,6 +12,7 @@ import { Buffer } from 'buffer'
 
 interface IdentityStored {
     identityNullifier: BigInt,
+    identityTrapdoor: BigInt,
     privKey: EddsaPrivateKey,
     recipientAddress: string,
     depositTxHash: string,
@@ -38,6 +39,7 @@ const hexifyItem = (item: IdentityStored) => {
         item,
         {
             identityNullifier: item.identityNullifier.toString(16),
+            identityTrapdoor: item.identityTrapdoor.toString(16),
             privKey: item.privKey.toString('hex'),
         }
     )
@@ -47,6 +49,7 @@ const deHexifyItem = (hexified: any): IdentityStored => {
     return {
         ...hexified,
         identityNullifier: BigInt('0x' + hexified.identityNullifier),
+        identityTrapdoor: BigInt('0x' + hexified.identityTrapdoor),
         privKey: Buffer.from(hexified.privKey, 'hex'),
     }
 }
@@ -110,6 +113,7 @@ const storeDeposit = (
     items.push({
         privKey: identity.keypair.privKey,
         identityNullifier: identity.identityNullifier,
+        identityTrapdoor: identity.identityTrapdoor,
         depositTxHash,
         recipientAddress,
         tokenType,

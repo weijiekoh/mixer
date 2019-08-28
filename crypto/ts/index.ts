@@ -32,12 +32,6 @@ const genRandomBuffer = (numBytes: number = 32) => {
     return crypto.randomBytes(numBytes)
 }
 
-const genRandom31ByteBuffer = (
-    randomBytes: Buffer = genRandomBuffer(31),
-): BigInt => {
-    return bigInt(snarkjs.bigInt.leBuff2int(randomBytes))
-}
-
 const genCircuit = (cirDef: any) => {
     return new snarkjs.Circuit(cirDef)
 }
@@ -56,7 +50,7 @@ const pedersenHash = (ints: snarkjs.bigInt[]) => {
     const p = circomlib.babyJub.unpackPoint(
         circomlib.pedersenHash.hash(
             Buffer.concat(
-             ints.map(x => x.leInt2Buff(32))
+                ints.map(x => x.leInt2Buff(32))
             )
         )
     )
@@ -64,7 +58,8 @@ const pedersenHash = (ints: snarkjs.bigInt[]) => {
     return bigInt(p[0])
 }
 
-// The identity commitment is the hash of the public key and the identity nullifier
+// The identity commitment is the hash of the public key, the identity
+// nullifier, and the identity trapdoor
 const genIdentityCommitment = (
     identity: Identity,
 ) => {
@@ -72,7 +67,7 @@ const genIdentityCommitment = (
     return pedersenHash([
         bigInt(circomlib.babyJub.mulPointEscalar(identity.keypair.pubKey, 8)[0]),
         bigInt(identity.identityNullifier),
-        bigInt(identity.identityTrapdoor)
+        bigInt(identity.identityTrapdoor),
     ])
 }
 
