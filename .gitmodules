@@ -2,3 +2,6 @@
 	path = semaphore
 	url = https://github.com/weijiekoh/semaphore.git
     branch= master
+[submodule "micromix_relayer"]
+	path = micromix_relayer
+	url = https://github.com/weijiekoh/micromix_relayer.git
