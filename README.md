@@ -7,6 +7,8 @@
 This is the monorepo for all code and documentation for a noncustodial Ethereum
 mixer. Try it at [micromix.app](https://micromix.app).
 
+Join the [Telegram group](https://t.me/joinchat/A5mVoBRl-b6SD8aoAUVvFw) to discuss.
+
 A mixer moves ETH or ERC20 tokens from one address to another in a way that
 nobody except the sender can know for sure that these addresses are linked.
 This mixer lets a user deposit fixed amounts of ETH into a contract, and when
