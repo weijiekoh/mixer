@@ -43,7 +43,7 @@ It has the following features:
 
     - One deposit per day.
 
- .   - One-click withdrawal once UTC midnight has passed.
+    - One-click withdrawal once UTC midnight has passed.
 
     - Immediate self-withdrawals in case the user wants their funds back at the
       cost of privacy.
