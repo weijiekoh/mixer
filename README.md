@@ -58,7 +58,7 @@ It has the following features:
 
 3. Ethereum contracts:
 
-    - A modified version of the
+    - The
       [Semaphore](https://github.com/kobigurk/semaphore/) zero-knowledge
       signalling system as a base layer.
 
