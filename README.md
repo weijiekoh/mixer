@@ -142,7 +142,7 @@ use this in production.
 `0x62730609...` is also the address to which the Mixer contract will transfer
 fees.
 
-Copy `config/local-dev.yaml.example` to `config/config.example.yaml` and modify
+Copy `config/config.example.yaml` to `config/local-dev.yaml` to  and modify
 it as such:
 
 - Change `backend.hotWalletPrivKeyPath` to the absolute path to the
