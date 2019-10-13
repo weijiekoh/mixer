@@ -73,7 +73,7 @@ It has the following features:
         
         - Allows the operator to withdraw all accurred fees.
 
-    - Gas use is currently 1.2 million per deposit and 886k per withdrawal.
+    - Gas costs after the Istanbul network upgrade is currently 1.2 million per deposit and 378k per withdrawal. The gas cost for each withdrawal (before Istanbul) is 886k.
 
 ## Local development and testing
 
