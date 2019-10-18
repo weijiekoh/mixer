@@ -127,7 +127,7 @@ const deployAllContracts = async (
     await tx.wait()
 
     console.log('Setting the external nullifier of the Semaphore contract')
-    tx = await mixerContract.setSemaphoreExternalNulllifier()
+    tx = await mixerContract.setSemaphoreExternalNulllifier({ gasLimit: 100000 })
     await tx.wait()
 
     console.log('Deploying Semaphore for the Token Mixer')
@@ -151,7 +151,7 @@ const deployAllContracts = async (
     await tx.wait()
 
     console.log('Setting the external nullifier of the Token Semaphore contract')
-    tx = await tokenMixerContract.setSemaphoreExternalNulllifier()
+    tx = await tokenMixerContract.setSemaphoreExternalNulllifier({ gasLimit: 100000 })
     await tx.wait()
 
     console.log('Deploying Relayer Registry')

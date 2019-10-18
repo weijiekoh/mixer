@@ -31,16 +31,13 @@ const mix = async (
     return relayerRegistryContract.relayCall(
         mixerContract.contractAddress,
         callData,
+        { gasLimit: 1000000 }
     )
 
     //return await mixerContract.mix(
-        //genDepositProof(
-            //signal,
-            //proof,
-            //publicSignals,
-            //recipientAddress,
-            //feeAmt,
-        //),
+        //depositProof,
+        //relayerAddress,
+        //{ gasLimit: 1000000 }
     //)
 }
 
@@ -67,6 +64,7 @@ const mixERC20 = async (
     return relayerRegistryContract.relayCall(
         mixerContract.contractAddress,
         callData,
+        { gasLimit: 1000000 },
     )
 }
 

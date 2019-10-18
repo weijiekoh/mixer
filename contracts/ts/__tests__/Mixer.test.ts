@@ -51,7 +51,7 @@ const accounts = genAccounts()
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const mixAmtWei = ethers.utils.parseEther(config.get('mixAmtEth')).toString()
 const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
 const feeAmt = ethers.utils.parseEther(
     (parseFloat(config.get('feeAmtEth'))).toString()
@@ -107,7 +107,7 @@ describe('Mixer', () => {
 
         const contracts = await deployAllContracts(
             deployer,
-            mixAmtEth,
+            mixAmtWei,
             mixAmtTokens,
             accounts[0].address,
         )
@@ -125,7 +125,7 @@ describe('Mixer', () => {
                     Mixer,
                     {},
                     '0x0000000000000000000000000000000000000000',
-                    mixAmtEth,
+                    mixAmtWei,
                     '0x0000000000000000000000000000000000000000',
                 )
             )
@@ -202,14 +202,19 @@ describe('Mixer', () => {
         it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
             const identityCommitment = identities[users[0]].identityCommitment
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth.add(1) }))
+
+            const invalidValue = (BigInt(mixAmtWei) + BigInt(1)).toString()
+            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: invalidValue }))
         })
 
         it('should fail to call depositERC20', async () => {
             let reason: string = ''
             let tx
             try {
-                tx = await mixerContract.depositERC20('0x' + identityCommitment.toString(16))
+                tx = await mixerContract.depositERC20(
+                    '0x' + identityCommitment.toString(16),
+                    { gasLimit: 1000000 },
+                )
                 const receipt = await mixerContract.verboseWaitForTransaction(tx)
             } catch (err) {
                 reason = err.data[err.transactionHash].reason
@@ -218,8 +223,15 @@ describe('Mixer', () => {
         })
 
         it('should perform an ETH deposit', async () => {
+            debugger
             // make a deposit (by the first user)
-            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth })
+            const tx = await mixerContract.deposit(
+                identityCommitment.toString(),
+                { 
+                    value: '0x' + BigInt(mixAmtWei).toString(16),
+                    gasLimit: 1500000,
+                },
+            )
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             const gasUsed = receipt.gasUsed.toString()

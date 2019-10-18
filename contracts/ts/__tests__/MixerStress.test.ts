@@ -186,7 +186,7 @@ describe('Mixer', () => {
                 const identityCommitment = identity.identityCommitment
 
                 // make a deposit
-                const tx = await mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth })
+                const tx = await mixerContract.deposit(identityCommitment.toString(), { value: mixAmtEth, gasLimit: 1500000 })
                 const receipt = await mixerContract.verboseWaitForTransaction(tx)
                 const leafAddedEvent = utils.parseLogs(receipt, semaphoreContract.contract, 'LeafAdded')[0]
                 nextIndex = leafAddedEvent.leaf_index

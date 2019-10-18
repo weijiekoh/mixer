@@ -185,7 +185,7 @@ describe('Token Mixer', () => {
             let reason: string = ''
             let tx
             try {
-                tx = await mixerContract.deposit('0x' + identityCommitment.toString(16))
+                tx = await mixerContract.deposit('0x' + identityCommitment.toString(16), { gasLimit: 1500000 })
                 const receipt = await mixerContract.verboseWaitForTransaction(tx)
             } catch (err) {
                 reason = err.data[err.transactionHash].reason
@@ -203,7 +203,7 @@ describe('Token Mixer', () => {
             assert.isTrue(balanceBefore > 0)
 
             // make a deposit
-            const tx = await mixerContract.depositERC20(identityCommitment.toString())
+            const tx = await mixerContract.depositERC20(identityCommitment.toString(), { gasLimit: 1500000 })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             const gasUsed = receipt.gasUsed.toString()
