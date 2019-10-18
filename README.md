@@ -73,7 +73,7 @@ It has the following features:
         
         - Allows the operator to withdraw all accurred fees.
 
-    - Gas use is currently 1.2 million per deposit and 886k per withdrawal.
+    - Gas costs after the Istanbul network upgrade is currently 1.2 million per deposit and 378k per withdrawal. The gas cost for each withdrawal (before Istanbul) is 886k.
 
 ## Local development and testing
 
@@ -142,7 +142,7 @@ use this in production.
 `0x62730609...` is also the address to which the Mixer contract will transfer
 fees.
 
-Copy `config/local-dev.yaml.example` to `config/config.example.yaml` and modify
+Copy `config/config.example.yaml` to `config/local-dev.yaml` to  and modify
 it as such:
 
 - Change `backend.hotWalletPrivKeyPath` to the absolute path to the
