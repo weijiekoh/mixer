@@ -1,5 +1,5 @@
 import * as ethers from 'ethers'
-const config = require('../exported_config')
+const config = require('../../exported_config')
 import {
     getMixerContract,
     getTokenMixerContract,

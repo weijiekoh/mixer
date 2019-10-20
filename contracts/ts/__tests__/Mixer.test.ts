@@ -19,25 +19,14 @@ import {
 
 import { sleep } from 'mixer-utils'
 import {
-    genRandomBuffer,
     genIdentity,
     genIdentityCommitment,
-    genIdentityNullifier,
-    genEddsaKeyPair,
-    genCircuit,
-    genSignedMsg,
-    signMsg,
-    verifySignature,
-    genSignalAndSignalHash,
-    genWitness,
-    genWitnessInputs,
-    extractWitnessRoot,
-    genPathElementsAndIndex,
+    genMixerWitness,
     genProof,
-    genPublicSignals,
     verifyProof,
-    setupTree,
-} from 'mixer-crypto'
+    verifySignature,
+    genPublicSignals,
+} from 'libsemaphore'
 
 import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
@@ -70,18 +59,8 @@ for (let i=0; i < users.length; i++) {
     const user = users[i]
 
     const identity = genIdentity()
-    const { privKey, pubKey } = identity.keypair
-    const identityNullifier = identity.identityNullifier
-    const identityTrapdoor = identity.identityTrapdoor
-    const identityCommitment = genIdentityCommitment(identity)
 
-    identities[user] = {
-        identityCommitment,
-        identityNullifier,
-        identityTrapdoor,
-        privKey,
-        pubKey,
-    }
+    identities[user] = identity
 }
 
 let mimcContract
@@ -165,21 +144,18 @@ describe('Mixer', () => {
         })
 
         it('the Semaphore contract\'s external nullifier should be the mixer contract address', async () => {
-            const semaphoreExtNullifier = await semaphoreContract.external_nullifier()
+            const semaphoreExtNullifier = await semaphoreContract.getExternalNullifierByIndex(1)
             const mixerAddress = mixerContract.contractAddress
             assert.isTrue(areEqualAddresses(semaphoreExtNullifier, mixerAddress))
         })
     })
 
     describe('Deposits and withdrawals', () => {
-        // initialise the off-chain merkle tree
-        const tree = setupTree()
-
         // get the circuit, verifying key, and proving key
         const { verifyingKey, provingKey, circuit } = getSnarks()
 
         const identity = identities[users[0]]
-        const identityCommitment = identity.identityCommitment
+        const identityCommitment = genIdentityCommitment(identity)
         let nextIndex
 
         let recipientBalanceBefore
@@ -193,14 +169,7 @@ describe('Mixer', () => {
         let mixReceipt
         let mixTxFee
 
-        it('should generate identity commitments', async () => {
-            for (const user of users) {
-                assert.isTrue(identities[user].identityCommitment.toString(10).length > 0)
-            }
-        })
-
         it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
-            const identityCommitment = identities[users[0]].identityCommitment
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
 
             const invalidValue = (BigInt(mixAmtWei) + BigInt(1)).toString()
@@ -223,7 +192,6 @@ describe('Mixer', () => {
         })
 
         it('should perform an ETH deposit', async () => {
-            debugger
             // make a deposit (by the first user)
             const tx = await mixerContract.deposit(
                 identityCommitment.toString(),
@@ -252,55 +220,47 @@ describe('Mixer', () => {
         })
 
         it('should make an ETH withdrawal', async () => {
-            await tree.update(nextIndex, identityCommitment.toString())
-
+            const leaves = await mixerContract.getLeaves()
             const {
+                witness,
+                signal,
+                signalHash,
                 signature,
                 msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            } = await genWitnessInputs(
                 tree,
-                nextIndex,
-                identityCommitment,
+                identityPath,
+                identityPathIndex,
+                identityPathElements,
+            } = await genMixerWitness(
+                circuit,
+                identity,
+                leaves,
+                20,
                 recipientAddress,
                 relayerAddress,
                 feeAmt,
-                identity.privKey,
                 externalNullifier,
             )
 
-            assert.isTrue(verifySignature(msg, signature, identity.pubKey))
+            assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
 
-            const w = genWitness(
-                circuit,
-                identity.pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
-                identity.identityNullifier,
-                identity.identityTrapdoor,
-                identityPathElements,
-                identityPathIndex,
-            )
+            assert.isTrue(circuit.checkWitness(witness))
 
-            const witnessRoot = extractWitnessRoot(circuit, w)
-            assert.equal(witnessRoot, identityPath.root)
+            const publicSignals = genPublicSignals(witness, circuit)
 
-            assert.isTrue(circuit.checkWitness(w))
-
-            const publicSignals = genPublicSignals(w, circuit)
-
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(witness, provingKey)
 
             // verify the proof off-chain
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
 
-            const mixInputs = await genDepositProof(signal, proof, publicSignals, recipientAddress, feeAmt)
+            const mixInputs = genDepositProof(
+                signal,
+                proof,
+                publicSignals,
+                recipientAddress,
+                feeAmt,
+            )
 
             // check inputs to mix() using preBroadcastCheck()
             const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(

@@ -18,28 +18,14 @@ import {
 
 import { sleep } from 'mixer-utils'
 import {
-    SnarkProvingKey,
-    SnarkVerifyingKey,
-    genRandomBuffer,
     genIdentity,
     genIdentityCommitment,
-    genIdentityNullifier,
-    genEddsaKeyPair,
-    genCircuit,
-    genSignedMsg,
-    signMsg,
-    verifySignature,
-    genSignalAndSignalHash,
-    genWitness,
-    genWitnessInputs,
-    extractWitnessRoot,
-    genPathElementsAndIndex,
+    genMixerWitness,
     genProof,
-    genPublicSignals,
     verifyProof,
-    unstringifyBigInts,
-    setupTree,
-} from 'mixer-crypto'
+    verifySignature,
+    genPublicSignals,
+} from 'libsemaphore'
 
 import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
@@ -74,18 +60,7 @@ for (let i=0; i < users.length; i++) {
     const user = users[i]
 
     const identity = genIdentity()
-    const { privKey, pubKey } = identity.keypair
-    const identityNullifier = identity.identityNullifier
-    const identityTrapdoor = identity.identityTrapdoor
-    const identityCommitment = genIdentityCommitment(identity)
-
-    identities[user] = {
-        identityCommitment,
-        identityNullifier,
-        identityTrapdoor,
-        privKey,
-        pubKey,
-    }
+    identities[user] = identity
 }
 
 let mimcContract
@@ -148,21 +123,18 @@ describe('Token Mixer', () => {
         })
 
         it('the Semaphore contract\'s external nullifier should be the mixer contract address', async () => {
-            const semaphoreExtNullifier = await semaphoreContract.external_nullifier()
+            const semaphoreExtNullifier = await semaphoreContract.getExternalNullifierByIndex(1)
             const mixerAddress = mixerContract.contractAddress
             assert.isTrue(areEqualAddresses(semaphoreExtNullifier, mixerAddress))
         })
     })
 
     describe('Deposits and withdrawals', () => {
-        // initialise the off-chain merkle tree
-        const tree = setupTree()
-
         // get the circuit, verifying key, and proving key
         const { verifyingKey, provingKey, circuit } = getSnarks()
 
         const identity = identities[users[0]]
-        const identityCommitment = identity.identityCommitment
+        const identityCommitment = genIdentityCommitment(identity)
         let nextIndex
 
         let recipientBalanceBefore
@@ -174,12 +146,6 @@ describe('Token Mixer', () => {
         let relayerBalanceDiff
 
         let mixReceipt
-
-        it('should generate identity commitments', async () => {
-            for (const user of users) {
-                assert.isTrue(identities[user].identityCommitment.toString(10).length > 0)
-            }
-        })
 
         it('should fail to call deposit() (which is for ETH only)', async () => {
             let reason: string = ''
@@ -225,49 +191,36 @@ describe('Token Mixer', () => {
         })
 
         it('should make a token withdrawal', async () => {
-            await tree.update(nextIndex, identityCommitment.toString())
+            const leaves = await mixerContract.getLeaves()
 
             const {
+                witness,
+                signal,
+                signalHash,
                 signature,
                 msg,
-                signalHash,
-                signal,
+                tree,
                 identityPath,
-                identityPathElements,
                 identityPathIndex,
-            } = await genWitnessInputs(
-                    tree,
-                    nextIndex,
-                    identityCommitment,
-                    recipientAddress,
-                    relayerAddress,
-                    feeAmt,
-                    identity.privKey,
-                    externalNullifier,
-                )
-
-            assert.isTrue(verifySignature(msg, signature, identity.pubKey))
-
-            const w = genWitness(
+                identityPathElements,
+            } = await genMixerWitness(
                 circuit,
-                identity.pubKey,
-                signature,
-                signalHash,
+                identity,
+                leaves,
+                20,
+                recipientAddress,
+                relayerAddress,
+                feeAmt,
                 externalNullifier,
-                identity.identityNullifier,
-                identity.identityTrapdoor,
-                identityPathElements,
-                identityPathIndex,
             )
 
-            const witnessRoot = extractWitnessRoot(circuit, w)
-            assert.equal(witnessRoot, identityPath.root)
+            assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
 
-            assert.isTrue(circuit.checkWitness(w))
+            assert.isTrue(circuit.checkWitness(witness))
 
-            const publicSignals = genPublicSignals(w, circuit)
+            const publicSignals = genPublicSignals(witness, circuit)
 
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(witness, provingKey)
 
             // verify the proof off-chain
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)

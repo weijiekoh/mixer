@@ -12,20 +12,16 @@ import { config } from 'mixer-config'
 import * as errors from '../errors'
 import { getContract } from 'mixer-contracts'
 import {
-    bigInt,
-    genSignedMsg,
+    parseVerifyingKeyJson,
     genCircuit,
-    genPublicSignals,
-    genProof,
-    genTree,
-    genWitness,
-    genWitnessInputs,
     genIdentity,
     genIdentityCommitment,
-    genSignalAndSignalHash,
-    unstringifyBigInts,
+    genMixerWitness,
+    genProof,
     verifyProof,
-} from 'mixer-crypto'
+    verifySignature,
+    genPublicSignals,
+} from 'libsemaphore'
 
 import { post } from './utils'
 
@@ -77,14 +73,12 @@ const provingKey = fs.readFileSync(
     path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'),
 )
 
-const verifyingKey = unstringifyBigInts(
-    JSON.parse(fs.readFileSync(
-        path.join(
-            __dirname,
-            '../../../semaphore/semaphorejs/build/verification_key.json',
-        )
-    ))
-)
+const verifyingKey = parseVerifyingKeyJson(fs.readFileSync(
+    path.join(
+        __dirname,
+        '../../../semaphore/semaphorejs/build/verification_key.json',
+    )
+))
 
 const circuitPath = '../../../semaphore/semaphorejs/build/circuit.json'
 const cirDef = JSON.parse(
@@ -108,12 +102,8 @@ const schemaInvalidParamsForEth = {
     fee: '0x0',
 }
 
-const toHex = (num: string) => {
-    return '0x' + bigInt(num).toString(16)
-}
-
 let server
-const broadcasterAddress = config.backend.broadcasterAddress
+const relayerAddress = config.backend.relayerAddress
 const recipientAddress = '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef'
 
 describe('the mixer_mix_eth API call', () => {
@@ -128,57 +118,56 @@ describe('the mixer_mix_eth API call', () => {
     test('accepts a valid proof to mix tokens and credits the recipient', async () => {
         const expectedTokenAmtToReceive = depositAmtTokens - feeAmtTokens
         // mint tokens for the sender
-        await tokenContract.mint(signer.address, (depositAmtTokens * (10 ** tokenDecimals)).toString())
-        await tokenContract.approve(tokenMixerContract.address, (depositAmtTokens * (10 ** tokenDecimals)).toString())
+        await tokenContract.mint(
+            signer.address,
+            (depositAmtTokens * (10 ** tokenDecimals)).toString(),
+            { gasLimit: 100000, }
+        )
+        await tokenContract.approve(
+            tokenMixerContract.address,
+            (depositAmtTokens * (10 ** tokenDecimals)).toString(),
+            { gasLimit: 100000, }
+        )
 
         // generate an identityCommitment
         const identity = genIdentity()
         const identityCommitment = genIdentityCommitment(identity)
 
-        const tx = await tokenMixerContract.depositERC20(identityCommitment.toString())
+        const tx = await tokenMixerContract.depositERC20(
+            identityCommitment.toString(),
+            { gasLimit: 1500000, }
+        )
         const receipt = await tx.wait()
 
         expect(receipt.status).toEqual(1)
 
         const leaves = await tokenMixerContract.getLeaves()
-        const tree = await genTree(leaves)
-        const leafIndex = await tree.element_index(identityCommitment)
         const externalNullifier = tokenMixerContract.address
 
         const {
+            witness,
+            signal,
+            signalHash,
             signature,
             msg,
-            signalHash,
-            signal,
-            identityPath,
-            identityPathElements,
-            identityPathIndex,
-        } = await genWitnessInputs(
             tree,
-            leafIndex,
-            identityCommitment,
-            recipientAddress,
-            broadcasterAddress,
-            feeAmtTokens * 10 ** tokenDecimals,
-            identity.keypair.privKey,
-            externalNullifier,
-        )
-
-        const w = genWitness(
+            identityPath,
+            identityPathIndex,
+            identityPathElements,
+        } = await genMixerWitness(
             circuit,
-            identity.keypair.pubKey,
-            signature,
-            signalHash,
+            identity,
+            leaves,
+            20,
+            recipientAddress,
+            relayerAddress,
+            feeAmtTokens * 10 ** tokenDecimals,
             externalNullifier,
-            identity.identityNullifier,
-            identity.identityTrapdoor,
-            identityPath.path_elements,
-            identityPath.path_index,
         )
 
-        const publicSignals = genPublicSignals(w, circuit)
+        const publicSignals = genPublicSignals(witness, circuit)
 
-        const proof = await genProof(w, provingKey.buffer)
+        const proof = await genProof(witness, provingKey)
 
         const isVerified = verifyProof(verifyingKey, proof, publicSignals)
         expect(isVerified).toBeTruthy()
@@ -224,50 +213,39 @@ describe('the mixer_mix_eth API call', () => {
         const identity = genIdentity()
         const identityCommitment = genIdentityCommitment(identity)
 
-        const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmtEth })
+        const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmtEth, gasLimit: 1500000 })
         const receipt = await tx.wait()
         expect(receipt.status).toEqual(1)
 
         // generate withdrawal proof
 
         const leaves = await mixerContract.getLeaves()
-        const tree = await genTree(leaves)
-        const leafIndex = await tree.element_index(identityCommitment)
         const externalNullifier = mixerContract.address
+
         const {
+            witness,
+            signal,
+            signalHash,
             signature,
             msg,
-            signalHash,
-            signal,
-            identityPath,
-            identityPathElements,
-            identityPathIndex,
-        } = await genWitnessInputs(
             tree,
-            leafIndex,
-            identityCommitment,
-            recipientAddress,
-            broadcasterAddress,
-            feeAmtEth,
-            identity.keypair.privKey,
-            externalNullifier,
-        )
-
-        const w = genWitness(
+            identityPath,
+            identityPathIndex,
+            identityPathElements,
+        } = await genMixerWitness(
             circuit,
-            identity.keypair.pubKey,
-            signature,
-            signalHash,
+            identity,
+            leaves,
+            20,
+            recipientAddress,
+            relayerAddress,
+            feeAmtEth, 
             externalNullifier,
-            identity.identityNullifier,
-            identity.identityTrapdoor,
-            identityPath.path_elements,
-            identityPath.path_index,
         )
 
-        const publicSignals = genPublicSignals(w, circuit)
+        const publicSignals = genPublicSignals(witness, circuit)
 
-        const proof = await genProof(w, provingKey.buffer)
+        const proof = await genProof(witness, provingKey)
 
         const isVerified = verifyProof(verifyingKey, proof, publicSignals)
         expect(isVerified).toBeTruthy()

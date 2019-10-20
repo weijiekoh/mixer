@@ -39,7 +39,7 @@ services:
     image: jumanjiman/etcd
 
     ports:
-      - "2379:2379"
+      - "2379:2000"
 
     networks:
       - "mixer-net"

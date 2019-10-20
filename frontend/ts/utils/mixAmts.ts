@@ -1,6 +1,6 @@
 import * as ethers from 'ethers'
 
-const config = require('../exported_config')
+const config = require('../../exported_config')
 
 const mixAmtEth = config.mixAmtEth
 const operatorFeeEth = config.feeAmtEth.toString()

@@ -3,8 +3,8 @@ import {
     SnarkProvingKey,
     SnarkVerifyingKey,
     genCircuit,
-    unstringifyBigInts,
-} from 'mixer-crypto'
+    parseVerifyingKeyJson,
+} from 'libsemaphore'
 const fs = require('fs');
 const path = require('path');
 
@@ -99,14 +99,12 @@ const areEqualAddresses = (a: string, b: string) => {
 }
 
 const getSnarks = () => {
-    const verifyingKey: SnarkVerifyingKey = unstringifyBigInts(
-        JSON.parse(fs.readFileSync(
-            path.join(
-                __dirname,
-                '../../../semaphore/semaphorejs/build/verification_key.json',
-            )
-        ))
-    )
+    const verifyingKey = parseVerifyingKeyJson(fs.readFileSync(
+        path.join(
+            __dirname,
+            '../../../semaphore/semaphorejs/build/verification_key.json',
+        )
+    ))
 
     const provingKey: SnarkProvingKey = fs.readFileSync(
         path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'),

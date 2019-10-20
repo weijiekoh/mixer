@@ -1,9 +1,18 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
-        "jsx": "react"
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "outDir": "./build",
+        "jsx": "react",
+        "lib": [ "es2015", "dom" ]
     },
+    "include": [
+        "./ts"
+    ],
     "exclude": [
-        "*/dist/*"
+        "*/dist/*",
+        "*/build/*",
+        "node_modules/*"
     ]
 }

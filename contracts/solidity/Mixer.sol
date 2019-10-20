@@ -93,7 +93,7 @@ contract Mixer {
     *  address.
      */
     function setSemaphoreExternalNulllifier () public {
-        semaphore.setExternalNullifier(uint256(address(this)));
+        semaphore.addExternalNullifier(uint256(address(this)));
     }
 
     /*

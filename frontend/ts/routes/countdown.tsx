@@ -8,23 +8,17 @@ import { getMixerContract, getTokenMixerContract, getTokenContract } from '../we
 import { genMixParams, sleep } from 'mixer-utils'
 import { fetchWithoutCache } from '../utils/fetcher'
 import { 
-    genSignedMsg,
-    genPubKey,
-    genTree,
-    genWitness,
-    genWitnessInputs,
     genCircuit,
-    genPathElementsAndIndex,
-    genIdentityCommitment,
-    genSignalAndSignalHash,
+    genMixerWitness,
     genPublicSignals,
     verifySignature,
-    unstringifyBigInts,
     genProof,
+    genPubKey,
+    genIdentityCommitment,
     verifyProof,
     Identity,
-} from 'mixer-crypto'
-
+    parseVerifyingKeyJson,
+} from 'libsemaphore'
 import {
     getItems,
     getNumItems,
@@ -43,9 +37,9 @@ import {
     feeAmtWei,
 } from '../utils/mixAmts'
 
-const config = require('../exported_config')
+const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
-const broadcasterAddress = config.backend.broadcasterAddress
+const relayerAddress = config.backend.relayerAddress
 const tokenDecimals = config.tokenDecimals
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
@@ -114,8 +108,7 @@ export default () => {
 
             const leaves = await mixerContract.getLeaves()
 
-            const tree = await genTree(leaves)
-
+            // TODO: serialise and deserialise the identity
             const pubKey = genPubKey(identityStored.privKey)
 
             const identity: Identity = {
@@ -126,52 +119,24 @@ export default () => {
 
             const identityCommitment = genIdentityCommitment(identity)
 
-            const leafIndex = await tree.element_index(identityCommitment)
-
-            const {
-                signature,
-                msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            } = await genWitnessInputs(
-                    tree,
-                    leafIndex,
-                    identityCommitment,
-                    recipientAddress,
-                    broadcasterAddress,
-                    feeAmt,
-                    identityStored.privKey,
-                    externalNullifier,
-                )
-
-            const validSig = verifySignature(msg, signature, pubKey)
-            if (!validSig) {
-                throw {
-                    code: ErrorCodes.INVALID_SIG,
-                }
-            }
-
             progress('Downloading circuit...')
             const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             progress('Generating witness...')
-            let w
+            let result
             try {
-                w = genWitness(
-                        circuit,
-                        pubKey,
-                        signature,
-                        signalHash,
-                        externalNullifier,
-                        identityStored.identityNullifier,
-                        identityStored.identityTrapdoor,
-                        identityPathElements,
-                        identityPathIndex,
-                    )
+                result = await genMixerWitness(
+                    circuit, 
+                    identity,
+                    leaves,
+                    20,
+                    recipientAddress,
+                    relayerAddress,
+                    feeAmt,
+                    externalNullifier,
+                )
+
             } catch (err) {
                 console.error(err)
                 throw {
@@ -179,7 +144,14 @@ export default () => {
                 }
             }
 
-            if (!circuit.checkWitness(w)) {
+            const validSig = verifySignature(result.msg, result.signature, pubKey)
+            if (!validSig) {
+                throw {
+                    code: ErrorCodes.INVALID_SIG,
+                }
+            }
+
+            if (!circuit.checkWitness(result.witness)) {
                 throw {
                     code: ErrorCodes.INVALID_WITNESS,
                 }
@@ -191,14 +163,15 @@ export default () => {
             )
 
             progress('Downloading verification key...')
-            const verifyingKey = unstringifyBigInts(
-                await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
+            const verifyingKey = parseVerifyingKeyJson(
+                // @ts-ignore
+                await (await fetch(config.frontend.snarks.paths.verificationKey)).text()
             )
 
             progress('Generating proof...')
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(result.witness, provingKey)
 
-            const publicSignals = genPublicSignals(w, circuit)
+            const publicSignals = genPublicSignals(result.witness, circuit)
 
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
 
@@ -209,7 +182,7 @@ export default () => {
             }
 
             const params = genMixParams(
-                signal,
+                result.signal,
                 proof,
                 recipientAddress,
                 BigInt(feeAmt.toString()),
@@ -382,7 +355,7 @@ export default () => {
                             withdrawBtn
                         }
 
-                        { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
+                        { (context.error != null && context.error['code'] === 'UNSUPPORTED_NETWORK') &&
                             <p>
                                 To continue, please connect to the correct Ethereum network.
                             </p>
@@ -475,7 +448,7 @@ export default () => {
 
                                     {context.error == null && withdrawBtn}
 
-                                    { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
+                                    { (context.error != null && context.error['code'] === 'UNSUPPORTED_NETWORK') &&
                                         <p>
                                             To continue, please connect to the correct Ethereum network.
                                         </p>

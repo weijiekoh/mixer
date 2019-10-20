@@ -4,7 +4,7 @@ import { useWeb3Context } from 'web3-react'
 import * as ethers from 'ethers'
 import { utils } from 'mixer-contracts'
 import { sleep } from 'mixer-utils'
-const config = require('../exported_config')
+const config = require('../../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
 import { quickWithdrawEth, quickWithdrawTokens } from '../web3/quickWithdraw'
@@ -14,22 +14,17 @@ const deployedAddresses = config.chain.deployedAddresses
 const tokenDecimals = config.tokenDecimals
 
 import { 
-    genSignedMsg,
-    genPubKey,
-    genTree,
     genCircuit,
-    genWitnessInputs,
-    genWitness,
-    genIdentityCommitment,
-    genPathElementsAndIndex,
-    genSignalAndSignalHash,
+    genMixerWitness,
     genPublicSignals,
     verifySignature,
-    unstringifyBigInts,
+    genPubKey,
     genProof,
+    genIdentityCommitment,
     verifyProof,
     Identity,
-} from 'mixer-crypto'
+    parseVerifyingKeyJson,
+} from 'libsemaphore'
 
 import { ErrorCodes } from '../errors'
 
@@ -116,15 +111,13 @@ export default () => {
             const mixerContract = isEth ?
                 await getMixerContract(context) : await getTokenMixerContract(context)
 
-            const broadcasterAddress = context.account
+            const relayerAddress = context.account
 
             const externalNullifier = mixerContract.address
 
             progress('Downloading leaves...')
 
             const leaves = await mixerContract.getLeaves()
-
-            const tree = await genTree(leaves)
 
             const pubKey = genPubKey(identityStored.privKey)
 
@@ -136,52 +129,23 @@ export default () => {
 
             const identityCommitment = genIdentityCommitment(identity)
 
-            const leafIndex = await tree.element_index(identityCommitment)
-
-            const {
-                signature,
-                msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            } = await genWitnessInputs(
-                    tree,
-                    leafIndex,
-                    identityCommitment,
-                    recipientAddress,
-                    broadcasterAddress,
-                    feeAmt,
-                    identityStored.privKey,
-                    externalNullifier,
-                )
-
-            const validSig = verifySignature(msg, signature, pubKey)
-            if (!validSig) {
-                throw {
-                    code: ErrorCodes.INVALID_SIG,
-                }
-            }
-
             progress('Downloading circuit...')
             const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
             progress('Generating witness...')
-            let w
+            let result
             try {
-                w = genWitness(
-                        circuit,
-                        pubKey,
-                        signature,
-                        signalHash,
-                        externalNullifier,
-                        identityStored.identityNullifier,
-                        identityStored.identityTrapdoor,
-                        identityPathElements,
-                        identityPathIndex,
-                    )
+                result = await genMixerWitness(
+                    circuit, 
+                    identity,
+                    leaves,
+                    20,
+                    recipientAddress,
+                    relayerAddress,
+                    feeAmt,
+                    externalNullifier,
+                )
             } catch (err) {
                 console.error(err)
                 throw {
@@ -189,7 +153,15 @@ export default () => {
                 }
             }
 
-            if (!circuit.checkWitness(w)) {
+            const validSig = verifySignature(result.msg, result.signature, pubKey)
+            if (!validSig) {
+                throw {
+                    code: ErrorCodes.INVALID_SIG,
+                }
+            }
+
+
+            if (!circuit.checkWitness(result.witness)) {
                 throw {
                     code: ErrorCodes.INVALID_WITNESS,
                 }
@@ -203,14 +175,15 @@ export default () => {
 
             progress('Downloading verifying key')
 
-            const verifyingKey = unstringifyBigInts(
-                await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
+            const verifyingKey = parseVerifyingKeyJson(
+                // @ts-ignore
+                await (await fetch(config.frontend.snarks.paths.verificationKey)).text()
             )
 
             progress('Generating proof')
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(result.witness, provingKey)
 
-            const publicSignals = genPublicSignals(w, circuit)
+            const publicSignals = genPublicSignals(result.witness, circuit)
 
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
 
@@ -223,27 +196,16 @@ export default () => {
             progress('Performing transaction')
 
             let tx
-            if (isEth) {
-                tx = await quickWithdrawEth(
-                    context,
-                    signal,
-                    proof,
-                    publicSignals,
-                    recipientAddress,
-                    feeAmt.toString(),
-                    broadcasterAddress,
-                )
-            } else {
-                tx = await quickWithdrawTokens(
-                    context,
-                    signal,
-                    proof,
-                    publicSignals,
-                    recipientAddress,
-                    feeAmt.toString(),
-                    broadcasterAddress,
-                )
-            }
+            const quickWithdrawFunc = isEth ? quickWithdrawEth : quickWithdrawTokens
+            tx = await quickWithdrawFunc(
+                context,
+                result.signal,
+                proof,
+                publicSignals,
+                recipientAddress,
+                feeAmt.toString(),
+                relayerAddress,
+            )
 
             setPendingTxHash(tx.hash)
             setProofGenProgress('')

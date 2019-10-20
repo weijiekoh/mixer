@@ -4,7 +4,7 @@ import { Redirect } from 'react-router-dom'
 import * as ethers from 'ethers'
 import { Buffer } from 'buffer'
 import { useWeb3Context } from 'web3-react'
-const config = require('../exported_config')
+const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
 import { Erc20ApproveButton, TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
@@ -24,7 +24,7 @@ import { depositEth, depositTokens, getTokenAllowance, approveTokens } from '../
 import {
     genIdentity,
     genIdentityCommitment,
-} from 'mixer-crypto'
+} from 'libsemaphore'
 
 import {
     mixAmtEth,
@@ -291,7 +291,7 @@ export default () => {
                         </div>
                     }
 
-                    { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') ?
+                    { (context.error != null && context.error['code'] === 'UNSUPPORTED_NETWORK') ?
                         <p>
                             Please connect to
                             the {config.frontend.supportedNetworkName} Ethereum

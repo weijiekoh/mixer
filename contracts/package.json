@@ -39,7 +39,7 @@
   "dependencies": {
     "config": "^3.1.0",
     "mixer-config": "1.0.0",
-    "mixer-crypto": "1.0.0",
+    "libsemaphore": "^0.0.16",
     "mixer-utils": "1.0.0",
     "openzeppelin-solidity": "^2.3.0"
   }

@@ -6,30 +6,20 @@ import { config } from 'mixer-config'
 import { getContract } from 'mixer-contracts'
 import {
     verifyProof,
-    bigInt,
     unstringifyBigInts,
-    genSignalAndSignalHash,
-} from 'mixer-crypto'
+    genMixerSignal,
+    keccak256HexToBigInt,
+} from 'libsemaphore'
 import * as Locker from 'node-etcd-lock'
 import { genValidator } from './utils'
 const deployedAddresses = config.get('chain.deployedAddresses')
-const broadcasterAddress = config.get('backend.broadcasterAddress')
+const relayerAddress = config.get('backend.relayerAddress')
 
 const hotWalletPrivKey = JSON.parse(
     fs.readFileSync(config.get('backend.hotWalletPrivKeyPath'), 'utf-8')
 ).privateKey
 
 const verificationKey = require('@mixer-backend/verification_key.json')
-
-//struct DepositProof {
-    //bytes32 signal;
-    //uint[2] a;
-    //uint[2][2] b;
-    //uint[2] c;
-    //uint[4] input;
-    //address recipientAddress;
-    //uint256 fee;
-//}
 
 interface DepositProof {
     signal: string
@@ -49,13 +39,10 @@ const areEqualAddresses = (a: string, b: string) => {
 const operatorFeeWei = ethers.utils.parseUnits(config.get('feeAmtEth').toString(), 'ether')
 const operatorFeeTokens = config.get('feeAmtTokens')
 
-const _mixRoute = (
-    // @ts-ignore
-    forTokens: boolean,
-) => async (
+const _mixRoute = (forTokens: boolean) => async (
     depositProof: DepositProof,
 ) => {
-    const publicInputs = depositProof.input.map(bigInt)
+    const publicInputs = depositProof.input.map(BigInt)
 
     // verify the fee
     let enoughFees
@@ -67,7 +54,11 @@ const _mixRoute = (
         enoughFees = fee.gte(operatorFeeWei)
     }
 
-    const insufficientFeeError = forTokens ? 'BACKEND_MIX_INSUFFICIENT_TOKEN_FEE' : 'BACKEND_MIX_INSUFFICIENT_ETH_FEE'
+    const insufficientFeeError = forTokens ?
+        'BACKEND_MIX_INSUFFICIENT_TOKEN_FEE'
+        :
+        'BACKEND_MIX_INSUFFICIENT_ETH_FEE'
+
     if (!enoughFees) {
         const errorMsg = 'the fee is to low'
         throw {
@@ -80,11 +71,10 @@ const _mixRoute = (
         }
     }
 
-    const nullifierAddress = forTokens ? deployedAddresses.TokenMixer : deployedAddresses.Mixer
-    const mixerContractAddress = nullifierAddress
+    const mixerContractAddress = forTokens ? deployedAddresses.TokenMixer : deployedAddresses.Mixer
 
     // verify the external nullifier
-    if (!areEqualAddresses(nullifierAddress, depositProof.input[3])) {
+    if (!areEqualAddresses(mixerContractAddress, depositProof.input[3])) {
         const errorMsg = 'the external nullifier in the input is invalid'
         throw {
             code: errors.errorCodes.BACKEND_MIX_EXTERNAL_NULLIFIER_INVALID,
@@ -97,11 +87,13 @@ const _mixRoute = (
     }
 
     // verify the signal off-chain
-    const { signalHash, signal } = genSignalAndSignalHash(
+    const signal = genMixerSignal(
         depositProof.recipientAddress,
-        broadcasterAddress,
+        relayerAddress,
         depositProof.fee,
     )
+
+    const signalHash = keccak256HexToBigInt(signal)
 
     const signalHashInvalid = '0x' + signalHash.toString(16) !== depositProof.input[2]
     const signalInvalid = depositProof.signal.toLowerCase() !== signal.toLowerCase()
@@ -146,19 +138,19 @@ const _mixRoute = (
     // this is only for the off-chain verification
     // be careful with the ordering of depositProof.b
     const proof = {
-        pi_a: [...depositProof.a.map(bigInt), bigInt(1)],
+        pi_a: [...depositProof.a.map(BigInt), BigInt(1)],
         pi_b: [
             [
-                bigInt(depositProof.b[0][1]),
-                bigInt(depositProof.b[0][0]),
+                BigInt(depositProof.b[0][1]),
+                BigInt(depositProof.b[0][0]),
             ],
             [
-                bigInt(depositProof.b[1][1]),
-                bigInt(depositProof.b[1][0]),
+                BigInt(depositProof.b[1][1]),
+                BigInt(depositProof.b[1][0]),
             ],
-            [1, 0].map(bigInt),
+            [1, 0].map(BigInt),
         ],
-        pi_c: [...depositProof.c.map(bigInt), bigInt(1)],
+        pi_c: [...depositProof.c.map(BigInt), BigInt(1)],
     }
 
     // verify the snark off-chain
@@ -259,9 +251,9 @@ const _mixRoute = (
     let mixCallData
 
     if (forTokens) {
-        mixCallData = mixerIface.functions.mixERC20.encode([depositProof, broadcasterAddress])
+        mixCallData = mixerIface.functions.mixERC20.encode([depositProof, relayerAddress])
     } else {
-        mixCallData = mixerIface.functions.mix.encode([depositProof, broadcasterAddress])
+        mixCallData = mixerIface.functions.mix.encode([depositProof, relayerAddress])
     }
 
     const relayerRegistryIface = new ethers.utils.Interface(relayerRegistryContract.interface.abi)
@@ -273,13 +265,21 @@ const _mixRoute = (
     )
 
     const unsignedTx = {
-        to: relayerRegistryContract.address,
+        to: mixerContractAddress,
         value: 0,
-        data: relayCallData,
+        data: mixCallData,
         nonce,
         gasPrice: ethers.utils.parseUnits('20', 'gwei'),
         gasLimit: config.get('chain.mix.gasLimit'),
     }
+    //const unsignedTx = {
+        //to: relayerRegistryContract.address,
+        //value: 0,
+        //data: relayCallData,
+        //nonce,
+        //gasPrice: ethers.utils.parseUnits('20', 'gwei'),
+        //gasLimit: config.get('chain.mix.gasLimit'),
+    //}
 
     // Sign the transaction
     const signedData = await signer.sign(unsignedTx)

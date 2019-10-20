@@ -11,22 +11,22 @@ chain:
   url: "https://kovan.infura.io/v3/5d37c494621a43558d77c90e368d4022"
   chainId: 42
   mix:
-    gasLimit: 8000000
+    gasLimit: 500000
   privateKeysPath: "../kovanPrivateKeys.json"
   deployedAddresses:
-    MiMC: '0x9DD726D927F9b406DcD0065a61124A31DC7A4D96'
-    Semaphore: '0x5d7Df26340f4A16797597E07f99b27170CBe1bc8'
-    Mixer: '0xCF321783a827d5422822a45f1F3543e3994f8361'
-    TokenMixer: '0xcF95B8393321B03d7E50A7043eE580B9fF605E3b'
-    TokenSemaphore: '0x0060FF11695ADBCBe0B751d3DEac45e415dA3D11'
-    RelayerRegistry: '0xB6A62103bf0d44343cd1D0d1B9a3D106F7b06874'
+    MiMC: '0x4e8E48FE6D2A6eec138269a92085b1110C8A763D'
+    Semaphore: '0x341B0D9B7ac18067fF1a99D9265c33Ae29ECdbf7'
+    Mixer: '0xecaFa9BE8fc203a064aFb04dbe53f98E55ddFBD1'
+    TokenMixer: '0x12E12EFD0046613F35Ac82406a0b429E16F258dd'
+    TokenSemaphore: '0x2d789d11E697bF39Ca3d9C07F565C9065DD02542'
+    RelayerRegistry: '0xb080FCf2c1ABDa24e161AD68D338b4DEF3073d02'
     Token: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2'
 
 backend:
   port: 3000
   host: "http://localhost"
   hotWalletPrivKeyPath: "/run/secrets/hotWalletPrivKeyPath"
-  broadcasterAddress: "0x53BE836678eA3Dbf7257ef32954184Ac06C2D4b1"
+  relayerAddress: "0x53BE836678eA3Dbf7257ef32954184Ac06C2D4b1"
   etcd:
     host: "mixer-etcd"
     port: 2379
@@ -35,9 +35,9 @@ backend:
 frontend:
   snarks:
     paths:
-      verificationKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/verification_key.json'
-      provingKey: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/proving_key.bin'
-      circuit: 'https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/circuit.json'
+      verificationKey: 'https://micromixtest.blob.core.windows.net/snarks/verification_key.json'
+      provingKey: 'https://micromixtest.blob.core.windows.net/snarks/proving_key.bin'
+      circuit: 'https://micromixtest.blob.core.windows.net/snarks/circuit.json'
   countdown:
     endsAtUtcMidnight: true
     endsAfterSecs: 5

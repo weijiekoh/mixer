@@ -1,7 +1,6 @@
 import * as ethers from 'ethers'
-const mixerAbi = require('../abis/Mixer-abi.json')
 import { getRelayerRegistryContract, getMixerContract, getTokenMixerContract } from './mixer'
-const config = require('../exported_config')
+const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
 
 const genDepositProof = (

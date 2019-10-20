@@ -1,16 +1,14 @@
 #!/bin/bash
 
-VERIFIER_SOL="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/verifier.sol"
-VERIFICATION_KEY_JSON="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/verification_key.json"
-PROVING_KEY_BIN="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/proving_key.bin"
-CIRCUIT_JSON="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/audit_v1/circuit.json"
-#PROVING_KEY_JSON="https://kobigurk.s3.us-west-1.amazonaws.com/mixer/proving_key.json"
+VERIFIER_SOL="https://micromixtest.blob.core.windows.net/snarks/verifier.sol"
+VERIFICATION_KEY_JSON="https://micromixtest.blob.core.windows.net/snarks/verification_key.json"
+PROVING_KEY_BIN="https://micromixtest.blob.core.windows.net/snarks/proving_key.bin"
+CIRCUIT_JSON="https://micromixtest.blob.core.windows.net/snarks/circuit.json"
 
 CIRCUIT_JSON_PATH="semaphore/semaphorejs/build/circuit.json"
 PROVING_KEY_BIN_PATH="semaphore/semaphorejs/build/proving_key.bin"
 VERIFIER_SOL_PATH="semaphore/semaphorejs/build/verifier.sol"
 VERIFICATION_KEY_PATH="semaphore/semaphorejs/build/verification_key.json"
-#PROVING_KEY_JSON_PATH="semaphore/semaphorejs/build/proving_key.json"
 
 mkdir -p semaphore/semaphorejs/build
 

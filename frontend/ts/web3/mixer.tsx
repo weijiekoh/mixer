@@ -1,9 +1,9 @@
 import * as ethers from 'ethers'
-const mixerAbi = require('../abis/Mixer-abi.json')
-const semaphoreAbi = require('../abis/Semaphore-abi.json')
-const relayerRegistryAbi = require('../abis/RelayerRegistry-abi.json')
-const tokenAbi = require('../abis/ERC20-abi.json')
-const config = require('../exported_config')
+const mixerAbi = require('../../abis/Mixer-abi.json')
+const semaphoreAbi = require('../../abis/Semaphore-abi.json')
+const relayerRegistryAbi = require('../../abis/RelayerRegistry-abi.json')
+const tokenAbi = require('../../abis/ERC20-abi.json')
+const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
 
 // It's not trivial to generalise these functions as Parcel won't let you

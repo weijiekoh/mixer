@@ -3,11 +3,11 @@
 // deterministically derived using mixer-crypto's genIdentityCommitment
 // function, so we don't store it.
 
-const config = require('./exported_config')
+const config = require('../exported_config')
 import {
     Identity,
     EddsaPrivateKey,
-} from 'mixer-crypto'
+} from 'libsemaphore'
 import { Buffer } from 'buffer'
 
 interface IdentityStored {

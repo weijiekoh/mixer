@@ -33,6 +33,7 @@ const TxButton = ({
     }
 
     return (
+        // @ts-ignore
         <span
             onClick={handleClick}
             disabled={isDisabled}
@@ -67,6 +68,7 @@ const Erc20ApproveButton = ({
     }
 
     return (
+        // @ts-ignore
         <span
             onClick={handleClick}
             disabled={isDisabled}
