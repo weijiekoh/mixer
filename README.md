@@ -318,7 +318,7 @@ chmod 400 MIXER_SECRETS/hotWalletPrivKey.json
 Next, run:
 
 ```bash
-NODE_ENV=docker-dev ./scripts/buildImages.sh && \
+NODE_ENV=docker ./scripts/buildImages.sh && \
 ./scripts/runImages.sh
 ```
 
