@@ -2,3 +2,6 @@
 	path = semaphore
 	url = https://github.com/weijiekoh/semaphore.git
     branch= master
+[submodule "surrogeth"]
+	path = surrogeth
+	url = https://github.com/weijiekoh/surrogeth.git
