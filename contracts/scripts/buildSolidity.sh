@@ -12,6 +12,9 @@ mkdir -p ./compiled/abis
 cp ../semaphore/semaphorejs/contracts/*.sol solidity/
 cp ../semaphore/semaphorejs/build/verifier.sol solidity/
 
+# Copy the Surrogeth contracts from the submodule into solidity/
+cp ../surrogeth/burnRegistry/contracts/ERC20Relayer*.sol ../surrogeth/burnRegistry/contracts/Relayer*.sol solidity/
+
 # Compile the contracts
 
 npx etherlime compile --solcVersion=native --buildDirectory=compiled --workingDirectory=solidity --exportAbi 

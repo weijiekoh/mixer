@@ -1,3 +1,4 @@
+surrogeth/surrogethd/.env
 default.etcd
 # prod config
 config/*-prod.yaml

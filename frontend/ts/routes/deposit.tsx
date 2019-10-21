@@ -11,6 +11,7 @@ import { TxHashMessage } from '../components/txHashMessage'
 import { sleep } from 'mixer-utils'
 // @ts-ignore
 import cat from '../../img/cat.png'
+import { SurrogethClient } from 'surrogeth-client'
 
 import {
     initStorage,
@@ -242,6 +243,24 @@ export default () => {
         const t = e.target.value
         setTokenType(t)
     }
+
+    //const testSurrogeth = async () => {
+        //const library = context.library
+        //const connector = context.connector
+        //if (library && connector) {
+            //const provider = new ethers.providers.Web3Provider(
+                //await connector.getProvider(config.chain.chainId),
+            //)
+            //const surrogeth = new SurrogethClient(
+                //provider,
+                //config.surrogeth.client.network,
+                //config.chain.deployedAddresses.RelayerReputation,
+            //)
+            //debugger
+            //console.log(await surrogeth.getBestRelayerIP())
+        //}
+    //}
+    //testSurrogeth()
 
     checkBalances()
     checkTokenAllowance()

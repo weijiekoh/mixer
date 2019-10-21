@@ -8,6 +8,8 @@ import { config } from 'mixer-config'
 import { genAccounts } from '../accounts'
 
 const ERC20Mintable = require('@mixer-contracts/compiled/ERC20Mintable.json')
+const RelayerForwarder = require('@mixer-contracts/compiled/RelayerForwarder.json')
+const RelayerReputation = require('@mixer-contracts/compiled/RelayerReputation.json')
 
 const deploySemaphore = (deployer, Semaphore, libraries) => {
     return deployer.deploy(
@@ -28,7 +30,8 @@ const _deployMixer = (
     tokenAddress,
 ) => {
 
-    return deployer.deploy(Mixer,
+    return deployer.deploy(
+        Mixer,
         {},
         semaphoreContractAddress,
         mixAmtTokens.toString(),
@@ -51,6 +54,30 @@ const deployEthMixer = (
         semaphoreContractAddress, 
         mixAmtEth,
         '0x0000000000000000000000000000000000000000',
+    )
+}
+
+const deployRF = (
+    deployer: any,
+    num: number,
+    denom: number,
+) => {
+    return deployer.deploy(
+        RelayerForwarder,
+        {},
+        num,
+        denom,
+    )
+}
+
+const deployRR = (
+    deployer: any,
+    rfAddress: string,
+) => {
+    return deployer.deploy(
+        RelayerReputation,
+        {},
+        rfAddress,
     )
 }
 
@@ -80,6 +107,15 @@ const deployAllContracts = async (
     let tokenContract
     let tokenDecimals = config.get('tokenDecimals')
 
+    // Deploy RelayerReputation if it's not specified in config. This should be
+    // the case for local-dev.yaml.
+    // In Kovan, the RR address is ___
+    let rrAddress = config.chain.deployedAddresses.RelayerReputation
+    let relayerReputationContract
+
+    let rfAddress = config.chain.deployedAddresses.RelayerForwarder
+    let relayerForwarderContract
+
     if (config.env !== 'local-dev') {
         console.log('Using existing token contract at', tokenAddress)
         tokenContract = new ethers.Contract(
@@ -87,10 +123,46 @@ const deployAllContracts = async (
             ERC20Mintable.abi,
             deployer.signer,
         )
+
+        console.log('Using existing RelayerReputation contract at', rrAddress)
+        relayerReputationContract = new ethers.Contract(
+            rrAddress,
+            RelayerReputation.abi,
+            deployer.signer,
+        )
+
+        console.log('Using existing RelayerForwarder contract at', rrAddress)
+        relayerForwarderContract = new ethers.Contract(
+            rfAddress,
+            RelayerForwarder.abi,
+            deployer.signer,
+        )
     } else {
+        const num = config.surrogeth.surrogethd.burnRegistry.RelayerForwarder.burnNum
+        const denom = config.surrogeth.surrogethd.burnRegistry.RelayerForwarder.burnDenom
+
         console.log('Deploying token')
         tokenContract = await deployToken(deployer)
         tokenAddress = tokenContract.address
+
+        console.log('Deploying RelayerForwarder')
+        relayerForwarderContract = await deployRF(deployer, num, denom)
+        rfAddress = relayerForwarderContract.contractAddress ? relayerForwarderContract.contractAddress : relayerForwarderContract.address
+
+        console.log('Deploying RelayerReputation')
+        relayerReputationContract = await deployRR(deployer, rfAddress)
+        rrAddress = relayerReputationContract.contractAddress ? relayerReputationContract.contractAddress : relayerReputationContract.address
+
+        console.log('Setting the RelayerReputation address in RelayerForwarder')
+        await relayerForwarderContract.setReputation(rrAddress)
+
+        console.log('Setting a relayer locator')
+
+        await relayerReputationContract.setRelayerLocator(
+            config.surrogeth.surrogethd.relayerAddress,
+            config.surrogeth.surrogethd.locator.url,
+            config.surrogeth.surrogethd.locator.type,
+        )
     }
 
     tokenAddress = tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address
@@ -98,7 +170,6 @@ const deployAllContracts = async (
     const MiMC = require('@mixer-contracts/compiled/MiMC.json')
     const Semaphore = require('@mixer-contracts/compiled/Semaphore.json')
     const Mixer = require('@mixer-contracts/compiled/Mixer.json')
-    const RelayerRegistry = require('@mixer-contracts/compiled/RelayerRegistry.json')
 
     console.log('Deploying MiMC')
     const mimcContract = await deployer.deploy(MiMC, {})
@@ -154,9 +225,6 @@ const deployAllContracts = async (
     tx = await tokenMixerContract.setSemaphoreExternalNulllifier({ gasLimit: 100000 })
     await tx.wait()
 
-    console.log('Deploying Relayer Registry')
-    const relayerRegistryContract = await deployer.deploy(RelayerRegistry, {})
-
     if (config.env === 'local-dev') {
         console.log('Minting tokens')
         await tokenContract.mint(adminAddress, '100000000000000000000000000')
@@ -166,7 +234,8 @@ const deployAllContracts = async (
         mimcContract,
         semaphoreContract,
         mixerContract,
-        relayerRegistryContract,
+        relayerForwarderContract,
+        relayerReputationContract,
         tokenSemaphoreContract,
         tokenMixerContract,
         tokenContract,
@@ -206,7 +275,8 @@ const main = async () => {
         mimcContract,
         semaphoreContract,
         mixerContract,
-        relayerRegistryContract,
+        relayerReputationContract,
+        relayerForwarderContract,
         tokenContract,
         tokenSemaphoreContract,
         tokenMixerContract,
@@ -223,7 +293,8 @@ const main = async () => {
         Mixer: mixerContract.contractAddress,
         TokenMixer: tokenMixerContract.contractAddress,
         TokenSemaphore: tokenSemaphoreContract.contractAddress,
-        RelayerRegistry: relayerRegistryContract.contractAddress,
+        RelayerForwarder: relayerForwarderContract.contractAddress,
+        RelayerReputation: relayerReputationContract.contractAddress,
         Token: tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address,
     }
 

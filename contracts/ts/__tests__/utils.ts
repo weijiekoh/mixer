@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const mix = async (
-    relayerRegistryContract,
+    relayerForwarderContract,
     mixerContract,
     signal,
     proof,
@@ -28,7 +28,7 @@ const mix = async (
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const callData = iface.functions.mix.encode([depositProof, relayerAddress])
 
-    return relayerRegistryContract.relayCall(
+    return relayerForwarderContract.relayCall(
         mixerContract.contractAddress,
         callData,
         { gasLimit: 1000000 }
@@ -42,7 +42,7 @@ const mix = async (
 }
 
 const mixERC20 = async (
-    relayerRegistryContract,
+    relayerForwarderContract,
     mixerContract,
     signal,
     proof,
@@ -61,7 +61,7 @@ const mixERC20 = async (
     const iface = new ethers.utils.Interface(mixerContract.interface.abi)
     const callData = iface.functions.mixERC20.encode([depositProof, relayerAddress])
 
-    return relayerRegistryContract.relayCall(
+    return relayerForwarderContract.relayCall(
         mixerContract.contractAddress,
         callData,
         { gasLimit: 1000000 },

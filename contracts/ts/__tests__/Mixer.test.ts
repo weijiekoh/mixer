@@ -66,7 +66,7 @@ for (let i=0; i < users.length; i++) {
 let mimcContract
 let mixerContract
 let semaphoreContract
-let relayerRegistryContract
+let relayerForwarderContract
 let externalNullifier : string
 
 describe('Mixer', () => {
@@ -93,7 +93,7 @@ describe('Mixer', () => {
         mimcContract = contracts.mimcContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
-        relayerRegistryContract = contracts.relayerRegistryContract
+        relayerForwarderContract = contracts.relayerForwarderContract
     })
 
     describe('Contract deployments', () => {
@@ -277,7 +277,7 @@ describe('Mixer', () => {
             relayerBalanceBefore = await deployer.provider.getBalance(relayerAddress)
 
             const mixTx = await mix(
-                relayerRegistryContract,
+                relayerForwarderContract,
                 mixerContract,
                 signal,
                 proof,

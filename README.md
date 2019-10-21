@@ -205,13 +205,41 @@ cd backend && \
 npm run server
 ```
 
+In another terminal, make `tsc` automatically rebuild the frontend code if it
+is modified:
+
+```bash
+# Assuming you are in mixer/
+
+cd frontend && \
+npm run watch-watch
+```
+
 In another terminal, launch the frontend:
 
 ```bash
 # Assuming you are in mixer/
 
 cd frontend && \
-npm run watch
+npm run webpack-watch
+```
+
+In another terminal, run a `surrogeth` daemon. You have to configure it first by creating a file `surrogeth/surrogethd/.env`:
+
+```
+SURROGETH_PRIVATE_KEY=0x................................................................
+LOCAL_RPC_URL="http://127.0.0.1:8005"
+SURROGETH_MIN_TX_PROFIT=100000000000000
+```
+
+Run Surrogeth:
+
+```
+# Assuming you are in mixer/
+
+cd surrogeth/surrogethd && \
+npm i &&
+npm run start
 ```
 
 Finally, launch a HTTP server to serve the zk-SNARK content:

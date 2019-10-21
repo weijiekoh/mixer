@@ -66,7 +66,7 @@ for (let i=0; i < users.length; i++) {
 let mimcContract
 let mixerContract
 let semaphoreContract
-let relayerRegistryContract
+let relayerForwarderContract
 let tokenContract
 let externalNullifier : string
 
@@ -94,7 +94,7 @@ describe('Token Mixer', () => {
         mimcContract = contracts.mimcContract
         semaphoreContract = contracts.tokenSemaphoreContract
         mixerContract = contracts.tokenMixerContract
-        relayerRegistryContract = contracts.relayerRegistryContract
+        relayerForwarderContract = contracts.relayerForwarderContract
         tokenContract = contracts.tokenContract
 
         // mint tokens
@@ -243,7 +243,7 @@ describe('Token Mixer', () => {
             relayerBalanceBefore = await tokenContract.balanceOf(relayerAddress)
 
             const mixTx = await mixERC20(
-                relayerRegistryContract,
+                relayerForwarderContract,
                 mixerContract,
                 signal,
                 proof,
