@@ -19,7 +19,8 @@ chain:
     Mixer: '0xecaFa9BE8fc203a064aFb04dbe53f98E55ddFBD1'
     TokenMixer: '0x12E12EFD0046613F35Ac82406a0b429E16F258dd'
     TokenSemaphore: '0x2d789d11E697bF39Ca3d9C07F565C9065DD02542'
-    RelayerRegistry: '0xb080FCf2c1ABDa24e161AD68D338b4DEF3073d02'
+    RelayerForwarder: '0x5988185601ba257cd1d0c4764042bf2e26f92fb7'
+    RelayerReputation: '0x90cD6Abb6683FcB9Da915454cC49F3fa4cb0a5b1'
     Token: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2'
 
 backend:
