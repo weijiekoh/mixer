@@ -35,7 +35,7 @@ const getRelayer = async (_) => {
         //return relayers[0]
     //}
     return {
-        locator: 'https://micromixrelayer.herokuapp.com/',
+        locator: 'https://micromixrelayer.herokuapp.com',
         locatorType: 'ip',
         address: '0x5E8b2E54A723eA152fD022cEa531C789DA07D289',
     }
