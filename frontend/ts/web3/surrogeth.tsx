@@ -16,22 +16,28 @@ const genSurrogethClient = (provider) => {
 }
 
 // Returns the first relayer from Surrogeth
-const getRelayer = async (context) => {
-    const library = context.library
-    const connector = context.connector
-    if (library && connector) {
-        const provider = new ethers.providers.Web3Provider(
-            await connector.getProvider(config.chain.chainId),
-        )
-        const surrogeth = genSurrogethClient(provider)
+const getRelayer = async (_) => {
+//const getRelayer = async (context) => {
+    //const library = context.library
+    //const connector = context.connector
+    //if (library && connector) {
+        //const provider = new ethers.providers.Web3Provider(
+            //await connector.getProvider(config.chain.chainId),
+        //)
+        //const surrogeth = genSurrogethClient(provider)
 
-        const relayers = await surrogeth.getRelayers(
-            1,
-            new Set([]),
-            new Set(['ip']),
-        )
+        //const relayers = await surrogeth.getRelayers(
+            //1,
+            //new Set([]),
+            //new Set(['ip']),
+        //)
 
-        return relayers[0]
+        //return relayers[0]
+    //}
+    return {
+        locator: 'https://micromixrelayer.herokuapp.com/',
+        locatorType: 'ip',
+        address: '0x5E8b2E54A723eA152fD022cEa531C789DA07D289',
     }
 }
 
