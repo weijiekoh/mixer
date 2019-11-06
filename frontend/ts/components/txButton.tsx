@@ -34,10 +34,7 @@ const TxButton = ({
 
     return (
         // @ts-ignore
-        <span
-            onClick={handleClick}
-            disabled={isDisabled}
-            className={className}>
+        <span onClick={handleClick} disabled={isDisabled} className={className}>
 
             {label}
 
@@ -69,10 +66,7 @@ const Erc20ApproveButton = ({
 
     return (
         // @ts-ignore
-        <span
-            onClick={handleClick}
-            disabled={isDisabled}
-            className={className}>
+        <span onClick={handleClick} disabled={isDisabled} className={className}>
 
             {label}
 
