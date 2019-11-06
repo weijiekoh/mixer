@@ -3,9 +3,7 @@
   "private": true,
   "scripts": {
     "bootstrap": "lerna bootstrap",
-    "build": "lerna run build",
-    "buildBaseImage": "./scripts/buildBaseImage.sh",
-    "buildImages": "./scripts/buildImages.sh"
+    "build": "lerna run build"
   },
   "devDependencies": {
     "lerna": "3.15.0",

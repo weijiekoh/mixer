@@ -19,17 +19,17 @@
         "worker_threads": "./externals/worker_threads.js"
     },
     "dependencies": {
-        "surrogeth-client": "^0.2.0",
         "buffer": "^5.2.1",
         "bulma": "^0.7.5",
         "ethers": "^4.0.30",
-        "mixer-contracts": "1.0.0",
         "libsemaphore": "^0.0.16",
+        "mixer-contracts": "1.0.0",
         "mixer-utils": "1.0.0",
         "react": "^16.8.6",
         "react-dom": "^16.8.6",
         "react-router-dom": "^5.0.1",
         "react-timer-hook": "^1.1.6",
+        "surrogeth-client": "^0.3.4",
         "web3-react": "^5.0.4"
     },
     "devDependencies": {

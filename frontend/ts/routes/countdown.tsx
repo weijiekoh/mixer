@@ -7,6 +7,7 @@ import { Redirect } from 'react-router-dom'
 import { getMixerContract, getTokenMixerContract, getTokenContract } from '../web3/mixer'
 import { genMixParams, sleep } from 'mixer-utils'
 import { fetchWithoutCache } from '../utils/fetcher'
+import { relayMixEth, relayMixTokens, getRelayer } from '../web3/surrogeth'
 import { 
     genCircuit,
     genMixerWitness,
@@ -20,8 +21,6 @@ import {
     parseVerifyingKeyJson,
 } from 'libsemaphore'
 import {
-    getItems,
-    getNumItems,
     updateWithdrawTxHash,
     getNumUnwithdrawn,
     getFirstUnwithdrawn,
@@ -39,7 +38,6 @@ import {
 
 const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
-const relayerAddress = config.backend.relayerAddress
 const tokenDecimals = config.tokenDecimals
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
@@ -123,6 +121,9 @@ export default () => {
             const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
+            progress('Looking up relayer...')
+            const relayer = await getRelayer(context)
+
             progress('Generating witness...')
             let result
             try {
@@ -132,7 +133,7 @@ export default () => {
                     leaves,
                     20,
                     recipientAddress,
-                    relayerAddress,
+                    relayer.address,
                     feeAmt,
                     externalNullifier,
                 )
@@ -181,59 +182,37 @@ export default () => {
                 }
             }
 
-            const params = genMixParams(
+            // TODO: perform pre-broadcast check
+
+            progress('Sending transaction to the relayer...')
+
+            const method = isEth ? relayMixEth : relayMixTokens
+
+            const txHash = await method(
+                context,
                 result.signal,
                 proof,
-                recipientAddress,
-                BigInt(feeAmt.toString()),
                 publicSignals,
+                recipientAddress,
+                feeAmt,
+                relayer,
             )
 
-            const method = isEth ? 'mixer_mix_eth' : 'mixer_mix_tokens'
+            progress('')
+            setTxHash(txHash)
+            console.log(txHash)
+            updateWithdrawTxHash(identityStored, txHash)
 
-            const request = {
-                jsonrpc: '2.0',
-                id: (new Date()).getTime(),
-                method,
-                params,
+            await sleep(3000)
+
+            if (isEth) {
+                const recipientBalanceAfter = await provider.getBalance(recipientAddress)
+                console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
+            } else {
+                const recipientBalanceAfter = (await tokenContract.balanceOf(recipientAddress)) / (10 ** tokenDecimals)
+                console.log('The recipient now has', recipientBalanceAfter.toString(), 'tokens')
             }
 
-            progress('Sending JSON-RPC call to the relayer...')
-            console.log(request)
-
-            const response = await fetch(
-                '/api',
-                {
-                    method: 'POST',
-                    body: JSON.stringify(request),
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                },
-            )
-
-            const responseJson = await response.json()
-            if (responseJson.result) {
-                progress('')
-                setTxHash(responseJson.result.txHash)
-                console.log(responseJson.result.txHash)
-                updateWithdrawTxHash(identityStored, responseJson.result.txHash)
-
-                await sleep(4000)
-
-                if (isEth) {
-                    const recipientBalanceAfter = await provider.getBalance(recipientAddress)
-                    console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
-                } else {
-                    const recipientBalanceAfter = (await tokenContract.balanceOf(recipientAddress)) / (10 ** tokenDecimals)
-                    console.log('The recipient now has', recipientBalanceAfter.toString(), 'tokens')
-                }
-
-            } else if (responseJson.error.data.name === 'BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID') {
-                throw {
-                    code: ErrorCodes.PRE_BROADCAST_CHECK_FAILED
-                }
-            }
         } catch (err) {
             console.error(err)
 
@@ -255,7 +234,6 @@ export default () => {
             } else if (err.code === ErrorCodes.PRE_BROADCAST_CHECK_FAILED) {
                 setErrorMsg('The pre-broadcast check failed')
             }
-
         }
     }
     

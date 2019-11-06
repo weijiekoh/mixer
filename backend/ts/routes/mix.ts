@@ -199,8 +199,8 @@ const _mixRoute = (forTokens: boolean) => async (
         'Semaphore',
     )
 
-    const relayerRegistryContract = getContract(
-        'RelayerRegistry',
+    const relayerForwarderContract = getContract(
+        'RelayerForwarder',
         signer,
         deployedAddresses,
     )
@@ -256,30 +256,30 @@ const _mixRoute = (forTokens: boolean) => async (
         mixCallData = mixerIface.functions.mix.encode([depositProof, relayerAddress])
     }
 
-    const relayerRegistryIface = new ethers.utils.Interface(relayerRegistryContract.interface.abi)
-    const relayCallData = relayerRegistryIface.functions.relayCall.encode(
+    const relayerForwarderIface = new ethers.utils.Interface(relayerForwarderContract.interface.abi)
+    const relayCallData = relayerForwarderIface.functions.relayCall.encode(
         [
             mixerContractAddress,
             mixCallData
         ],
     )
 
-    const unsignedTx = {
-        to: mixerContractAddress,
-        value: 0,
-        data: mixCallData,
-        nonce,
-        gasPrice: ethers.utils.parseUnits('20', 'gwei'),
-        gasLimit: config.get('chain.mix.gasLimit'),
-    }
     //const unsignedTx = {
-        //to: relayerRegistryContract.address,
+        //to: mixerContractAddress,
         //value: 0,
-        //data: relayCallData,
+        //data: mixCallData,
         //nonce,
         //gasPrice: ethers.utils.parseUnits('20', 'gwei'),
         //gasLimit: config.get('chain.mix.gasLimit'),
     //}
+    const unsignedTx = {
+        to: relayerForwarderContract.address,
+        value: 0,
+        data: relayCallData,
+        nonce,
+        gasPrice: ethers.utils.parseUnits('20', 'gwei'),
+        gasLimit: config.get('chain.mix.gasLimit'),
+    }
 
     // Sign the transaction
     const signedData = await signer.sign(unsignedTx)

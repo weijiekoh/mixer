@@ -22,6 +22,8 @@ contract RelayerReputation {
     mapping(uint256 => address) public relayerList;
     uint256 public nextRelayer = 1;
 
+    mapping(address => bool) private _seenRelayers;
+
     constructor(address _forwarderAddress) public {
         forwarderAddress = _forwarderAddress;
     }
@@ -37,6 +39,7 @@ contract RelayerReputation {
     function _addRelayer(address _relayer) internal {
         relayerList[nextRelayer] = _relayer;
         nextRelayer += 1;
+        _seenRelayers[_relayer] = true;
         emit RelayerAdded(_relayer);
     }
 
@@ -49,6 +52,10 @@ contract RelayerReputation {
      */
     function setRelayerLocator(address _relayer, string calldata _locator, string calldata _locatorType) external {
         require(_relayer == msg.sender, "RelayerReputation: can only set the locator for self");
+
+        if (!_seenRelayers[_relayer]) {
+            _addRelayer(_relayer);
+        }
 
         relayerToLocator[_relayer] = RelayerLocator(
             _locator,
@@ -64,7 +71,7 @@ contract RelayerReputation {
      * @param _burnValue The amount of wei burned by the specified relayer
      */
     function updateReputation(address _relayer, uint256 _burnValue) external onlyForwarder {
-        if (relayerToRelayCount[_relayer] == 0) {
+        if (!_seenRelayers[_relayer]) {
             _addRelayer(_relayer);
         }
 

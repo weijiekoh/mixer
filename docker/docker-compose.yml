@@ -1,23 +1,5 @@
 version: '3.7'
 services: 
-  mixer-backend: 
-    container_name: mixer-backend
-
-    build:
-      context: ../backend
-
-    ports:
-      - "3000:3000"
-
-    networks:
-      - "mixer-net"
-
-    environment:
-      - NODE_ENV=docker
-
-    secrets:
-      - hotWalletPrivKeyPath
-
   mixer-frontend:
     container_name: mixer-frontend
 

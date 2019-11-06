@@ -28,6 +28,7 @@ frontend/ts/abis
 deployedAddresses.json
 node_modules/
 lerna-debug.log
+*.lerna_backup
 
 # Swap
 [._]*.s[a-v][a-z]

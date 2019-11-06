@@ -1,28 +1,8 @@
 import * as ethers from 'ethers'
-import { getRelayerRegistryContract, getMixerContract, getTokenMixerContract } from './mixer'
+import { getRelayerForwarderContract, getMixerContract, getTokenMixerContract } from './mixer'
+import { genDepositProof } from './utils'
 const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
-
-const genDepositProof = (
-    signal,
-    proof,
-    publicSignals,
-    recipientAddress,
-    fee,
-) => {
-    return {
-        signal,
-        a: [ proof.pi_a[0].toString(), proof.pi_a[1].toString() ],
-        b: [ 
-            [ proof.pi_b[0][1].toString(), proof.pi_b[0][0].toString() ],
-            [ proof.pi_b[1][1].toString(), proof.pi_b[1][0].toString() ],
-        ],
-        c: [ proof.pi_c[0].toString(), proof.pi_c[1].toString() ],
-        input: publicSignals.map((x) => x.toString()),
-        recipientAddress,
-        fee,
-    }
-}
 
 /*
  * Perform a web3 transaction to make quick withdrawal of ETH
@@ -46,7 +26,7 @@ const quickWithdrawEth = async (
         )
         const signer = provider.getSigner()
         const mixerContract = await getMixerContract(context)
-        const relayerRegistryContract = await getRelayerRegistryContract(context)
+        const relayerForwarderContract = await getRelayerForwarderContract(context)
 
         const depositProof = genDepositProof(
             signal,
@@ -59,10 +39,10 @@ const quickWithdrawEth = async (
         const iface = new ethers.utils.Interface(mixerContract.interface.abi)
         const callData = iface.functions.mix.encode([depositProof, broadcasterAddress])
 
-        return relayerRegistryContract.relayCall(
+        return relayerForwarderContract.relayCall(
             deployedAddresses.Mixer,
             callData,
-            { gasLimit: 8000000 },
+            { gasLimit: 500000 },
         )
     }
 }
@@ -89,7 +69,7 @@ const quickWithdrawTokens = async (
         )
         const signer = provider.getSigner()
         const mixerContract = await getTokenMixerContract(context)
-        const relayerRegistryContract = await getRelayerRegistryContract(context)
+        const relayerForwarderContract = await getRelayerForwarderContract(context)
 
         const depositProof = genDepositProof(
             signal,
@@ -102,10 +82,10 @@ const quickWithdrawTokens = async (
         const iface = new ethers.utils.Interface(mixerContract.interface.abi)
         const callData = iface.functions.mixERC20.encode([depositProof, broadcasterAddress])
 
-        return relayerRegistryContract.relayCall(
+        return relayerForwarderContract.relayCall(
             deployedAddresses.TokenMixer,
             callData,
-            { gasLimit: 8000000 },
+            { gasLimit: 500000 },
         )
     }
 }

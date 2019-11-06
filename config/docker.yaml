@@ -2,10 +2,14 @@
 env: 'docker'
 mixAmtEth: 0.1
 mixAmtTokens: 20
-feeAmtEth: 0.001
+feeAmtEth: 0.005
 feeAmtTokens: 2
 tokenSym: 'DAI'
 tokenDecimals: 18
+
+surrogeth:
+  client:
+    network: "KOVAN"
 
 chain:
   url: "https://kovan.infura.io/v3/5d37c494621a43558d77c90e368d4022"
@@ -27,7 +31,7 @@ backend:
   port: 3000
   host: "http://localhost"
   hotWalletPrivKeyPath: "/run/secrets/hotWalletPrivKeyPath"
-  relayerAddress: "0x53BE836678eA3Dbf7257ef32954184Ac06C2D4b1"
+  relayerAddress: "0xF029495818a13fa8193E96f3eddB2d4884F8BC65"
   etcd:
     host: "mixer-etcd"
     port: 2379
@@ -39,6 +43,9 @@ frontend:
       verificationKey: 'https://micromixtest.blob.core.windows.net/snarks/verification_key.json'
       provingKey: 'https://micromixtest.blob.core.windows.net/snarks/proving_key.bin'
       circuit: 'https://micromixtest.blob.core.windows.net/snarks/circuit.json'
+      #verificationKey: 'http://localhost:8000/build/verification_key.json'
+      #circuit: 'http://localhost:8000/build/circuit.json'
+      #provingKey: 'http://localhost:8000/build/proving_key.bin'
   countdown:
     endsAtUtcMidnight: true
     endsAfterSecs: 5
