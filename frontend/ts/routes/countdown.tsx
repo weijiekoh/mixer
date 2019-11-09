@@ -124,6 +124,8 @@ export default () => {
             progress('Looking up relayer...')
             const relayer = await getRelayer(context)
 
+            console.log('Using relayer:', relayer)
+
             progress('Generating witness...')
             let result
             try {
@@ -133,7 +135,7 @@ export default () => {
                     leaves,
                     20,
                     recipientAddress,
-                    relayer.address,
+                    deployedAddresses.RelayerForwarder,
                     feeAmt,
                     externalNullifier,
                 )
