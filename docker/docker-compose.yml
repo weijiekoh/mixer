@@ -15,20 +15,6 @@ services:
     environment:
       - NODE_ENV=docker
 
-  mixer-etcd:
-    container_name: mixer-etcd
-
-    image: jumanjiman/etcd
-
-    ports:
-      - "2379:2000"
-
-    networks:
-      - "mixer-net"
-
-    environment:
-      - NODE_ENV=docker
-
 networks:
   mixer-net:
 
