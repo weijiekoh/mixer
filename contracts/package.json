@@ -41,6 +41,6 @@
     "mixer-config": "1.0.0",
     "libsemaphore": "^0.0.16",
     "mixer-utils": "1.0.0",
-    "openzeppelin-solidity": "^2.3.0"
+    "openzeppelin-solidity": "2.4.0"
   }
 }

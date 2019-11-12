@@ -135,7 +135,7 @@ export default () => {
                     leaves,
                     20,
                     recipientAddress,
-                    deployedAddresses.RelayerForwarder,
+                    isEth ? deployedAddresses.RelayerForwarder : deployedAddresses.ERC20RelayerForwarder,
                     feeAmt,
                     externalNullifier,
                 )
@@ -188,17 +188,30 @@ export default () => {
 
             progress('Sending transaction to the relayer...')
 
-            const method = isEth ? relayMixEth : relayMixTokens
+            let txHash
 
-            const txHash = await method(
-                context,
-                result.signal,
-                proof,
-                publicSignals,
-                recipientAddress,
-                feeAmt,
-                relayer,
-            )
+            if (isEth) {
+                txHash = await relayMixEth(
+                    context,
+                    result.signal,
+                    proof,
+                    publicSignals,
+                    recipientAddress,
+                    feeAmt,
+                    relayer,
+                )
+            } else {
+                txHash = await relayMixTokens(
+                    context,
+                    result.signal,
+                    proof,
+                    publicSignals,
+                    recipientAddress,
+                    feeAmt,
+                    relayer,
+                    deployedAddresses.Token,
+                )
+            }
 
             progress('')
             setTxHash(txHash)

@@ -40,7 +40,7 @@ const accounts = genAccounts()
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const mixAmtWei = ethers.utils.parseEther(config.get('mixAmtEth')).toString()
+const mixAmtWei = ethers.utils.parseEther(config.get('mixAmtEth').toString()).toString()
 const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
 const feeAmt = ethers.utils.parseEther(
     (parseFloat(config.get('feeAmtEth'))).toString()
@@ -306,7 +306,11 @@ describe('Mixer', () => {
 
         it('should increase the recipient\'s balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore).toString()
-            assert.equal(ethers.utils.formatEther(recipientBalanceDiff), '0.099')
+            const expectedDiff = BigInt(mixAmtWei) - BigInt(feeAmt)
+            assert.equal(
+                ethers.utils.formatEther(recipientBalanceDiff), 
+                ethers.utils.formatEther(expectedDiff.toString()),
+            )
         })
     })
 })

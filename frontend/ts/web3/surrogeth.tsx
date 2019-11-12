@@ -1,7 +1,12 @@
 import * as ethers from 'ethers'
 import { genDepositProof } from './utils'
 import { SurrogethClient } from 'surrogeth-client'
-import { getRelayerForwarderContract, getMixerContract, getTokenMixerContract } from './mixer'
+import {
+    getRelayerForwarderContract,
+    getERC20RelayerForwarderContract,
+    getMixerContract,
+    getTokenMixerContract,
+} from './mixer'
 const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
 
@@ -110,6 +115,7 @@ const relayMixTokens = async (
     recipientAddress,
     feeAmt,
     relayer,
+    tokenAddress,
 ) => {
     const library = context.library
     const connector = context.connector
@@ -118,8 +124,8 @@ const relayMixTokens = async (
             await connector.getProvider(config.chain.chainId),
         )
         const signer = provider.getSigner()
-        const mixerContract = await getTokenMixerContract(context)
-        const relayerForwarderContract = await getRelayerForwarderContract(context)
+        const tokenMixerContract = await getTokenMixerContract(context)
+        const erc20RelayerForwarderContract = await getERC20RelayerForwarderContract(context)
 
         const depositProof = genDepositProof(
             signal,
@@ -129,17 +135,24 @@ const relayMixTokens = async (
             feeAmt,
         )
 
-        const iface = new ethers.utils.Interface(mixerContract.interface.abi)
-        const callData = iface.functions.mixERC20.encode([depositProof, relayer.address])
+        const iface = new ethers.utils.Interface(tokenMixerContract.interface.abi)
+        const callData = iface.functions.mixERC20.encode([
+            depositProof,
+            erc20RelayerForwarderContract.address,
+        ])
 
-        const rfIface = new ethers.utils.Interface(relayerForwarderContract.interface.abi)
-        const rfCallData = rfIface.functions.relayCall.encode([deployedAddresses.TokenMixer, callData])
+        const rfIface = new ethers.utils.Interface(erc20RelayerForwarderContract.interface.abi)
+        const rfCallData = rfIface.functions.relayCall.encode([
+            deployedAddresses.TokenMixer,
+            callData,
+            tokenAddress,
+        ])
 
         const surrogeth = genSurrogethClient(provider)
 
         return surrogeth.submitTx(
             {
-                to: deployedAddresses.RelayerForwarder,
+                to: deployedAddresses.ERC20RelayerForwarder,
                 value: 0,
                 data: rfCallData,
             },

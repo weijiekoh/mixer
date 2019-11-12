@@ -8,6 +8,8 @@ import { config } from 'mixer-config'
 import { genAccounts } from '../accounts'
 
 const ERC20Mintable = require('@mixer-contracts/compiled/ERC20Mintable.json')
+const ERC20RelayerForwarder = require('@mixer-contracts/compiled/ERC20RelayerForwarder.json')
+const ERC20RelayerReputation = require('@mixer-contracts/compiled/ERC20RelayerReputation.json')
 const RelayerForwarder = require('@mixer-contracts/compiled/RelayerForwarder.json')
 const RelayerReputation = require('@mixer-contracts/compiled/RelayerReputation.json')
 
@@ -54,6 +56,30 @@ const deployEthMixer = (
         semaphoreContractAddress, 
         mixAmtEth,
         '0x0000000000000000000000000000000000000000',
+    )
+}
+
+const deployERC20RF = (
+    deployer: any,
+    num: number,
+    denom: number,
+) => {
+    return deployer.deploy(
+        ERC20RelayerForwarder,
+        {},
+        num,
+        denom,
+    )
+}
+
+const deployERC20RR = (
+    deployer: any,
+    rfAddress: string,
+) => {
+    return deployer.deploy(
+        RelayerReputation,
+        {},
+        rfAddress,
     )
 }
 
@@ -116,6 +142,12 @@ const deployAllContracts = async (
     let rfAddress = config.chain.deployedAddresses.RelayerForwarder
     let relayerForwarderContract
 
+    let erc20RrAddress = config.chain.deployedAddresses.ERC20RelayerReputation
+    let erc20RelayerReputationContract
+
+    let erc20RfAddress = config.chain.deployedAddresses.ERC20RelayerForwarder
+    let erc20RelayerForwarderContract
+
     if (config.env !== 'local-dev') {
         console.log('Using existing token contract at', tokenAddress)
         tokenContract = new ethers.Contract(
@@ -163,6 +195,30 @@ const deployAllContracts = async (
             config.surrogeth.surrogethd.locator.url,
             config.surrogeth.surrogethd.locator.type,
         )
+
+        console.log('Deploying ERC20RelayerForwarder')
+        erc20RelayerForwarderContract = await deployERC20RF(deployer, num, denom)
+        erc20RfAddress = erc20RelayerForwarderContract.contractAddress ? 
+            erc20RelayerForwarderContract.contractAddress :
+            erc20RelayerForwarderContract.address
+
+        console.log('Deploying ERC20RelayerReputation')
+        erc20RelayerReputationContract = await deployERC20RR(deployer, erc20RfAddress)
+        erc20RrAddress = erc20RelayerReputationContract.contractAddress ? 
+            erc20RelayerReputationContract.contractAddress :
+            erc20RelayerReputationContract.address
+
+        console.log('Setting the ERC20RelayerReputation address in ERC20RelayerForwarder')
+        await erc20RelayerForwarderContract.setReputation(erc20RrAddress)
+
+        console.log('Setting an ERC20 relayer locator')
+
+        await erc20RelayerReputationContract.setRelayerLocator(
+            config.surrogeth.surrogethd.relayerAddress,
+            config.surrogeth.surrogethd.locator.url,
+            config.surrogeth.surrogethd.locator.type,
+        )
+
     }
 
     tokenAddress = tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address
@@ -236,6 +292,8 @@ const deployAllContracts = async (
         mixerContract,
         relayerForwarderContract,
         relayerReputationContract,
+        erc20RelayerForwarderContract,
+        erc20RelayerReputationContract,
         tokenSemaphoreContract,
         tokenMixerContract,
         tokenContract,
@@ -277,6 +335,8 @@ const main = async () => {
         mixerContract,
         relayerReputationContract,
         relayerForwarderContract,
+        erc20RelayerReputationContract,
+        erc20RelayerForwarderContract,
         tokenContract,
         tokenSemaphoreContract,
         tokenMixerContract,
@@ -295,6 +355,8 @@ const main = async () => {
         TokenSemaphore: tokenSemaphoreContract.contractAddress,
         RelayerForwarder: relayerForwarderContract.contractAddress,
         RelayerReputation: relayerReputationContract.contractAddress,
+        ERC20RelayerForwarder: erc20RelayerForwarderContract.contractAddress,
+        ERC20RelayerReputation: erc20RelayerReputationContract.contractAddress,
         Token: tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address,
     }
 

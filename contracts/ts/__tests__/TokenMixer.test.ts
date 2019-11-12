@@ -41,7 +41,7 @@ const depositorAddress = accounts[0].address
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const mixAmtWei = ethers.utils.parseEther(config.get('mixAmtEth').toString()).toString()
 const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
 const tokenDecimals = config.get('tokenDecimals')
 const mixAmtTokensMultiplied = (mixAmtTokens.toNumber() * 10 ** tokenDecimals).toString()
@@ -87,7 +87,7 @@ describe('Token Mixer', () => {
 
         const contracts = await deployAllContracts(
             deployer,
-            mixAmtEth,
+            mixAmtWei,
             mixAmtTokens,
             depositorAddress,
         )

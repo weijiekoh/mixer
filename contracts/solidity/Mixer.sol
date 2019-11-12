@@ -1,8 +1,9 @@
 pragma experimental ABIEncoderV2;
 pragma solidity ^0.5.0;
 import { Semaphore } from "./Semaphore.sol";
-import { SafeMath } from "./SafeMath.sol";
-import { IERC20 } from "./token/IERC20.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 } from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 
 /*
  * A mixer for either ETH or ERC20 tokens.
@@ -10,6 +11,7 @@ import { IERC20 } from "./token/IERC20.sol";
  */
 contract Mixer {
     using SafeMath for uint256;
+    using SafeERC20 for ERC20;
 
     // The amount of ETH or ERC20 tokens to mix at a time.
     uint256 public mixAmt;
@@ -21,7 +23,7 @@ contract Mixer {
 
     // The address of the ERC20 token to mix. If this contract is for raw ETH
     // (not wrapped ETH), its value should be `0x0000000000000000000000000000000000000000`.
-    IERC20 public token;
+    ERC20 public token;
 
     event Deposited(address indexed depositor, uint256 indexed mixAmt, uint256 identityCommitment);
     event DepositedERC20(address indexed depositor, uint256 indexed mixAmt, uint256 identityCommitment);
@@ -59,7 +61,7 @@ contract Mixer {
         semaphore = Semaphore(_semaphore);
 
         // Set the token address
-        token = IERC20(_token);
+        token = ERC20(_token);
     }
 
     /*
@@ -190,17 +192,19 @@ contract Mixer {
      *               minus fees, to the recipient if the proof is valid.
      * @param _relayerAddress The address to send the fee to.
      */
-    function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyERC20 validFee(_proof.fee) {
+    function mixERC20(DepositProof memory _proof, address payable _relayerAddress)
+    public
+    onlyERC20 
+    validFee(_proof.fee) {
+
         broadcastToSemaphore(_proof, _relayerAddress);
 
         // Transfer the fee to the relayer
-        bool relayerTransferSucceeded = token.transfer(_relayerAddress, _proof.fee);
-        require(relayerTransferSucceeded, "Mixer: failed to transfer the fee in tokens to the relayer");
+        token.safeTransfer(_relayerAddress, _proof.fee);
 
         // Transfer the tokens owed to the recipient, minus the fee 
         uint256 recipientMixAmt = mixAmt.sub(_proof.fee);
-        bool recipientTransferSucceeded = token.transfer(_proof.recipientAddress, recipientMixAmt);
-        require(recipientTransferSucceeded, "Mixer: failed to transfer mixAmt tokens to the recipient");
+        token.safeTransfer(_proof.recipientAddress, recipientMixAmt);
 
         emit MixedERC20(_proof.recipientAddress, recipientMixAmt, _proof.fee);
     }
@@ -211,7 +215,11 @@ contract Mixer {
      *               minus the fee, to the recipient if the proof is valid.
      * @param _relayerAddress The address to send the fee to.
      */
-    function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyEth validFee(_proof.fee) {
+    function mix(DepositProof memory _proof, address payable _relayerAddress)
+    public
+    onlyEth
+    validFee(_proof.fee) {
+
         broadcastToSemaphore(_proof, _relayerAddress);
 
         // Transfer the fee to the relayer

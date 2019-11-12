@@ -5,7 +5,7 @@ if (require.main === module) {
     if (c.chain.privateKeys) {
         delete c.chain.privateKeys
     }
-    if (c.backend.hotWalletPrivKey) {
+    if (c.backend && c.backend.hotWalletPrivKey) {
         delete c.backend.hotWalletPrivKey
     }
     console.log(JSON.stringify(config))

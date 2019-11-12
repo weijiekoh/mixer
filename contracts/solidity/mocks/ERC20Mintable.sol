@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
-import "./ERC20.sol";
-import "./ERC20Detailed.sol";
-import "../access/MinterRole.sol";
+import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { ERC20Detailed } from "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import { MinterRole } from "openzeppelin-solidity/contracts/access/roles/MinterRole.sol";
 
 /**
  * Copied from openzeppelin-contracts 2.3.0

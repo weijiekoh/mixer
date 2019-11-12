@@ -35,7 +35,7 @@
     "name": "token",
     "outputs": [
       {
-        "internalType": "contract IERC20",
+        "internalType": "contract ERC20",
         "name": "",
         "type": "address"
       }
