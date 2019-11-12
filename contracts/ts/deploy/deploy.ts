@@ -77,7 +77,7 @@ const deployERC20RR = (
     rfAddress: string,
 ) => {
     return deployer.deploy(
-        RelayerReputation,
+        ERC20RelayerReputation,
         {},
         rfAddress,
     )

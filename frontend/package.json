@@ -29,7 +29,7 @@
         "react-dom": "^16.8.6",
         "react-router-dom": "^5.0.1",
         "react-timer-hook": "^1.1.6",
-        "surrogeth-client": "^0.3.7",
+        "surrogeth-client": "file://../surrogeth/client/",
         "web3-react": "^5.0.4"
     },
     "devDependencies": {

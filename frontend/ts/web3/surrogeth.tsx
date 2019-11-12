@@ -150,8 +150,9 @@ const relayMixTokens = async (
 
         const surrogeth = genSurrogethClient(provider)
 
-        return surrogeth.submitTx(
+        return surrogeth.submitERC20Tx(
             {
+                token: deployedAddresses.Token,
                 to: deployedAddresses.ERC20RelayerForwarder,
                 value: 0,
                 data: rfCallData,
