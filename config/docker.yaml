@@ -25,6 +25,8 @@ chain:
     TokenSemaphore: '0x2d789d11E697bF39Ca3d9C07F565C9065DD02542'
     RelayerForwarder: '0x5988185601ba257cd1d0c4764042bf2e26f92fb7'
     RelayerReputation: '0x90cD6Abb6683FcB9Da915454cC49F3fa4cb0a5b1'
+    ERC20RelayerForwarder: '0x29DD0Aea577e46A5d1c858A36647f4baeb6E9E4B'
+    ERC20RelayerReputation: '0x6b504375563dDfC0C3eBFEc0708f7889b9068728'
     Token: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2'
 
 backend:

@@ -117,14 +117,14 @@ export default () => {
 
             const identityCommitment = genIdentityCommitment(identity)
 
-            progress('Downloading circuit...')
-            const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
-            const circuit = genCircuit(cirDef)
-
             progress('Looking up relayer...')
             const relayer = await getRelayer(context)
 
             console.log('Using relayer:', relayer)
+
+            progress('Downloading circuit...')
+            const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
+            const circuit = genCircuit(cirDef)
 
             progress('Generating witness...')
             let result
