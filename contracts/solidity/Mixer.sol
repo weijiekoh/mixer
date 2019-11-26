@@ -161,12 +161,12 @@ contract Mixer {
      * Broadcasts the computed signal (the hash of the recipient's address, the
      * relayer's address, and the fee via Semaphore.
      */
-    function broadcastToSemaphore(DepositProof memory _proof, address payable _relayerAddress) private {
+    function broadcastToSemaphore(DepositProof memory _proof, address payable _forwarderAddress) private {
         // Hash the recipient's address, the mixer contract's address, and fee
         bytes32 computedSignal = keccak256(
             abi.encodePacked(
                 _proof.recipientAddress,
-                _relayerAddress,
+                _forwarderAddress,
                 _proof.fee
             )
         );
@@ -188,13 +188,13 @@ contract Mixer {
      * Withdraw tokens to a specified recipient using a zk-SNARK deposit proof
      * @param _proof A deposit proof. This function will send `mixAmt` tokens,
      *               minus fees, to the recipient if the proof is valid.
-     * @param _relayerAddress The address to send the fee to.
+     * @param _forwarderAddress The address to send the fee to.
      */
-    function mixERC20(DepositProof memory _proof, address payable _relayerAddress) public onlyERC20 validFee(_proof.fee) {
-        broadcastToSemaphore(_proof, _relayerAddress);
+    function mixERC20(DepositProof memory _proof, address payable _forwarderAddress) public onlyERC20 validFee(_proof.fee) {
+        broadcastToSemaphore(_proof, _forwarderAddress);
 
         // Transfer the fee to the relayer
-        bool relayerTransferSucceeded = token.transfer(_relayerAddress, _proof.fee);
+        bool relayerTransferSucceeded = token.transfer(_forwarderAddress, _proof.fee);
         require(relayerTransferSucceeded, "Mixer: failed to transfer the fee in tokens to the relayer");
 
         // Transfer the tokens owed to the recipient, minus the fee 
@@ -209,13 +209,13 @@ contract Mixer {
      * Withdraw funds to a specified recipient using a zk-SNARK deposit proof
      * @param _proof A deposit proof. This function will send `mixAmt` tokens,
      *               minus the fee, to the recipient if the proof is valid.
-     * @param _relayerAddress The address to send the fee to.
+     * @param _forwarderAddress The address to send the fee to.
      */
-    function mix(DepositProof memory _proof, address payable _relayerAddress) public onlyEth validFee(_proof.fee) {
-        broadcastToSemaphore(_proof, _relayerAddress);
+    function mix(DepositProof memory _proof, address payable _forwarderAddress) public onlyEth validFee(_proof.fee) {
+        broadcastToSemaphore(_proof, _forwarderAddress);
 
         // Transfer the fee to the relayer
-        _relayerAddress.transfer(_proof.fee);
+        _forwarderAddress.transfer(_proof.fee);
 
         // Transfer the ETH owed to the recipient, minus the fee 
         uint256 recipientMixAmt = mixAmt.sub(_proof.fee);
