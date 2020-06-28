@@ -13,3 +13,4 @@ contracts/compiled
 contracts/parity
 semaphore/docs
 semaphore/semaphorejs/blake2sdef.json
+kovanPrivateKeys.json

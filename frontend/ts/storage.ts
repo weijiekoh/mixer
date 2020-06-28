@@ -3,23 +3,30 @@
 // deterministically derived using mixer-crypto's genIdentityCommitment
 // function, so we don't store it.
 
+const config = require('../exported_config')
 import {
     Identity,
     EddsaPrivateKey,
-} from 'mixer-crypto'
+} from 'libsemaphore'
 import { Buffer } from 'buffer'
 
 interface IdentityStored {
     identityNullifier: BigInt,
+    identityTrapdoor: BigInt,
     privKey: EddsaPrivateKey,
     recipientAddress: string,
     depositTxHash: string,
     withdrawTxHash: string,
     timestamp: number,
+    tokenType: string,
 }
 
 const localStorage = window.localStorage
-const key = 'MIXER'
+
+// The storage key depends on the mixer contracts to prevent conflicts
+const ethMixerPrefix = config.chain.deployedAddresses.Mixer.slice(2).toLowerCase()
+const tokenMixerPrefix = config.chain.deployedAddresses.TokenMixer.slice(2).toLowerCase()
+const key = `MIXER_${ethMixerPrefix}_${tokenMixerPrefix}`
 
 const initStorage = () => {
     if (!localStorage.getItem(key)) {
@@ -32,6 +39,7 @@ const hexifyItem = (item: IdentityStored) => {
         item,
         {
             identityNullifier: item.identityNullifier.toString(16),
+            identityTrapdoor: item.identityTrapdoor.toString(16),
             privKey: item.privKey.toString('hex'),
         }
     )
@@ -41,6 +49,7 @@ const deHexifyItem = (hexified: any): IdentityStored => {
     return {
         ...hexified,
         identityNullifier: BigInt('0x' + hexified.identityNullifier),
+        identityTrapdoor: BigInt('0x' + hexified.identityTrapdoor),
         privKey: Buffer.from(hexified.privKey, 'hex'),
     }
 }
@@ -94,13 +103,20 @@ const saveItems = (items: any[]) => {
     localStorage.setItem(key, data)
 }
 
-const storeDeposit = (identity: Identity, recipientAddress: string, depositTxHash=null) =>  {
+const storeDeposit = (
+    identity: Identity,
+    recipientAddress: string,
+    tokenType: string,
+    depositTxHash=null,
+) =>  {
     const items = getRawItems()
     items.push({
         privKey: identity.keypair.privKey,
         identityNullifier: identity.identityNullifier,
+        identityTrapdoor: identity.identityTrapdoor,
         depositTxHash,
         recipientAddress,
+        tokenType,
         timestamp: (new Date()).getTime(),
         withdrawTxHash: '',
     })

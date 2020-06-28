@@ -25,7 +25,7 @@
     "koa-bodyparser": "^4.2.1",
     "koa-helmet": "^4.2.0",
     "mixer-contracts": "1.0.0",
-    "mixer-crypto": "1.0.0",
+    "libsemaphore": "^0.0.16",
     "mixer-config": "1.0.0",
     "mixer-utils": "1.0.0",
     "mixer-config": "1.0.0",

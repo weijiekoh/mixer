@@ -1,3 +1,4 @@
+require('module-alias/register')
 // Make Typescript happy
 declare var assert: any
 declare var before: any
@@ -18,41 +19,29 @@ import {
 
 import { sleep } from 'mixer-utils'
 import {
-    genRandomBuffer,
     genIdentity,
     genIdentityCommitment,
-    genIdentityNullifier,
-    genEddsaKeyPair,
-    genCircuit,
-    genSignedMsg,
-    signMsg,
-    verifySignature,
-    genSignalAndSignalHash,
-    genWitness,
-    genWitnessInputs,
-    extractWitnessRoot,
-    genPathElementsAndIndex,
+    genMixerWitness,
     genProof,
-    genPublicSignals,
     verifyProof,
-    setupTree,
-} from 'mixer-crypto'
+    verifySignature,
+    genPublicSignals,
+} from 'libsemaphore'
 
 import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
-const Mixer = require('../../compiled/Mixer.json')
+const Mixer = require('@mixer-contracts/compiled/Mixer.json')
 
 import {
-    deployAllContractsForEthMixer,
-    deployAllContractsForTokenMixer,
-    deployToken,
+    deployAllContracts,
 } from '../deploy/deploy'
 
 const accounts = genAccounts()
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const depositAmt = ethers.utils.parseEther(config.get('mixAmtEth'))
+const mixAmtWei = ethers.utils.parseEther(config.get('mixAmtEth')).toString()
+const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
 const feeAmt = ethers.utils.parseEther(
     (parseFloat(config.get('feeAmtEth'))).toString()
 )
@@ -69,25 +58,12 @@ const contractsPath = path.join(
 for (let i=0; i < users.length; i++) {
     const user = users[i]
 
-    let keyBuf = genRandomBuffer(32)
-    let idNullifierBytes = genRandomBuffer(31)
+    const identity = genIdentity()
 
-    // Generate an eddsa identity, identity nullifier, and identity commitment
-    // per user
-    const { privKey, pubKey } = genEddsaKeyPair(keyBuf)
-    const identityNullifier = genIdentityNullifier(idNullifierBytes)
-    const identityCommitment = genIdentityCommitment(identityNullifier, pubKey)
-
-    identities[user] = {
-        identityCommitment,
-        identityNullifier,
-        privKey,
-        pubKey,
-    }
+    identities[user] = identity
 }
 
 let mimcContract
-let multipleMerkleTreeContract
 let mixerContract
 let semaphoreContract
 let relayerRegistryContract
@@ -108,9 +84,13 @@ describe('Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        const contracts = await deployAllContractsForEthMixer(deployer, contractsPath)
+        const contracts = await deployAllContracts(
+            deployer,
+            mixAmtWei,
+            mixAmtTokens,
+            accounts[0].address,
+        )
         mimcContract = contracts.mimcContract
-        multipleMerkleTreeContract = contracts.multipleMerkleTreeContract
         semaphoreContract = contracts.semaphoreContract
         mixerContract = contracts.mixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
@@ -124,7 +104,7 @@ describe('Mixer', () => {
                     Mixer,
                     {},
                     '0x0000000000000000000000000000000000000000',
-                    ethers.utils.parseEther(config.mixAmtEth),
+                    mixAmtWei,
                     '0x0000000000000000000000000000000000000000',
                 )
             )
@@ -152,7 +132,6 @@ describe('Mixer', () => {
             )
 
             assert.isAddress(mimcContract.contractAddress)
-            assert.isAddress(multipleMerkleTreeContract.contractAddress)
             assert.isAddress(semaphoreContract.contractAddress)
             assert.isAddress(mixerContract.contractAddress)
 
@@ -165,21 +144,18 @@ describe('Mixer', () => {
         })
 
         it('the Semaphore contract\'s external nullifier should be the mixer contract address', async () => {
-            const semaphoreExtNullifier = await semaphoreContract.external_nullifier()
+            const semaphoreExtNullifier = await semaphoreContract.getExternalNullifierByIndex(1)
             const mixerAddress = mixerContract.contractAddress
             assert.isTrue(areEqualAddresses(semaphoreExtNullifier, mixerAddress))
         })
     })
 
     describe('Deposits and withdrawals', () => {
-        // initialise the off-chain merkle tree
-        const tree = setupTree()
-
         // get the circuit, verifying key, and proving key
         const { verifyingKey, provingKey, circuit } = getSnarks()
 
         const identity = identities[users[0]]
-        const identityCommitment = identity.identityCommitment
+        const identityCommitment = genIdentityCommitment(identity)
         let nextIndex
 
         let recipientBalanceBefore
@@ -193,23 +169,21 @@ describe('Mixer', () => {
         let mixReceipt
         let mixTxFee
 
-        it('should generate identity commitments', async () => {
-            for (const user of users) {
-                assert.isTrue(identities[user].identityCommitment.toString(10).length > 0)
-            }
-        })
-
         it('should not add the identity commitment to the contract if the amount is incorrect', async () => {
-            const identityCommitment = identities[users[0]].identityCommitment
             await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: 0 }))
-            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: depositAmt.add(1) }))
+
+            const invalidValue = (BigInt(mixAmtWei) + BigInt(1)).toString()
+            await assert.revert(mixerContract.deposit(identityCommitment.toString(), { value: invalidValue }))
         })
 
         it('should fail to call depositERC20', async () => {
             let reason: string = ''
             let tx
             try {
-                tx = await mixerContract.depositERC20('0x' + identityCommitment.toString(16))
+                tx = await mixerContract.depositERC20(
+                    '0x' + identityCommitment.toString(16),
+                    { gasLimit: 1000000 },
+                )
                 const receipt = await mixerContract.verboseWaitForTransaction(tx)
             } catch (err) {
                 reason = err.data[err.transactionHash].reason
@@ -219,15 +193,21 @@ describe('Mixer', () => {
 
         it('should perform an ETH deposit', async () => {
             // make a deposit (by the first user)
-            const tx = await mixerContract.deposit(identityCommitment.toString(), { value: depositAmt })
+            const tx = await mixerContract.deposit(
+                identityCommitment.toString(),
+                { 
+                    value: '0x' + BigInt(mixAmtWei).toString(16),
+                    gasLimit: 1500000,
+                },
+            )
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             const gasUsed = receipt.gasUsed.toString()
             console.log('Gas used for this deposit:', gasUsed)
 
             // check that the leaf was added using the receipt
-            assert.isTrue(utils.hasEvent(receipt, multipleMerkleTreeContract.contract, 'LeafAdded'))
-            const leafAddedEvent = utils.parseLogs(receipt, multipleMerkleTreeContract.contract, 'LeafAdded')[0]
+            assert.isTrue(utils.hasEvent(receipt, semaphoreContract.contract, 'LeafAdded'))
+            const leafAddedEvent = utils.parseLogs(receipt, semaphoreContract.contract, 'LeafAdded')[0]
 
             nextIndex = leafAddedEvent.leaf_index
             assert.equal(nextIndex, 0)
@@ -240,54 +220,47 @@ describe('Mixer', () => {
         })
 
         it('should make an ETH withdrawal', async () => {
-            await tree.update(nextIndex, identityCommitment.toString())
-
+            const leaves = await mixerContract.getLeaves()
             const {
+                witness,
+                signal,
+                signalHash,
                 signature,
                 msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            } = await genWitnessInputs(
                 tree,
-                nextIndex,
-                identityCommitment,
+                identityPath,
+                identityPathIndex,
+                identityPathElements,
+            } = await genMixerWitness(
+                circuit,
+                identity,
+                leaves,
+                20,
                 recipientAddress,
                 relayerAddress,
                 feeAmt,
-                identity.privKey,
                 externalNullifier,
             )
 
-            assert.isTrue(verifySignature(msg, signature, identity.pubKey))
+            assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
 
-            const w = genWitness(
-                circuit,
-                identity.pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
-                identity.identityNullifier,
-                identityPathElements,
-                identityPathIndex,
-            )
+            assert.isTrue(circuit.checkWitness(witness))
 
-            const witnessRoot = extractWitnessRoot(circuit, w)
-            assert.equal(witnessRoot, identityPath.root)
+            const publicSignals = genPublicSignals(witness, circuit)
 
-            assert.isTrue(circuit.checkWitness(w))
-
-            const publicSignals = genPublicSignals(w, circuit)
-
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(witness, provingKey)
 
             // verify the proof off-chain
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
             assert.isTrue(isVerified)
 
-            const mixInputs = await genDepositProof(signal, proof, publicSignals, recipientAddress, feeAmt)
+            const mixInputs = genDepositProof(
+                signal,
+                proof,
+                publicSignals,
+                recipientAddress,
+                feeAmt,
+            )
 
             // check inputs to mix() using preBroadcastCheck()
             const preBroadcastChecked = await semaphoreContract.preBroadcastCheck(

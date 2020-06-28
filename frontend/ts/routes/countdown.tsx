@@ -4,24 +4,21 @@ import { useTimer } from 'react-timer-hook'
 import * as ethers from 'ethers'
 import { useWeb3Context } from 'web3-react'
 import { Redirect } from 'react-router-dom'
-import { getMixerContract } from '../web3/mixer'
+import { getMixerContract, getTokenMixerContract, getTokenContract } from '../web3/mixer'
 import { genMixParams, sleep } from 'mixer-utils'
+import { fetchWithoutCache } from '../utils/fetcher'
 import { 
-    genSignedMsg,
-    genPubKey,
-    genTree,
-    genWitness,
     genCircuit,
-    genPathElementsAndIndex,
-    genIdentityCommitment,
-    genSignalAndSignalHash,
+    genMixerWitness,
     genPublicSignals,
     verifySignature,
-    unstringifyBigInts,
     genProof,
+    genPubKey,
+    genIdentityCommitment,
     verifyProof,
-} from 'mixer-crypto'
-
+    Identity,
+    parseVerifyingKeyJson,
+} from 'libsemaphore'
 import {
     getItems,
     getNumItems,
@@ -35,13 +32,15 @@ import { ErrorCodes } from '../errors'
 import {
     mixAmtEth,
     operatorFeeEth,
+    mixAmtTokens,
+    operatorFeeTokens,
     feeAmtWei,
-} from '../utils/ethAmts'
+} from '../utils/mixAmts'
 
-const config = require('../exported_config')
+const config = require('../../exported_config')
 const deployedAddresses = config.chain.deployedAddresses
-const broadcasterAddress = config.backend.broadcasterAddress
-
+const relayerAddress = config.backend.relayerAddress
+const tokenDecimals = config.tokenDecimals
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 const endsAtMidnight = config.frontend.countdown.endsAtUtcMidnight
 const endsAfterSecs = config.frontend.countdown.endsAfterSecs
@@ -71,6 +70,13 @@ export default () => {
     const identityStored = getFirstUnwithdrawn()
     const recipientAddress = identityStored.recipientAddress
 
+    const tokenType = identityStored.tokenType
+    const isEth = tokenType === 'ETH'
+
+    const mixAmt = isEth ? mixAmtEth : mixAmtTokens
+    const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
+
     const context = useWeb3Context()
 
     const withdraw = async (context) => {
@@ -81,11 +87,20 @@ export default () => {
             await context.connector.getProvider(config.chain.chainId),
         )
 
-        const recipientBalanceBefore = await provider.getBalance(recipientAddress)
-        console.log('The recipient has', ethers.utils.formatEther(recipientBalanceBefore), 'ETH')
+        const tokenContract = await getTokenContract(context)
+
+        if (isEth) {
+            const recipientBalanceBefore = await provider.getBalance(recipientAddress)
+            console.log('The recipient has', ethers.utils.formatEther(recipientBalanceBefore), 'ETH')
+        } else {
+            const recipientBalanceBefore = (await tokenContract.balanceOf(recipientAddress)) / (10 ** tokenDecimals)
+
+            console.log('The recipient has', recipientBalanceBefore.toString(), 'tokens')
+        }
 
         try {
-            const mixerContract = await getMixerContract(context)
+            const mixerContract = isEth ?
+                await getMixerContract(context) : await getTokenMixerContract(context)
 
             const externalNullifier = mixerContract.address
 
@@ -93,56 +108,35 @@ export default () => {
 
             const leaves = await mixerContract.getLeaves()
 
-            const tree = await genTree(leaves)
-
+            // TODO: serialise and deserialise the identity
             const pubKey = genPubKey(identityStored.privKey)
 
-            const identityCommitment = genIdentityCommitment(
-                identityStored.identityNullifier,
-                pubKey,
-            )
-
-            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
-                tree,
-                identityCommitment,
-            )
-
-            const leafIndex = await tree.element_index(identityCommitment)
-            const identityPath = await tree.path(leafIndex)
-
-            const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmtWei,
-            )
-
-            const { signature, msg } = genSignedMsg(
-                identityStored.privKey,
-                externalNullifier,
-                signalHash, 
-            )
-
-            const validSig = verifySignature(msg, signature, pubKey)
-            if (!validSig) {
-                throw {
-                    code: ErrorCodes.INVALID_SIG,
-                }
+            const identity: Identity = {
+                keypair: { pubKey, privKey: identityStored.privKey },
+                identityNullifier: identityStored.identityNullifier,
+                identityTrapdoor: identityStored.identityTrapdoor,
             }
 
+            const identityCommitment = genIdentityCommitment(identity)
+
             progress('Downloading circuit...')
-            const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
+            const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
-            let w
+            progress('Generating witness...')
+            let result
             try {
-                w = genWitness(
-                    circuit,
-                    pubKey,
-                    signature,
-                    signalHash,
+                result = await genMixerWitness(
+                    circuit, 
+                    identity,
+                    leaves,
+                    20,
+                    recipientAddress,
+                    relayerAddress,
+                    feeAmt,
                     externalNullifier,
-                    identityStored.identityNullifier,
-                    identityPathElements,
-                    identityPathIndex,
                 )
+
             } catch (err) {
                 console.error(err)
                 throw {
@@ -150,7 +144,14 @@ export default () => {
                 }
             }
 
-            if (!circuit.checkWitness(w)) {
+            const validSig = verifySignature(result.msg, result.signature, pubKey)
+            if (!validSig) {
+                throw {
+                    code: ErrorCodes.INVALID_SIG,
+                }
+            }
+
+            if (!circuit.checkWitness(result.witness)) {
                 throw {
                     code: ErrorCodes.INVALID_WITNESS,
                 }
@@ -162,14 +163,15 @@ export default () => {
             )
 
             progress('Downloading verification key...')
-            const verifyingKey = unstringifyBigInts(
-                await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
+            const verifyingKey = parseVerifyingKeyJson(
+                // @ts-ignore
+                await (await fetch(config.frontend.snarks.paths.verificationKey)).text()
             )
 
             progress('Generating proof...')
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(result.witness, provingKey)
 
-            const publicSignals = genPublicSignals(w, circuit)
+            const publicSignals = genPublicSignals(result.witness, circuit)
 
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
 
@@ -180,17 +182,19 @@ export default () => {
             }
 
             const params = genMixParams(
-                signal,
+                result.signal,
                 proof,
                 recipientAddress,
-                BigInt(feeAmtWei.toString()),
+                BigInt(feeAmt.toString()),
                 publicSignals,
             )
+
+            const method = isEth ? 'mixer_mix_eth' : 'mixer_mix_tokens'
 
             const request = {
                 jsonrpc: '2.0',
                 id: (new Date()).getTime(),
-                method: 'mixer_mix',
+                method,
                 params,
             }
 
@@ -217,8 +221,14 @@ export default () => {
 
                 await sleep(4000)
 
-                const recipientBalanceAfter = await provider.getBalance(recipientAddress)
-                console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
+                if (isEth) {
+                    const recipientBalanceAfter = await provider.getBalance(recipientAddress)
+                    console.log('The recipient now has', ethers.utils.formatEther(recipientBalanceAfter), 'ETH')
+                } else {
+                    const recipientBalanceAfter = (await tokenContract.balanceOf(recipientAddress)) / (10 ** tokenDecimals)
+                    console.log('The recipient now has', recipientBalanceAfter.toString(), 'tokens')
+                }
+
             } else if (responseJson.error.data.name === 'BACKEND_MIX_PROOF_PRE_BROADCAST_INVALID') {
                 throw {
                     code: ErrorCodes.PRE_BROADCAST_CHECK_FAILED
@@ -253,10 +263,9 @@ export default () => {
     expiryTimestamp.setUTCHours(0, 0, 0, 0)
     expiryTimestamp.setDate(expiryTimestamp.getDate() + 1)
 
-
     // Whether the current time is greater than the expiry timestamp (i.e.
     // UTC midnight 
-    const midnightOver = firstLoadTime > expiryTimestamp
+    let midnightOver = firstLoadTime > expiryTimestamp
 
     // Dev only
     if (!endsAtMidnight && !midnightOver) {
@@ -285,7 +294,6 @@ export default () => {
         timer.days + timer.hours + timer.minutes + timer.seconds === 0
     ) {
         setWithdrawStarted(true)
-        withdraw(context)
     }
 
     const withdrawBtn = (
@@ -295,13 +303,12 @@ export default () => {
                 if (showAdvanced) {
                     setShowAdvanced(false)
                 }
-                if (!withdrawStarted) {
-                    setWithdrawStarted(true)
-                    withdraw(context)
-                }
+
+                setWithdrawStarted(true)
+                withdraw(context)
             }}
             className='button is-warning'>
-            Mix {mixAmtEth} ETH now
+            Mix now
         </span>
     )
 
@@ -318,14 +325,14 @@ export default () => {
                                 {recipientAddress} 
                             </pre>
                             <br />
-                            can receive {mixAmtEth - operatorFeeEth} ETH 
+                            can receive {mixAmt - operatorFee} {tokenType} 
                             { countdownDone || midnightOver || withdrawBtnClicked ?
                                 <span>
                                     { (txHash.length === 0 && midnightOver) ?
                                         <span>.</span>
                                         :
                                         <span>
-                                            {' '} soon.
+                                            {' '}.
                                         </span>
                                     }
                                   { proofGenProgress.length > 0 && 
@@ -344,11 +351,11 @@ export default () => {
                             }
                         </h2>
 
-                        { context.error == null && txHash.length === 0 && midnightOver && !withdrawStarted &&
+                        { context.error == null && txHash.length === 0 && (midnightOver || withdrawStarted) &&  !withdrawBtnClicked &&
                             withdrawBtn
                         }
 
-                        { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
+                        { (context.error != null && context.error['code'] === 'UNSUPPORTED_NETWORK') &&
                             <p>
                                 To continue, please connect to the correct Ethereum network.
                             </p>
@@ -384,17 +391,11 @@ export default () => {
                     <div className='column is-6 is-offset-3'>
                         <p>
                             To enjoy the most anonymity, leave your deposit
-                            untouched for as long as possible.
-                        </p>
-                        <br />
-                        <p>
-                            To let this page automatically mix your funds at an
-                            optimal time, leave this page open till after
-                            midnight UTC. For example, if you deposit your
-                            funds at 3pm UTC on 1 Jan, this page will wait for
-                            9 hours to mix the funds. If you close this page,
-                            you can reopen it any time, and withdraw it at a
-                            click of a button, even after midnight UTC.
+                            untouched for as long as possible. We recommend
+                            that you wait at least till past midnight UTC of
+                            the day you deposit funds. For example, if you
+                            deposit your funds at 3pm UTC on 1 Jan, this please
+                            wait at least 9 hours to mix the funds.
                         </p>
                     </div>
 
@@ -403,7 +404,7 @@ export default () => {
 
             <br />
 
-            { !(txHash.length === 0 && midnightOver && !withdrawStarted) &&
+            { !(txHash.length === 0 && midnightOver) &&
                 !withdrawBtnClicked &&
                 !withdrawStarted &&
                 <div>
@@ -447,7 +448,7 @@ export default () => {
 
                                     {context.error == null && withdrawBtn}
 
-                                    { (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') &&
+                                    { (context.error != null && context.error['code'] === 'UNSUPPORTED_NETWORK') &&
                                         <p>
                                             To continue, please connect to the correct Ethereum network.
                                         </p>

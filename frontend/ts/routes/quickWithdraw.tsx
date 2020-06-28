@@ -1,40 +1,35 @@
 import React, { Component, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useWeb3Context } from 'web3-react'
-import * as snarkjs from 'snarkjs'
 import * as ethers from 'ethers'
 import { utils } from 'mixer-contracts'
 import { sleep } from 'mixer-utils'
-const config = require('../exported_config')
+const config = require('../../exported_config')
 import { TxButton, TxStatuses } from '../components/txButton'
 import { TxHashMessage } from '../components/txHashMessage'
-import { quickWithdraw } from '../web3/quickWithdraw'
-import { getMixerContract } from '../web3/mixer'
+import { quickWithdrawEth, quickWithdrawTokens } from '../web3/quickWithdraw'
+import { getMixerContract, getTokenMixerContract } from '../web3/mixer'
+import { fetchWithoutCache } from '../utils/fetcher'
 const deployedAddresses = config.chain.deployedAddresses
-const broadcasterAddress = config.backend.broadcasterAddress
+const tokenDecimals = config.tokenDecimals
 
 import { 
-    genSignedMsg,
-    genPubKey,
-    genTree,
     genCircuit,
-    genWitness,
-    genIdentityCommitment,
-    genPathElementsAndIndex,
-    genSignalAndSignalHash,
+    genMixerWitness,
     genPublicSignals,
     verifySignature,
-    unstringifyBigInts,
-    extractWitnessRoot,
+    genPubKey,
     genProof,
+    genIdentityCommitment,
     verifyProof,
-} from 'mixer-crypto'
+    Identity,
+    parseVerifyingKeyJson,
+} from 'libsemaphore'
 
 import { ErrorCodes } from '../errors'
 
 import {
     getItems,
-    getNumUnwithdrawn,
     updateWithdrawTxHash,
     getFirstUnwithdrawn,
     getNumUnwithdrawn,
@@ -43,8 +38,10 @@ import {
 import {
     mixAmtEth,
     operatorFeeEth,
+    mixAmtTokens,
+    operatorFeeTokens,
     feeAmtWei,
-} from '../utils/ethAmts'
+} from '../utils/mixAmts'
 
 const blockExplorerTxPrefix = config.frontend.blockExplorerTxPrefix
 
@@ -84,9 +81,15 @@ export default () => {
         setProofGenProgress(line)
     }
 
-    //// Just use the last stored item
-    //const identityStored = items[items.length - 1]
+    // Just use the last stored item
     const identityStored = getFirstUnwithdrawn()
+
+    const tokenType = identityStored.tokenType
+    const isEth = tokenType === 'ETH'
+
+    const mixAmt = isEth ? mixAmtEth : mixAmtTokens
+    const operatorFee = isEth ? operatorFeeEth : operatorFeeTokens
+    const feeAmt = isEth ? feeAmtWei : operatorFeeTokens * (10 ** tokenDecimals)
 
     const withdrawTxHash = identityStored.withdrawTxHash
     const recipientAddress = identityStored.recipientAddress
@@ -105,59 +108,43 @@ export default () => {
         }
 
         try {
-            const mixerContract = await getMixerContract(context)
+            const mixerContract = isEth ?
+                await getMixerContract(context) : await getTokenMixerContract(context)
 
-            const broadcasterAddress = context.account
+            const relayerAddress = context.account
+
             const externalNullifier = mixerContract.address
-            progress('Downloading leaves...')
-            const leaves = await mixerContract.getLeaves()
 
-            const tree = await genTree(leaves)
+            progress('Downloading leaves...')
+
+            const leaves = await mixerContract.getLeaves()
 
             const pubKey = genPubKey(identityStored.privKey)
 
-            const identityCommitment = genIdentityCommitment(
-                identityStored.identityNullifier,
-                pubKey,
-            )
-
-            const { identityPathElements, identityPathIndex } = await genPathElementsAndIndex(
-                tree,
-                identityCommitment,
-            )
-
-            const { signalHash, signal } = genSignalAndSignalHash(
-                recipientAddress, broadcasterAddress, feeAmtWei,
-            )
-
-            const { signature, msg } = genSignedMsg(
-                identityStored.privKey,
-                externalNullifier,
-                signalHash, 
-            )
-
-            const validSig = verifySignature(msg, signature, pubKey)
-            if (!validSig) {
-                throw {
-                    code: ErrorCodes.INVALID_SIG,
-                }
+            const identity: Identity = {
+                keypair: { pubKey, privKey: identityStored.privKey },
+                identityNullifier: identityStored.identityNullifier,
+                identityTrapdoor: identityStored.identityTrapdoor,
             }
 
+            const identityCommitment = genIdentityCommitment(identity)
+
             progress('Downloading circuit...')
-            const cirDef = await (await fetch(config.frontend.snarks.paths.circuit)).json()
+            const cirDef = await (await fetchWithoutCache(config.frontend.snarks.paths.circuit)).json()
             const circuit = genCircuit(cirDef)
 
-            let w
+            progress('Generating witness...')
+            let result
             try {
-                w = genWitness(
-                    circuit,
-                    pubKey,
-                    signature,
-                    signalHash,
+                result = await genMixerWitness(
+                    circuit, 
+                    identity,
+                    leaves,
+                    20,
+                    recipientAddress,
+                    relayerAddress,
+                    feeAmt,
                     externalNullifier,
-                    identityStored.identityNullifier,
-                    identityPathElements,
-                    identityPathIndex,
                 )
             } catch (err) {
                 console.error(err)
@@ -166,9 +153,15 @@ export default () => {
                 }
             }
 
-            const witnessRoot = extractWitnessRoot(circuit, w)
+            const validSig = verifySignature(result.msg, result.signature, pubKey)
+            if (!validSig) {
+                throw {
+                    code: ErrorCodes.INVALID_SIG,
+                }
+            }
 
-            if (!circuit.checkWitness(w)) {
+
+            if (!circuit.checkWitness(result.witness)) {
                 throw {
                     code: ErrorCodes.INVALID_WITNESS,
                 }
@@ -182,14 +175,15 @@ export default () => {
 
             progress('Downloading verifying key')
 
-            const verifyingKey = unstringifyBigInts(
-                await (await fetch(config.frontend.snarks.paths.verificationKey)).json()
+            const verifyingKey = parseVerifyingKeyJson(
+                // @ts-ignore
+                await (await fetch(config.frontend.snarks.paths.verificationKey)).text()
             )
 
             progress('Generating proof')
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(result.witness, provingKey)
 
-            const publicSignals = genPublicSignals(w, circuit)
+            const publicSignals = genPublicSignals(result.witness, circuit)
 
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
 
@@ -201,28 +195,30 @@ export default () => {
 
             progress('Performing transaction')
 
-            const tx = await quickWithdraw(
+            let tx
+            const quickWithdrawFunc = isEth ? quickWithdrawEth : quickWithdrawTokens
+            tx = await quickWithdrawFunc(
                 context,
-                signal,
+                result.signal,
                 proof,
                 publicSignals,
                 recipientAddress,
-                feeAmtWei,
-                broadcasterAddress,
+                feeAmt.toString(),
+                relayerAddress,
             )
 
             setPendingTxHash(tx.hash)
             setProofGenProgress('')
 
-            if (config.env === 'local-dev') {
-                await sleep(3000)
-            }
-
             const receipt = await tx.wait()
 
+            if (config.env === 'local-dev') {
+                await sleep(2000)
+            }
+
             if (receipt.status === 1) {
-                updateWithdrawTxHash(identityStored, tx.hash)
                 setCompletedWithdraw(true)
+                updateWithdrawTxHash(identityStored, tx.hash)
             } else {
                 throw {
                     code: ErrorCodes.TX_FAILED,
@@ -260,7 +256,7 @@ export default () => {
                   <div className='column is-8 is-offset-2'>
                       <div className='section'>
                           <h2 className='subtitle'>
-                              You can immediately withdraw { mixAmtEth - operatorFeeEth * 2 } ETH to
+                              You can immediately withdraw { mixAmt - operatorFee} {tokenType} to
                               <br />
                               <br />
                               <pre>
@@ -288,7 +284,7 @@ export default () => {
                               onClick={handleWithdrawBtnClick}
                               txStatus={txStatus}
                               isDisabled={withdrawBtnDisabled}
-                              label={`Withdraw ${mixAmtEth - operatorFeeEth} ETH`}
+                              label={`Withdraw ${mixAmt - operatorFee} ${tokenType}`}
                           />
 
                           { pendingTxHash.length > 0 &&
@@ -328,11 +324,11 @@ export default () => {
                    </div>
                }
 
-               { withdrawTxHash && completedWithdraw &&
+               { completedWithdraw &&
                     <div className='column is-8 is-offset-2'>
                         <TxHashMessage 
                             mixSuccessful={true}
-                            txHash={withdrawTxHash}
+                            txHash={pendingTxHash}
                             txStatus={TxStatuses.Mined} />
                         <a href='/'>Make another deposit</a>.
                    </div>

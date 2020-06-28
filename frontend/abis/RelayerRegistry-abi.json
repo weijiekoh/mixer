@@ -1,0 +1,22 @@
+[
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_applicationContract",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_encodedPayload",
+        "type": "bytes"
+      }
+    ],
+    "name": "relayCall",
+    "outputs": [],
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]

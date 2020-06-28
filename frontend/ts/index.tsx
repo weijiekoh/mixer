@@ -9,6 +9,7 @@ import DepositRoute from './routes/deposit'
 import CountdownRoute from './routes/countdown'
 import QuickWithdrawRoute from './routes/quickWithdraw'
 import connectors from './web3'
+import '../less/index.less'
 
 import {
     initStorage,

@@ -1,3 +1,4 @@
+require('module-alias/register')
 import * as ethers from 'ethers'
 import * as argparse from 'argparse' 
 import * as fs from 'fs' 
@@ -5,6 +6,8 @@ import * as path from 'path'
 import * as etherlime from 'etherlime-lib'
 import { config } from 'mixer-config'
 import { genAccounts } from '../accounts'
+
+const ERC20Mintable = require('@mixer-contracts/compiled/ERC20Mintable.json')
 
 const deploySemaphore = (deployer, Semaphore, libraries) => {
     return deployer.deploy(
@@ -21,100 +24,81 @@ const _deployMixer = (
     deployer,
     Mixer,
     semaphoreContractAddress,
-    mixAmt,
+    mixAmtTokens,
     tokenAddress,
 ) => {
+
     return deployer.deploy(Mixer,
         {},
         semaphoreContractAddress,
-        mixAmt,
+        mixAmtTokens.toString(),
         tokenAddress,
-    )
-}
-
-const deployEthMixer = (
-    deployer,
-    Mixer,
-    semaphoreContractAddress,
-) => {
-    return _deployMixer(
-        deployer,
-        Mixer,
-        semaphoreContractAddress, 
-        ethers.utils.parseEther(config.mixAmtEth),
-        '0x0000000000000000000000000000000000000000',
     )
 }
 
 const deployTokenMixer = _deployMixer
 
+const deployEthMixer = (
+    deployer,
+    Mixer,
+    semaphoreContractAddress,
+    mixAmtEth,
+) => {
+
+    return _deployMixer(
+        deployer,
+        Mixer,
+        semaphoreContractAddress, 
+        mixAmtEth,
+        '0x0000000000000000000000000000000000000000',
+    )
+}
+
 const deployToken = async (
     deployer: any,
-    compiledContracts: string,
 ) => {
-    const ERC20Mintable = require(path.join(compiledContracts, 'ERC20Mintable.json'))
-    const tokenContract = await deployer.deploy(ERC20Mintable, {})
+    const tokenContract = await deployer.deploy(
+        ERC20Mintable,
+        {},
+        'Token',
+        'TKN',
+        18,
+    )
 
     return tokenContract
 }
 
-const deployAllContractsForTokenMixer = async (
-    deployer: any,
-    compiledContracts: string,
-    mixAmt: number,
-    tokenAddress: string,
+const deployAllContracts = async (
+    deployer,
+    mixAmtEth,
+    mixAmtTokens,
+    adminAddress,
 ) => {
-    const MiMC = require(path.join(compiledContracts, 'MiMC.json'))
-    const Semaphore = require(path.join(compiledContracts, 'Semaphore.json'))
-    const Mixer = require(path.join(compiledContracts, 'Mixer.json'))
-    const RelayerRegistry = require(path.join(compiledContracts, 'RelayerRegistry.json'))
+    // Deploy token if it's not specified in config. This should be the case for local-dev.yaml
+    // In Kovan, the DAI address is 0xc4375b7de8af5a38a93548eb8453a498222c4ff2
+    let tokenAddress = config.chain.deployedAddresses.Token
+    let tokenContract
+    let tokenDecimals = config.get('tokenDecimals')
 
-    const mimcContract = await deployer.deploy(MiMC, {})
-    const libraries = {
-        MiMC: mimcContract.contractAddress,
+    if (config.env !== 'local-dev') {
+        console.log('Using existing token contract at', tokenAddress)
+        tokenContract = new ethers.Contract(
+            tokenAddress,
+            ERC20Mintable.abi,
+            deployer.signer,
+        )
+    } else {
+        console.log('Deploying token')
+        tokenContract = await deployToken(deployer)
+        tokenAddress = tokenContract.address
     }
 
-    console.log('Deploying Semaphore')
-    const semaphoreContract = await deploySemaphore(
-        deployer,
-        Semaphore,
-        libraries,
-    )
+    tokenAddress = tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address
 
-    console.log('Deploying the Token Mixer')
-    const mixerContract = await deployTokenMixer(
-        deployer,
-        Mixer,
-        semaphoreContract.contractAddress,
-        mixAmt,
-        tokenAddress,
-    )
-
-    console.log('Transferring ownership of Semaphore to the Token Mixer')
-    const tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
-    await tx.wait()
-
-    console.log('Setting the external nullifier of the Semaphore contract')
-    await mixerContract.setSemaphoreExternalNulllifier()
-    await tx.wait()
-
-    console.log('Deploying Relayer Registry')
-    const relayerRegistryContract = await deployer.deploy(RelayerRegistry, {})
-
-    return {
-        mimcContract,
-        semaphoreContract,
-        mixerContract,
-        relayerRegistryContract,
-    }
-}
-
-const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: string) => {
-    const MiMC = require(path.join(compiledContracts, 'MiMC.json'))
-    const MultipleMerkleTree = require(path.join(compiledContracts, 'MultipleMerkleTree.json'))
-    const Semaphore = require(path.join(compiledContracts, 'Semaphore.json'))
-    const Mixer = require(path.join(compiledContracts, 'Mixer.json'))
-    const RelayerRegistry = require(path.join(compiledContracts, 'RelayerRegistry.json'))
+    const MiMC = require('@mixer-contracts/compiled/MiMC.json')
+    const Semaphore = require('@mixer-contracts/compiled/Semaphore.json')
+    const Mixer = require('@mixer-contracts/compiled/Mixer.json')
+    const RelayerRegistry = require('@mixer-contracts/compiled/RelayerRegistry.json')
 
     console.log('Deploying MiMC')
     const mimcContract = await deployer.deploy(MiMC, {})
@@ -122,12 +106,6 @@ const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: s
     const libraries = {
         MiMC: mimcContract.contractAddress,
     }
-
-    console.log('Deploying MultipleMerkleTree')
-    const multipleMerkleTreeContract = await deployer.deploy(
-        MultipleMerkleTree,
-        libraries,
-    )
 
     console.log('Deploying Semaphore')
     const semaphoreContract = await deploySemaphore(
@@ -141,25 +119,57 @@ const deployAllContractsForEthMixer = async (deployer: any, compiledContracts: s
         deployer,
         Mixer,
         semaphoreContract.contractAddress,
+        mixAmtEth,
     )
 
     console.log('Transferring ownership of Semaphore to the ETH Mixer')
-    const tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
+    let tx = await semaphoreContract.transferOwnership(mixerContract.contractAddress)
     await tx.wait()
 
     console.log('Setting the external nullifier of the Semaphore contract')
-    await mixerContract.setSemaphoreExternalNulllifier()
+    tx = await mixerContract.setSemaphoreExternalNulllifier({ gasLimit: 100000 })
+    await tx.wait()
+
+    console.log('Deploying Semaphore for the Token Mixer')
+    const tokenSemaphoreContract = await deploySemaphore(
+        deployer,
+        Semaphore,
+        libraries,
+    )
+
+    console.log('Deploying the Token Mixer')
+    const tokenMixerContract = await deployTokenMixer(
+        deployer,
+        Mixer,
+        tokenSemaphoreContract.contractAddress,
+        mixAmtTokens * (10 ** tokenDecimals),
+        tokenAddress,
+    )
+
+    console.log('Transferring ownership of Token Semaphore to the Token Mixer')
+    tx = await tokenSemaphoreContract.transferOwnership(tokenMixerContract.contractAddress)
+    await tx.wait()
+
+    console.log('Setting the external nullifier of the Token Semaphore contract')
+    tx = await tokenMixerContract.setSemaphoreExternalNulllifier({ gasLimit: 100000 })
     await tx.wait()
 
     console.log('Deploying Relayer Registry')
     const relayerRegistryContract = await deployer.deploy(RelayerRegistry, {})
 
+    if (config.env === 'local-dev') {
+        console.log('Minting tokens')
+        await tokenContract.mint(adminAddress, '100000000000000000000000000')
+    }
+
     return {
         mimcContract,
-        multipleMerkleTreeContract,
         semaphoreContract,
         mixerContract,
-        relayerRegistryContract
+        relayerRegistryContract,
+        tokenSemaphoreContract,
+        tokenMixerContract,
+        tokenContract,
     }
 }
 
@@ -167,17 +177,11 @@ const main = async () => {
     const accounts = genAccounts()
     const admin = accounts[0]
 
+    console.log('Using account', admin.address)
+
     const parser = new argparse.ArgumentParser({ 
         description: 'Deploy all contracts to an Ethereum network of your choice'
     })
-
-    parser.addArgument(
-        ['-c', '--compiled'],
-        {
-            help: 'The directory containing the compiled Solidity files',
-            required: true
-        }
-    )
 
     parser.addArgument(
         ['-o', '--output'],
@@ -188,7 +192,6 @@ const main = async () => {
     )
 
     const args = parser.parseArgs()
-    const compiledContracts = args.compiled
     const outputAddressFile = args.output
 
     const deployer = new etherlime.JSONRPCPrivateKeyDeployer(
@@ -199,28 +202,29 @@ const main = async () => {
         },
     )
 
-    const contractsPath = path.join(
-        __dirname,
-        '../..',
-        compiledContracts,
-    )
-    console.log(contractsPath)
-
     const {
         mimcContract,
-        multipleMerkleTreeContract,
         semaphoreContract,
         mixerContract,
         relayerRegistryContract,
-    } 
-    = await deployAllContractsForEthMixer(deployer, contractsPath)
+        tokenContract,
+        tokenSemaphoreContract,
+        tokenMixerContract,
+    } = await deployAllContracts(
+        deployer,
+        ethers.utils.parseEther(config.mixAmtEth.toString()),
+        config.mixAmtTokens,
+        admin.address,
+    )
 
     const addresses = {
         MiMC: mimcContract.contractAddress,
-        MultipleMerkleTree: multipleMerkleTreeContract.contractAddress,
         Semaphore: semaphoreContract.contractAddress,
         Mixer: mixerContract.contractAddress,
+        TokenMixer: tokenMixerContract.contractAddress,
+        TokenSemaphore: tokenSemaphoreContract.contractAddress,
         RelayerRegistry: relayerRegistryContract.contractAddress,
+        Token: tokenContract.contractAddress ? tokenContract.contractAddress : tokenContract.address,
     }
 
     const addressJsonPath = path.join(__dirname, '../..', outputAddressFile)
@@ -242,6 +246,5 @@ if (require.main === module) {
 
 export {
     deployToken,
-    deployAllContractsForTokenMixer,
-    deployAllContractsForEthMixer,
+    deployAllContracts,
 }

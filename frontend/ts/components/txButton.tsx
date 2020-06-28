@@ -33,6 +33,7 @@ const TxButton = ({
     }
 
     return (
+        // @ts-ignore
         <span
             onClick={handleClick}
             disabled={isDisabled}
@@ -44,4 +45,39 @@ const TxButton = ({
     )
 }
 
-export { TxButton, TxStatuses, TxButtonStatus }
+const Erc20ApproveButton = ({
+    onClick,
+    label,
+    txStatus,
+    isDisabled,
+}) => {
+    let className = 'button is-link '
+    if (txStatus === TxStatuses.Pending) {
+        className += 'is-loading '
+        isDisabled = true
+
+    } else if (txStatus === TxStatuses.Mined) {
+        isDisabled = true
+    }
+
+    const handleClick = () => {
+        if (isDisabled) {
+            return
+        }
+        onClick()
+    }
+
+    return (
+        // @ts-ignore
+        <span
+            onClick={handleClick}
+            disabled={isDisabled}
+            className={className}>
+
+            {label}
+
+        </span>
+    )
+}
+
+export { Erc20ApproveButton, TxButton, TxStatuses, TxButtonStatus }

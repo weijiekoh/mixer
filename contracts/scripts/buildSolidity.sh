@@ -14,15 +14,7 @@ cp ../semaphore/semaphorejs/build/verifier.sol solidity/
 
 # Compile the contracts
 
-npx etherlime compile --solcVersion=0.5.10 --buildDirectory=compiled --workingDirectory=solidity --exportAbi 
-
-#if [[ -z "${SOLC}" ]]; then
-    #solcBinary="solc"
-#else
-    #solcBinary="${SOLC}"
-#fi
-
-#$solcBinary -o ./compiled ./solidity/*.sol --overwrite --optimize --bin --abi --bin-runtime
+npx etherlime compile --solcVersion=native --buildDirectory=compiled --workingDirectory=solidity --exportAbi 
 
 # Build the MiMC contract from bytecode
 node build/buildMiMC.js
@@ -30,4 +22,4 @@ node build/buildMiMC.js
 # Copy ABIs to the frontend module
 
 mkdir -p ../frontend/ts
-cp -r compiled/abis ../frontend/ts/
+cp -r compiled/abis ../frontend/

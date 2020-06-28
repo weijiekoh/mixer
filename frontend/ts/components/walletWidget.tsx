@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { useWeb3Context, Connectors } from 'web3-react'
-const config = require('../exported_config')
+const config = require('../../exported_config')
 
 const networkName = config.frontend.supportedNetworkName
 
@@ -19,8 +19,11 @@ const WalletWidget = () => {
     const context = useWeb3Context()
 
     const setConnector = () => {
-        if (!context.connector) {
-            context.setConnector('MetaMask')
+        try {
+            if (!context.connector) {
+                context.setConnector('MetaMask')
+            }
+        } catch (e) {
         }
     }
 
@@ -47,7 +50,7 @@ const WalletWidget = () => {
                     </span>
                 </p>
             )
-        } else if (context.error != null && context.error.code === 'UNSUPPORTED_NETWORK') {
+        } else if (context.error != null && context.error['code'] === 'UNSUPPORTED_NETWORK') {
             return (
                 <p>
                     { circleIcon('warn') }

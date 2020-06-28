@@ -1,3 +1,4 @@
+require('module-alias/register')
 // Make Typescript happy
 declare var assert: any
 declare var before: any
@@ -17,37 +18,22 @@ import {
 
 import { sleep } from 'mixer-utils'
 import {
-    SnarkProvingKey,
-    SnarkVerifyingKey,
-    genRandomBuffer,
     genIdentity,
     genIdentityCommitment,
-    genIdentityNullifier,
-    genEddsaKeyPair,
-    genCircuit,
-    genSignedMsg,
-    signMsg,
-    verifySignature,
-    genSignalAndSignalHash,
-    genWitness,
-    genWitnessInputs,
-    extractWitnessRoot,
-    genPathElementsAndIndex,
+    genMixerWitness,
     genProof,
-    genPublicSignals,
     verifyProof,
-    unstringifyBigInts,
-    setupTree,
-} from 'mixer-crypto'
+    verifySignature,
+    genPublicSignals,
+} from 'libsemaphore'
 
 import { genAccounts } from '../accounts'
 import buildMiMC from '../buildMiMC'
-const Mixer = require('../../compiled/Mixer.json')
+const Mixer = require('@mixer-contracts/compiled/Mixer.json')
+const ERC20Mintable = require('@mixer-contracts/compiled/ERC20Mintable.json')
 
 import {
-    deployAllContractsForEthMixer,
-    deployAllContractsForTokenMixer,
-    deployToken,
+    deployAllContracts,
 } from '../deploy/deploy'
 
 const accounts = genAccounts()
@@ -55,8 +41,11 @@ const depositorAddress = accounts[0].address
 const recipientAddress = accounts[1].address
 let relayerAddress = accounts[2].address
 
-const depositAmt = config.get('testing.mixAmtTokens')
-const feeAmt = config.get('testing.feeAmtTokens')
+const mixAmtEth = ethers.utils.parseEther(config.get('mixAmtEth').toString())
+const mixAmtTokens = ethers.utils.bigNumberify(config.get('mixAmtTokens').toString())
+const tokenDecimals = config.get('tokenDecimals')
+const mixAmtTokensMultiplied = (mixAmtTokens.toNumber() * 10 ** tokenDecimals).toString()
+const feeAmt = config.get('feeAmtTokens')
 
 const users = accounts.slice(1, 6).map((user) => user.address)
 const identities = {}
@@ -70,21 +59,8 @@ const contractsPath = path.join(
 for (let i=0; i < users.length; i++) {
     const user = users[i]
 
-    let keyBuf = genRandomBuffer(32)
-    let idNullifierBytes = genRandomBuffer(31)
-
-    // Generate an eddsa identity, identity nullifier, and identity commitment
-    // per user
-    const { privKey, pubKey } = genEddsaKeyPair(keyBuf)
-    const identityNullifier = genIdentityNullifier(idNullifierBytes)
-    const identityCommitment = genIdentityCommitment(identityNullifier, pubKey)
-
-    identities[user] = {
-        identityCommitment,
-        identityNullifier,
-        privKey,
-        pubKey,
-    }
+    const identity = genIdentity()
+    identities[user] = identity
 }
 
 let mimcContract
@@ -109,20 +85,20 @@ describe('Token Mixer', () => {
     before(async () => {
         await buildMiMC()
 
-        tokenContract = await deployToken(deployer, contractsPath)
-        const contracts = await deployAllContractsForTokenMixer(
+        const contracts = await deployAllContracts(
             deployer,
-            contractsPath,
-            depositAmt,
-            tokenContract.contractAddress,
+            mixAmtEth,
+            mixAmtTokens,
+            depositorAddress,
         )
         mimcContract = contracts.mimcContract
-        semaphoreContract = contracts.semaphoreContract
-        mixerContract = contracts.mixerContract
+        semaphoreContract = contracts.tokenSemaphoreContract
+        mixerContract = contracts.tokenMixerContract
         relayerRegistryContract = contracts.relayerRegistryContract
+        tokenContract = contracts.tokenContract
 
         // mint tokens
-        await tokenContract.mint(depositorAddress, 1000)
+        await tokenContract.mint(depositorAddress, '100000000000000000000000')
     })
 
     describe('Contract deployments', () => {
@@ -147,21 +123,18 @@ describe('Token Mixer', () => {
         })
 
         it('the Semaphore contract\'s external nullifier should be the mixer contract address', async () => {
-            const semaphoreExtNullifier = await semaphoreContract.external_nullifier()
+            const semaphoreExtNullifier = await semaphoreContract.getExternalNullifierByIndex(1)
             const mixerAddress = mixerContract.contractAddress
             assert.isTrue(areEqualAddresses(semaphoreExtNullifier, mixerAddress))
         })
     })
 
     describe('Deposits and withdrawals', () => {
-        // initialise the off-chain merkle tree
-        const tree = setupTree()
-
         // get the circuit, verifying key, and proving key
         const { verifyingKey, provingKey, circuit } = getSnarks()
 
         const identity = identities[users[0]]
-        const identityCommitment = identity.identityCommitment
+        const identityCommitment = genIdentityCommitment(identity)
         let nextIndex
 
         let recipientBalanceBefore
@@ -174,17 +147,11 @@ describe('Token Mixer', () => {
 
         let mixReceipt
 
-        it('should generate identity commitments', async () => {
-            for (const user of users) {
-                assert.isTrue(identities[user].identityCommitment.toString(10).length > 0)
-            }
-        })
-
-        it('should fail to call deposit', async () => {
+        it('should fail to call deposit() (which is for ETH only)', async () => {
             let reason: string = ''
             let tx
             try {
-                tx = await mixerContract.deposit('0x' + identityCommitment.toString(16))
+                tx = await mixerContract.deposit('0x' + identityCommitment.toString(16), { gasLimit: 1500000 })
                 const receipt = await mixerContract.verboseWaitForTransaction(tx)
             } catch (err) {
                 reason = err.data[err.transactionHash].reason
@@ -193,12 +160,16 @@ describe('Token Mixer', () => {
         })
 
         it('should perform a token deposit', async () => {
-            await tokenContract.approve(mixerContract.contractAddress, depositAmt)
+            await tokenContract.approve(
+                mixerContract.contractAddress,
+                mixAmtTokensMultiplied,
+            )
 
             const balanceBefore = await tokenContract.balanceOf(depositorAddress)
+            assert.isTrue(balanceBefore > 0)
 
             // make a deposit
-            const tx = await mixerContract.depositERC20(identityCommitment.toString())
+            const tx = await mixerContract.depositERC20(identityCommitment.toString(), { gasLimit: 1500000 })
             const receipt = await mixerContract.verboseWaitForTransaction(tx)
 
             const gasUsed = receipt.gasUsed.toString()
@@ -213,52 +184,43 @@ describe('Token Mixer', () => {
             assert.include(leaves, identityCommitment.toString())
             const balanceAfter = await tokenContract.balanceOf(depositorAddress)
 
-            assert.equal(balanceBefore - balanceAfter, depositAmt)
+            assert.equal(
+                balanceBefore.sub(balanceAfter).toString(),
+                mixAmtTokensMultiplied,
+            )
         })
 
         it('should make a token withdrawal', async () => {
-            await tree.update(nextIndex, identityCommitment.toString())
+            const leaves = await mixerContract.getLeaves()
 
             const {
+                witness,
+                signal,
+                signalHash,
                 signature,
                 msg,
-                signalHash,
-                signal,
-                identityPath,
-                identityPathElements,
-                identityPathIndex,
-            } = await genWitnessInputs(
                 tree,
-                nextIndex,
-                identityCommitment,
+                identityPath,
+                identityPathIndex,
+                identityPathElements,
+            } = await genMixerWitness(
+                circuit,
+                identity,
+                leaves,
+                20,
                 recipientAddress,
                 relayerAddress,
                 feeAmt,
-                identity.privKey,
                 externalNullifier,
             )
 
-            assert.isTrue(verifySignature(msg, signature, identity.pubKey))
+            assert.isTrue(verifySignature(msg, signature, identity.keypair.pubKey))
 
-            const w = genWitness(
-                circuit,
-                identity.pubKey,
-                signature,
-                signalHash,
-                externalNullifier,
-                identity.identityNullifier,
-                identityPathElements,
-                identityPathIndex,
-            )
+            assert.isTrue(circuit.checkWitness(witness))
 
-            const witnessRoot = extractWitnessRoot(circuit, w)
-            assert.equal(witnessRoot, identityPath.root)
+            const publicSignals = genPublicSignals(witness, circuit)
 
-            assert.isTrue(circuit.checkWitness(w))
-
-            const publicSignals = genPublicSignals(w, circuit)
-
-            const proof = await genProof(w, provingKey.buffer)
+            const proof = await genProof(witness, provingKey)
 
             // verify the proof off-chain
             const isVerified = verifyProof(verifyingKey, proof, publicSignals)
@@ -308,7 +270,10 @@ describe('Token Mixer', () => {
 
         it('should increase the recipient\'s token balance', () => {
             recipientBalanceDiff = recipientBalanceAfter.sub(recipientBalanceBefore)
-            assert.equal(recipientBalanceDiff, depositAmt - feeAmt)
+            assert.equal(
+                recipientBalanceDiff.add(feeAmt).toString(),
+                mixAmtTokensMultiplied,
+            )
         })
     })
 })

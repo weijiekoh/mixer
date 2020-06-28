@@ -3,8 +3,8 @@ import {
     SnarkProvingKey,
     SnarkVerifyingKey,
     genCircuit,
-    unstringifyBigInts,
-} from 'mixer-crypto'
+    parseVerifyingKeyJson,
+} from 'libsemaphore'
 const fs = require('fs');
 const path = require('path');
 
@@ -31,16 +31,13 @@ const mix = async (
     return relayerRegistryContract.relayCall(
         mixerContract.contractAddress,
         callData,
+        { gasLimit: 1000000 }
     )
 
     //return await mixerContract.mix(
-        //genDepositProof(
-            //signal,
-            //proof,
-            //publicSignals,
-            //recipientAddress,
-            //feeAmt,
-        //),
+        //depositProof,
+        //relayerAddress,
+        //{ gasLimit: 1000000 }
     //)
 }
 
@@ -67,6 +64,7 @@ const mixERC20 = async (
     return relayerRegistryContract.relayCall(
         mixerContract.contractAddress,
         callData,
+        { gasLimit: 1000000 },
     )
 }
 
@@ -101,14 +99,12 @@ const areEqualAddresses = (a: string, b: string) => {
 }
 
 const getSnarks = () => {
-    const verifyingKey: SnarkVerifyingKey = unstringifyBigInts(
-        JSON.parse(fs.readFileSync(
-            path.join(
-                __dirname,
-                '../../../semaphore/semaphorejs/build/verification_key.json',
-            )
-        ))
-    )
+    const verifyingKey = parseVerifyingKeyJson(fs.readFileSync(
+        path.join(
+            __dirname,
+            '../../../semaphore/semaphorejs/build/verification_key.json',
+        )
+    ))
 
     const provingKey: SnarkProvingKey = fs.readFileSync(
         path.join(__dirname, '../../../semaphore/semaphorejs/build/proving_key.bin'),
